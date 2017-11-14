@@ -1,0 +1,33 @@
+{
+  "buildFiles": [
+    "C:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\Android.mk",
+    "C:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\Application.mk"
+  ],
+  "cleanCommands": [
+    "D:\\Android\\android-sdk\\ndk-bundle\\ndk-build.cmd NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003dC:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\Android.mk NDK_APPLICATION_MK\u003dC:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\Application.mk APP_ABI\u003dx86_64 NDK_ALL_ABIS\u003dx86_64 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003dC:/Users/Adam/Desktop/acodexm/Android/Study/Panorama/app/build/intermediates/ndkBuild/customDebugType/obj NDK_LIBS_OUT\u003dC:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\build\\intermediates\\ndkBuild\\customDebugType\\lib clean"
+  ],
+  "libraries": {
+    "MyLib-customDebugType-x86_64": {
+      "buildCommand": "D:\\Android\\android-sdk\\ndk-bundle\\ndk-build.cmd NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003dC:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\Android.mk NDK_APPLICATION_MK\u003dC:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\Application.mk APP_ABI\u003dx86_64 NDK_ALL_ABIS\u003dx86_64 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003dC:/Users/Adam/Desktop/acodexm/Android/Study/Panorama/app/build/intermediates/ndkBuild/customDebugType/obj NDK_LIBS_OUT\u003dC:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\build\\intermediates\\ndkBuild\\customDebugType\\lib C:/Users/Adam/Desktop/acodexm/Android/Study/Panorama/app/build/intermediates/ndkBuild/customDebugType/obj/local/x86_64/libMyLib.so",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "MyLib",
+      "files": [
+        {
+          "src": "C:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\src\\main\\jni\\acodexm_panorama_NativePanorama.cpp",
+          "flags": "\"-gcc-toolchain\" \"D:/Android/android-sdk/ndk-bundle/build//../toolchains/x86_64-4.9/prebuilt/windows-x86_64\" \"-target\" \"x86_64-none-linux-android\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-fPIC\" \"-Wno-invalid-command-line-argument\" \"-Wno-unused-command-line-argument\" \"-no-canonical-prefixes\" \"-g\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-UNDEBUG\" \"-fno-limit-debug-info\" \"-IC:/Users/Adam/Desktop/acodexm/Android/Study/OpenCV-android-sdk/sdk/native/jni/include/opencv\" \"-IC:/Users/Adam/Desktop/acodexm/Android/Study/OpenCV-android-sdk/sdk/native/jni/include\" \"-ID:/Android/android-sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\" \"-ID:/Android/android-sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/libs/x86_64/include\" \"-ID:/Android/android-sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include/backward\" \"-IC:/Users/Adam/Desktop/acodexm/Android/Study/Panorama/app/src/main/jni\" \"-frtti\" \"-fexceptions\" \"-DANDROID\" \"-fPIC\" \"-DANDROID\" \"-fsigned-char\" \"-D__ANDROID_API__\u003d21\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"--sysroot\" \"D:/Android/android-sdk/ndk-bundle/build//../sysroot\" \"-isystem\" \"D:/Android/android-sdk/ndk-bundle/build//../sysroot/usr/include/x86_64-linux-android\""
+        }
+      ],
+      "output": "C:\\Users\\Adam\\Desktop\\acodexm\\Android\\Study\\Panorama\\app\\build\\intermediates\\ndkBuild\\customDebugType\\obj\\local\\x86_64\\libMyLib.so"
+    }
+  },
+  "toolchains": {
+    "toolchain-x86_64": {
+      "cppCompilerExecutable": "D:\\Android\\android-sdk\\ndk-bundle\\build\\..\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}
