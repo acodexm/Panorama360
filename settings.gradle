@@ -1,1 +1,1 @@
-include 'desktop', 'android', 'core', ':opencv-java', ':app'
+include 'desktop', 'android', 'core', ':opencv-java'
