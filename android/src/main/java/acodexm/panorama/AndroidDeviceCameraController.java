@@ -27,15 +27,15 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
         PictureCallback, Camera.AutoFocusCallback {
     private static final String TAG = AndroidDeviceCameraController.class.getSimpleName();
     private static final int ONE_SECOND_IN_MILI = 1000;
-    private final AndroidLauncher activity;
+    private final CameraFragment mCameraFragment;
     private CameraSurface cameraSurface;
     private byte[] pictureData;
     private boolean safeToTakePicture = true;
-    private Movement mMovement;
+//    private Movement mMovement;
 
-    public AndroidDeviceCameraController(AndroidLauncher activity) {
-        this.activity = activity;
-        mMovement = new Movement(activity);
+    public AndroidDeviceCameraController(CameraFragment mCameraFragment) {
+        this.mCameraFragment = mCameraFragment;
+//        mMovement = new Movement();
     }
 
     public void setCameraParametersForPicture(Camera camera) {
@@ -59,10 +59,10 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
         Log.d(TAG, "showToast");
         Runnable r = new Runnable() {
             public void run() {
-                Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(mCameraFragment.getContext(), message, Toast.LENGTH_SHORT).show();
             }
         };
-        activity.post(r);
+        mCameraFragment.post(r);
     }
 
     //AutoFocusCallback
@@ -90,11 +90,11 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
     //DeviceCameraControl
     @Override
     public synchronized void prepareCamera() {
-        activity.setFixedSize(960, 640);
+        mCameraFragment.setFixedSize(960, 640);
         if (cameraSurface == null) {
-            cameraSurface = new CameraSurface(activity);
+            cameraSurface = new CameraSurface(mCameraFragment.getContext());
         }
-        activity.addContentView(cameraSurface, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        mCameraFragment.getActivity().addContentView(cameraSurface, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
     }
 
@@ -117,7 +117,7 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
                 cameraSurface.getCamera().stopPreview();
             }
         }
-        activity.restoreFixedSize();
+        mCameraFragment.restoreFixedSize();
     }
 
     @Override
@@ -128,7 +128,7 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
                 startPreview();
             }
         };
-        activity.post(r);
+        mCameraFragment.post(r);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
                 stopPreview();
             }
         };
-        activity.post(r);
+        mCameraFragment.post(r);
     }
 
     @Override
@@ -150,23 +150,23 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
                 prepareCamera();
             }
         };
-        activity.post(r);
+        mCameraFragment.post(r);
     }
 
-    @Override
-    public float getChangeX() {
-        return (float) Math.round(mMovement.mLastX * 10) / 10;
-    }
-
-    @Override
-    public float getChangeY() {
-        return (float) Math.round(mMovement.mLastY * 10) / 10;
-    }
-
-    @Override
-    public float getChangeZ() {
-        return (float) Math.round(mMovement.mLastZ * 10) / 10;
-    }
+//    @Override
+//    public float getChangeX() {
+//        return (float) Math.round(mMovement.mLastX * 10) / 10;
+//    }
+//
+//    @Override
+//    public float getChangeY() {
+//        return (float) Math.round(mMovement.mLastY * 10) / 10;
+//    }
+//
+//    @Override
+//    public float getChangeZ() {
+//        return (float) Math.round(mMovement.mLastZ * 10) / 10;
+//    }
 
     @Override
     public void takePicture() {

@@ -1,17 +1,16 @@
 buildscript {
-    
-
     repositories {
         mavenLocal()
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         jcenter()
-        google()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
-        
-
+        classpath 'com.android.tools.build:gradle:2.2.2'
     }
 }
 
@@ -34,7 +33,10 @@ allprojects {
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-        google()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
 }
 
@@ -43,13 +45,13 @@ project(":desktop") {
 
 
     dependencies {
-        implementation project(":core")
-        implementation "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
-        implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-        implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
-        implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
-        implementation "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
-        
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        compile "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+        compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+        compile "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
+
     }
 }
 
@@ -60,44 +62,42 @@ project(":android") {
 
     dependencies {
 
-        implementation project(":core")
-        implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
-        implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
         natives "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-armeabi"
         natives "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-armeabi-v7a"
         natives "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-arm64-v8a"
         natives "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-x86"
         natives "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-x86_64"
-        implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
         natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi"
         natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
         natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
         natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
         natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
-        implementation fileTree(dir: 'libs', include: ['*.jar'])
-        implementation 'com.android.support:design:26.1.0'
-        implementation 'com.android.support:appcompat-v7:26.1.0'
-        implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-        testImplementation 'junit:junit:4.12'
-        androidTestImplementation 'com.android.support.test:runner:1.0.1'
-        androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+        compile fileTree(dir: 'libs', include: ['*.jar'])
+        compile 'com.android.support:design:26.1.0'
+        compile 'com.android.support:appcompat-v7:26.1.0'
+        compile 'com.android.support.constraint:constraint-layout:1.0.2'
+        testCompile 'junit:junit:4.12'
         //RxAndroid
-        implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-        implementation 'io.reactivex.rxjava2:rxjava:2.1.5'
+        compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+        compile 'io.reactivex.rxjava2:rxjava:2.1.5'
         //ButterKnife
-        implementation 'com.jakewharton:butterknife:8.8.1'
-        annotationProcessor "com.jakewharton:butterknife-compiler:8.8.1"
+        compile 'com.jakewharton:butterknife:8.8.1'
+        compile "com.jakewharton:butterknife-compiler:8.8.1"
         //Mockito testing
-        testImplementation 'org.mockito:mockito-core:2.10.0'
-        androidTestImplementation 'org.mockito:mockito-android:2.10.0'
+        testCompile 'org.mockito:mockito-core:2.10.0'
+        androidTestCompile 'org.mockito:mockito-android:2.10.0'
         //OpenCV
-        implementation project(":opencv-java")
-        
+        compile project(":opencv-java")
+
     }
 }
 
@@ -106,12 +106,12 @@ project(":core") {
 
 
     dependencies {
-        implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
-        implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
-        implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
-        implementation "net.dermetfan.libgdx-utils:libgdx-utils:0.13.4"
-        implementation "net.dermetfan.libgdx-utils:libgdx-utils-box2d:0.13.4"
-        
+        compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        compile "net.dermetfan.libgdx-utils:libgdx-utils:0.13.4"
+        compile "net.dermetfan.libgdx-utils:libgdx-utils-box2d:0.13.4"
+
     }
 }
 

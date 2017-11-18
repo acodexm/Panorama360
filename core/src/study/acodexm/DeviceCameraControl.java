@@ -24,9 +24,9 @@ public interface DeviceCameraControl {
 
     void prepareCameraAsync();
 
-    float getChangeX();
-
-    float getChangeY();
-
-    float getChangeZ();
+//    float getChangeX();
+//
+//    float getChangeY();
+//
+//    float getChangeZ();
 }

@@ -5,9 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".MainActivity">
+    tools:context=".AndroidLauncher">
 
 
     <include layout="@layout/camera_layout"/>
+
+    <include layout="@layout/libgdx_layout"/>
+
 
 </android.support.design.widget.CoordinatorLayout>

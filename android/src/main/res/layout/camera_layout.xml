@@ -4,19 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
-    <SurfaceView
-        android:id="@+id/surfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
-
-    <SurfaceView
-        android:id="@+id/surfaceViewOnTop"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+    tools:context=".AndroidLauncher">
 
     <Button
         android:id="@+id/capture"
@@ -35,8 +23,8 @@
         android:id="@+id/save"
         android:layout_width="wrap_content"
         android:layout_height="70dp"
-        android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
         android:layout_margin="10dp"
         android:background="@android:color/holo_purple"
         android:padding="10dp"

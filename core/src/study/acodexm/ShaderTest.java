@@ -51,7 +51,11 @@ public class ShaderTest implements ApplicationListener {
     private List<Vector3> vector3s;
     private boolean isUpdated;
     private Vector3 position;
-    private float x, y, z;
+    private float x, y, z, change, tmp;
+    private float temp;
+    private Matrix4 modelTransform;
+    private Matrix4 instMat;
+    private Matrix4 camMat;
 
 
     @Override
@@ -110,9 +114,28 @@ public class ShaderTest implements ApplicationListener {
         x = 1f;
         y = 0f;
         z = 0f;
+        change = 0;
 //        y=0.001f;
 //        z=0.001f;
+        modelTransform = new Matrix4();
+        instMat = new Matrix4();
+        camMat = new Matrix4();
+    }
 
+    public float calcRotation(float angle) {
+        double result;
+        if (angle >= 0 && temp < angle)
+            result = Math.sqrt(0.977 - Math.pow(angle, 2));
+        else if (angle >= 0 && temp > angle)
+            result = -Math.sqrt(0.977 - Math.pow(angle, 2));
+        else if (angle < 0 && temp > angle)
+            result = -Math.sqrt(0.977 - Math.pow(angle, 2));
+        else
+            result = Math.sqrt(0.977 - Math.pow(angle, 2));
+        if (Double.isNaN(result))
+            result = 0;
+        temp = angle;
+        return (float) result;
     }
 
     @Override
@@ -123,12 +146,18 @@ public class ShaderTest implements ApplicationListener {
 //            renderPhotos();
             isUpdated = true;
         }
-        Matrix4 modelTransform = new Matrix4();
-        modelTransform.set(instance.transform);
+
+        camMat = cam.combined;
+        instMat = instance.transform;
+//        camMat.toNormalMatrix();
+//        instMat.toNormalMatrix();
+        modelTransform.set(instMat);
 /* Multiply the transform with the combined matrix of the camera. */
-        modelTransform.mul(cam.combined);
+        modelTransform.mul(camMat);
 /* Extract the position as usual. */
-        Quaternion q = modelTransform.getRotation(new Quaternion());
+        Quaternion q = modelTransform.getRotation(new Quaternion(), true);
+        Quaternion camQ = cam.projection.getRotation(new Quaternion(), true);
+        Quaternion modelQ = instance.transform.getRotation(new Quaternion(), true);
 //        position = modelTransform.getTranslation(new Vector3());
 //        Vector3 center=new Vector3(0,0,0);
 //        Vector3 direction = (center - position).normalized;
@@ -136,9 +165,19 @@ public class ShaderTest implements ApplicationListener {
 //        System.out.println(position);
 //        instance.transform.setFromEulerAngles(20f,y,z);
 //        System.out.println(x);
-        instance.transform.setFromEulerAngles(x, y, z);
-        System.out.println(x + " " + q.getYaw());
+        instance.transform.setFromEulerAngles(x, translateRotatePitch(), -translateRotatePitch());
+        System.out.println(x + " " + camQ.getYaw() + " " + camQ.getRoll() + " " + camQ.getPitch() + " " + modelQ.getYaw() + " " + modelQ.getRoll() + " " + modelQ.getPitch());
+//        System.out.println(x + " " + calcRotation(q.getYaw() / 18) * 18 + " " + q.getYaw());
         x++;
+        if (change < 50 && tmp < change) {
+            tmp = change;
+            change++;
+        } else {
+            tmp = change;
+            change--;
+            if (change < -49)
+                change = tmp + 1;
+        }
 //        y++;
 //        z++;
 //        System.out.println(atan2(position.x, position.z));
@@ -159,6 +198,21 @@ public class ShaderTest implements ApplicationListener {
         shader.render(renderable);
         shader.end();
         renderContext.end();
+    }
+
+    public float translateRotatePitch() {
+        float axis;
+        Quaternion modelQ = instance.transform.getRotation(new Quaternion(), true);
+        axis = change * (float) Math.cos(Math.toRadians(modelQ.getYaw()));
+        LOG.d(TAG, modelQ.getYaw() + " " + Math.cos(Math.toRadians(modelQ.getYaw())) + " " + axis + " " + change);
+        return axis;
+    }
+
+    public float translateRotateRoll() {
+        float axis;
+        Quaternion modelQ = instance.transform.getRotation(new Quaternion(), true);
+        axis = change * (float) Math.sin(Math.toRadians(modelQ.getYaw()));
+        return axis;
     }
 
     @Override

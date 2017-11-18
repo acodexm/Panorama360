@@ -46,9 +46,9 @@ public class MainActivity extends AppCompatActivity {
     Button captureBtn;
     @BindView(R.id.save)
     Button saveBtn;
-    @BindView(R.id.surfaceView)
+    //    @BindView(R.id.surfaceView)
     SurfaceView mSurfaceView;
-    @BindView(R.id.surfaceViewOnTop)
+    //    @BindView(R.id.surfaceViewOnTop)
     SurfaceView mSurfaceViewOnTop;
     private List<Mat> listImage = new ArrayList<>();
     private ProgressDialog ringProgressDialog;
