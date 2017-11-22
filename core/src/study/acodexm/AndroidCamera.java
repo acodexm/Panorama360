@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import acodexm.panorama.RotationVector;
 import study.acodexm.Utils.LOG;
 
 public class AndroidCamera implements ApplicationListener {
@@ -66,7 +65,7 @@ public class AndroidCamera implements ApplicationListener {
 //            }
 //        }
 //    };
-    //merge
+
     private ModelInstance instance;
     private ModelBatch modelBatch;
     //    private PerspectiveCamera cam;
@@ -86,6 +85,7 @@ public class AndroidCamera implements ApplicationListener {
     private FPSLogger fpsLogger;
     private Matrix4 mat4;
     private RotationVector mRotationVector;
+
 
 
     public AndroidCamera(DeviceCameraControl cameraControl, RotationVector rotationVector) {
@@ -113,30 +113,18 @@ public class AndroidCamera implements ApplicationListener {
 //        batch = new SpriteBatch();
         float aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
         camera = new PerspectiveCamera(20, 2f * aspectRatio, 2f);
-//        camera = new PerspectiveCamera(
-//                67.0f,
-//                Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         camera.far = 300.0f;
-        camera.near = 1f;
+        camera.near = 0.1f;
         camera.position.set(0f, 0f, 0f);
-//        camera.lookAt(0f, 0f, 0f);
-//        cameraChild = new ModelInstance(new Model());
 
-        //merge
+
         cells = 8;
         isUpdated = false;
         modelBatch = new ModelBatch();
-//        cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-//        cam.position.set(0.3183349f, 0.0061908923f, 0.33766082f);
-//        cam.lookAt(-0.68591654f, -0.013339217f, -0.72755706f);
-//        cam.near = 1f;
-//        cam.far = 300f;
-//        cam.update();
         camController = new CameraInputController(camera);
-        Gdx.input.setInputProcessor(camController);
         //sphere model template
         mModelBuilder = new ModelBuilder();
-        sphereTemplate = mModelBuilder.createSphere(4f, 8f, 4f, cells, 7,
+        sphereTemplate = mModelBuilder.createSphere(2f, 4f, 2f, cells, 7,
                 new Material(),
                 VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
         NodePart blockPart = sphereTemplate.nodes.get(0).parts.get(0);
@@ -167,8 +155,8 @@ public class AndroidCamera implements ApplicationListener {
         rotationMatrix = new Matrix4(mRotationVector.getValues());
         fpsLogger = new FPSLogger();
         mat4 = new Matrix4();
-        photoSphere = setTexOnSphere(vector3s, mModelBuilder);
-        instance = new ModelInstance(photoSphere);
+//        photoSphere = setTexOnSphere(vector3s, mModelBuilder);
+//        instance = new ModelInstance(photoSphere);
     }
 
     @Override
@@ -194,18 +182,25 @@ public class AndroidCamera implements ApplicationListener {
     public void render() {
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        Gdx.gl.glClearColor(0.57f, 0.40f, 0.55f, 1.0f);
-        if (mode == Mode.normal) {
-            mode = Mode.prepare;
-            if (deviceCameraControl != null) {
-                deviceCameraControl.prepareCameraAsync();
-            }
-        }
+        Gdx.gl.glClearColor(0, 0, 0, 0);
+//        if (mode == Mode.normal) {
+//            mode = Mode.prepare;
+//            if (deviceCameraControl != null) {
+//                deviceCameraControl.prepareCameraAsync();
+//            }
+//        }
 //        render_preview();
-//merge
+//        Gdx.gl20.glClearColor(0.0f, 0.0f, 0.6f, 1.0f);
+//        Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+//        Gdx.gl20.glEnable(GL20.GL_DEPTH_TEST);
+//        Gdx.gl20.glEnable(GL20.GL_TEXTURE);
+//        Gdx.gl20.glEnable(GL20.GL_TEXTURE_2D);
+//        Gdx.gl20.glEnable(GL20.GL_LINE_LOOP);
+//        Gdx.gl20.glDepthFunc(GL20.GL_LEQUAL);
+//        Gdx.gl20.glClearDepthf(1.0F);
         if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");
-//            renderPhotos();
+            renderPhotos();
             isUpdated = true;
         }
 
@@ -225,43 +220,9 @@ public class AndroidCamera implements ApplicationListener {
         camera.direction.set(-mat4.val[Matrix4.M21], -mat4.val[Matrix4.M22], -mat4.val[Matrix4.M20]);
         camera.update();
         fpsLogger.log();
-        Gdx.app.log("Rotation Matrix", rotationMatrix.toString());
+//        Gdx.app.log("Rotation Matrix", rotationMatrix.toString());
+//        LOG.d("cam dir",camera.direction.toString());
     }
-//
-//    public float calcRotation(float angle) {
-//        double result;
-//        if (angle >= 0 && temp < angle)
-//            result = Math.sqrt(0.977 - Math.pow(angle, 2));
-//        else if (angle >= 0 && temp > angle)
-//            result = -Math.sqrt(0.977 - Math.pow(angle, 2));
-//        else if (angle < 0 && temp > angle)
-//            result = -Math.sqrt(0.977 - Math.pow(angle, 2));
-//        else
-//            result = Math.sqrt(0.977 - Math.pow(angle, 2));
-//        if (Double.isNaN(result))
-//            result = 0;
-//        temp = angle;
-//        return (float) result;
-//    }
-//
-//    public float translateRotate1() {
-//        float axis;
-//        Quaternion modelQ = instance.transform.getRotation(new Quaternion(), true);
-//        axis = deviceCameraControl.getChangeY() * (float) Math.sin(Math.toRadians(modelQ.getYaw()));
-//        LOG.d(TAG, modelQ.getYaw() + " " + Math.sin(Math.toRadians(modelQ.getYaw())) + " " + axis + " " + deviceCameraControl.getChangeY());
-//        return axis;
-//    }
-//
-//    public float translateRotate2() {
-////        float axis;
-////        Matrix4 modelTransform = new Matrix4();
-////        modelTransform.set(transform);
-////        modelTransform.mul(camera.combined);
-////        Quaternion q = modelTransform.getRotation(new Quaternion(),true);
-////        axis = deviceCameraControl.getChangeY() * q.getYaw()/6;
-//        Quaternion modelQ = instance.transform.getRotation(new Quaternion(), true);
-//        return deviceCameraControl.getChangeY() * (float) Math.cos(Math.toRadians(modelQ.getYaw()));
-//    }
 
     private void renderPhotos() {
         try {
@@ -277,7 +238,6 @@ public class AndroidCamera implements ApplicationListener {
             stringSet.put(33, "room.jpg");
             photoSphere = setPhotoOnSphere(vector3s, mModelBuilder, stringSet, ids);
             instance = new ModelInstance(photoSphere);
-            instance.transform.setFromEulerAngles(0f, -90f, 0f);
         } catch (Exception e) {
             LOG.e(TAG, "no chyba nie:", e);
         }
@@ -289,7 +249,7 @@ public class AndroidCamera implements ApplicationListener {
         for (int id : ids) {
             Texture texture = new Texture(Gdx.files.internal("data/texture/" + fileName.get(id)));
             Material material = new Material(TextureAttribute.createDiffuse(texture),
-                    ColorAttribute.createSpecular(1, 1, 1, 1),
+                    ColorAttribute.createSpecular(1, 1, 1, 0.5f),
                     FloatAttribute.createShininess(8f));
             modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
                     .rect(

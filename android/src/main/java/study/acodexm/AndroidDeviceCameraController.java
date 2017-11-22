@@ -1,4 +1,4 @@
-package acodexm.panorama;
+package study.acodexm;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -21,21 +21,18 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-import study.acodexm.DeviceCameraControl;
-
 public class AndroidDeviceCameraController implements DeviceCameraControl,
         PictureCallback, Camera.AutoFocusCallback {
     private static final String TAG = AndroidDeviceCameraController.class.getSimpleName();
     private static final int ONE_SECOND_IN_MILI = 1000;
-    private final CameraFragment mCameraFragment;
+    private final MainActivity mCameraFragment;
     private CameraSurface cameraSurface;
     private byte[] pictureData;
     private boolean safeToTakePicture = true;
-//    private Movement mMovement;
 
-    public AndroidDeviceCameraController(CameraFragment mCameraFragment) {
+
+    public AndroidDeviceCameraController(MainActivity mCameraFragment) {
         this.mCameraFragment = mCameraFragment;
-//        mMovement = new Movement();
     }
 
     public void setCameraParametersForPicture(Camera camera) {
@@ -94,7 +91,7 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
         if (cameraSurface == null) {
             cameraSurface = new CameraSurface(mCameraFragment.getContext());
         }
-        mCameraFragment.getActivity().addContentView(cameraSurface, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        mCameraFragment.addContentView(cameraSurface, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
     }
 
@@ -153,20 +150,6 @@ public class AndroidDeviceCameraController implements DeviceCameraControl,
         mCameraFragment.post(r);
     }
 
-//    @Override
-//    public float getChangeX() {
-//        return (float) Math.round(mMovement.mLastX * 10) / 10;
-//    }
-//
-//    @Override
-//    public float getChangeY() {
-//        return (float) Math.round(mMovement.mLastY * 10) / 10;
-//    }
-//
-//    @Override
-//    public float getChangeZ() {
-//        return (float) Math.round(mMovement.mLastZ * 10) / 10;
-//    }
 
     @Override
     public void takePicture() {

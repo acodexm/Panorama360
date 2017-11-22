@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".AndroidLauncher">
+    tools:context="study.acodexm.AndroidLauncher">
 
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <!--<include layout="@layout/libgdx_layout"/>-->
 
-    <include layout="@layout/camera_layout"/>
+    <!--<View-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:background="@color/colorPrimary"/>-->
+    <!--&lt;!&ndash;<include layout="@layout/test_layout"/>&ndash;&gt;-->
+    <!--<include layout="@layout/camera_layout"/>-->
 
-    <include layout="@layout/libgdx_layout"/>
-
-
-</android.support.design.widget.CoordinatorLayout>
+</FrameLayout>

@@ -1,4 +1,4 @@
-package acodexm.panorama;
+package study.acodexm;
 
 public class AndroidRotationVector implements RotationVector {
 

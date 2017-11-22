@@ -1,4 +1,4 @@
-package acodexm.panorama;
+package study.acodexm;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

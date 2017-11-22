@@ -1,4 +1,4 @@
-package acodexm.panorama;
+package study.acodexm;
 
 import org.junit.Test;
 
