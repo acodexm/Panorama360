@@ -18,7 +18,7 @@ android {
         exclude 'META-INF/robovm/ios/robovm.xml'
     }
     defaultConfig {
-        applicationId 'acodexm.panorama'
+        applicationId 'study.acodexm'
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 1
