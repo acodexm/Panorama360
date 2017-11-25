@@ -52,11 +52,9 @@ public class AndroidCamera implements ApplicationListener {
     private int lat, lon;
     private List<Vector3> vector3s;
     private boolean isUpdated;
-    private Matrix4 rotationMatrix;
     private FPSLogger fpsLogger;
     private Matrix4 mat4;
     private RotationVector mRotationVector;
-    private boolean calculated = false;
     private Map<Integer, Vector3> centersOfGrid;
     private ActionMode mActionMode = ActionMode.FullAuto;
     private PictureMode mPictureMode = PictureMode.panorama;
@@ -64,6 +62,7 @@ public class AndroidCamera implements ApplicationListener {
     private Map<Integer, byte[]> mPictures;
     private List<Integer> ids;
     private List<Integer> takenPictures;
+    private Map<Integer, String> stringSet;
 
     public AndroidCamera(RotationVector rotationVector, SphereControl sphereControl) {
         mRotationVector = rotationVector;
@@ -74,51 +73,20 @@ public class AndroidCamera implements ApplicationListener {
     public void create() {
         LOG.d(TAG, "create method begin");
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
-        float aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
-        camera = new PerspectiveCamera(20, 2f * aspectRatio, 2f);
-        camera.far = 300.0f;
-        camera.near = 0.1f;
-        camera.position.set(0f, 0f, 0f);
-        isUpdated = false;
-        modelBatch = new ModelBatch();
-        camController = new CameraInputController(camera);
-        //sphere model template
-        mModelBuilder = new ModelBuilder();
-        lat = 10;
-        lon = 7;
-        sphereTemplate = mModelBuilder.createSphere(2f, 2f, 2f, lat, lon,
-                new Material(),
-                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
-        NodePart blockPart = sphereTemplate.nodes.get(0).parts.get(0);
-        renderable = new Renderable();
-        blockPart.setRenderable(renderable);
-        renderable.meshPart.primitiveType = GL20.GL_POINTS;
-        renderable.environment = null;
-        renderable.worldTransform.idt();
-        renderContext = new RenderContext(
-                new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED, 1));
-        shader = new DefaultShader(renderable);
-        shader.init();
 
-        //vertices of template sphere model
-        int verticesAmount = renderable.meshPart.mesh.getNumVertices()
-                * renderable.meshPart.mesh.getVertexSize() / 4;
-        float vertices[] = new float[verticesAmount];
-        renderable.meshPart.mesh.getVertices(vertices);
-        int vsize = renderable.meshPart.mesh.getVertexSize() / 4;
-        vector3s = new ArrayList<Vector3>();
-        for (int i = 0; i < vertices.length; i += vsize) {
-            vector3s.add(meshToWorld(
-                    vertices[i],
-                    vertices[i + 1],
-                    vertices[i + 2],
-                    renderable.worldTransform));
-        }
-        rotationMatrix = new Matrix4(mRotationVector.getValues());
+        setupCamera();
+        setupSphere();
+        makeListOfSphereVertices();
+        //initialize variables
         fpsLogger = new FPSLogger();
         mat4 = new Matrix4();
-        setIdList();
         takenPictures = new ArrayList<Integer>();
+        fpsLogger = new FPSLogger();
+        stringSet = new HashMap<Integer, String>();
+        isUpdated = false;
+        modelBatch = new ModelBatch();
+        setIdList();
+
     }
 
     @Override
@@ -132,12 +100,18 @@ public class AndroidCamera implements ApplicationListener {
 
     @Override
     public void render() {
-        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+//        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+//        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+//        Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        Gdx.gl.glClearColor(0, 0, 0, 0);
+        camController.update();
         if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");
-            renderPhotos();
+            if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                renderPhotosAndroid();
+            } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                renderPhotosDesktop();
+            }
             isUpdated = true;
         }
 
@@ -150,22 +124,79 @@ public class AndroidCamera implements ApplicationListener {
         shader.render(renderable);
         shader.end();
         renderContext.end();
-        camController.update();
-
-        mat4.set(mRotationVector.getValues());
-        camera.up.set(mat4.val[Matrix4.M01], mat4.val[Matrix4.M02], mat4.val[Matrix4.M00]);
-        camera.direction.set(-mat4.val[Matrix4.M21], -mat4.val[Matrix4.M22], -mat4.val[Matrix4.M20]);
-        camera.update();
-        fpsLogger.log();
-        if (!calculated)
-            centersOfGrid = calculateCenterList(vector3s, ids);
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            mat4.set(mRotationVector.getValues());
+            camera.up.set(mat4.val[Matrix4.M01], mat4.val[Matrix4.M02], mat4.val[Matrix4.M00]);
+            camera.direction.set(-mat4.val[Matrix4.M21], -mat4.val[Matrix4.M22], -mat4.val[Matrix4.M20]);
+            camera.update();
+        }
         int position = whereIsCameraLooking(centersOfGrid, ids);
         if (position != -1) {
             if (!takenPictures.contains(position)) {
-                takenPictures.add(position);
                 LOG.d(TAG, "take picture!! at: " + position);
-                mSphereControl.autoTakePicture(position);
+                takenPictures.add(position);
+                if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                    mSphereControl.autoTakePicture(position);
+//                    stringSet.put(position, position + ".png");
+                } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                    stringSet.put(position, position + ".png");
+                }
+                isUpdated = false;
             }
+        }
+        fpsLogger.log();
+        System.out.println("getJavaHeap: " + Gdx.app.getJavaHeap()
+                + " getNativeHeap: " + Gdx.app.getNativeHeap());
+    }
+
+    private void setupCamera() {
+        float aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
+        camera = new PerspectiveCamera(30, 2f * aspectRatio, 2f);
+        camera.position.set(0f, 0f, 0f);
+        camera.lookAt(0, 0f, -4.0f);
+        camera.near = 0.1f;
+        camera.far = 300f;
+        camera.update();
+        camController = new CameraInputController(camera);
+        if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+            Gdx.input.setInputProcessor(camController);
+        }
+    }
+
+    private void setupSphere() {
+        mModelBuilder = new ModelBuilder();
+        lat = 10;
+        lon = 7;
+        sphereTemplate = mModelBuilder.createSphere(4f, 4f, 4f, lat, lon,
+                new Material(),
+                VertexAttributes.Usage.Position
+                        | VertexAttributes.Usage.Normal
+                        | VertexAttributes.Usage.TextureCoordinates);
+        NodePart blockPart = sphereTemplate.nodes.get(0).parts.get(0);
+        renderable = new Renderable();
+        blockPart.setRenderable(renderable);
+        renderable.meshPart.primitiveType = GL20.GL_POINTS;
+        renderable.environment = null;
+        renderable.worldTransform.idt();
+        renderContext = new RenderContext(
+                new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED, 1));
+        shader = new DefaultShader(renderable);
+        shader.init();
+    }
+
+    private void makeListOfSphereVertices() {
+        int verticesAmount = renderable.meshPart.mesh.getNumVertices()
+                * renderable.meshPart.mesh.getVertexSize() / 4;
+        float vertices[] = new float[verticesAmount];
+        renderable.meshPart.mesh.getVertices(vertices);
+        int vsize = renderable.meshPart.mesh.getVertexSize() / 4;
+        vector3s = new ArrayList<Vector3>();
+        for (int i = 0; i < vertices.length; i += vsize) {
+            vector3s.add(meshToWorld(
+                    vertices[i],
+                    vertices[i + 1],
+                    vertices[i + 2],
+                    renderable.worldTransform));
         }
     }
 
@@ -176,22 +207,30 @@ public class AndroidCamera implements ApplicationListener {
         for (int i = lat; i <= amount; i++) {
             ids.add(i);
         }
-        mSphereControl.setIdTable(ids);
-    }
-
-    private void renderPhotos() {
-        try {
-            mPictures = mSphereControl.getPictures();
-            if (mPictures == null)
-                mPictures = new HashMap<Integer, byte[]>();
-            photoSphere = setPhotoOnSphere(vector3s, mModelBuilder, mPictures, ids);
-            instance = new ModelInstance(photoSphere);
-        } catch (Exception e) {
-            LOG.e(TAG, "nope ", e);
+        if (Gdx.app.getType() == Application.ApplicationType.Android && mSphereControl != null) {
+            mSphereControl.setIdTable(ids);
         }
+        centersOfGrid = calculateCenterList(vector3s, ids);
     }
 
-    private Model setPhotoOnSphere(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, byte[]> fileName, List<Integer> ids) {
+    private void renderPhotosAndroid() {
+        mPictures = mSphereControl.getPictures();
+        if (mPictures == null)
+            mPictures = new HashMap<Integer, byte[]>();
+        photoSphere = null;
+        photoSphere = setPhotoOnSphereAndroid(vector3s, mModelBuilder, mPictures, ids);
+        instance = null;
+        instance = new ModelInstance(photoSphere);
+    }
+
+    private void renderPhotosDesktop() {
+        photoSphere = null;
+        photoSphere = setPhotoOnSphereDesktop(vector3s, mModelBuilder, stringSet, ids);
+        instance = null;
+        instance = new ModelInstance(photoSphere);
+    }
+
+    private Model setPhotoOnSphereAndroid(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, byte[]> fileName, List<Integer> ids) {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         for (int id : ids) {
@@ -199,6 +238,7 @@ public class AndroidCamera implements ApplicationListener {
             Texture texture;
             if (bytes != null) {
                 try {
+                    LOG.d(TAG, "loading byte[] texture " + id);
                     texture = new Texture(new Pixmap(bytes, 0, bytes.length));
                 } catch (Exception e) {
                     LOG.e(TAG, "texture load failed, loading empty ", e);
@@ -210,7 +250,7 @@ public class AndroidCamera implements ApplicationListener {
             }
             Material material = new Material(TextureAttribute.createDiffuse(texture),
                     ColorAttribute.createSpecular(1f, 1f, 1f, 1f),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.3f));
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f));
             modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
                     .rect(
                             fourVertices.get(id + lat + 1).x, fourVertices.get(id + lat + 1).y, fourVertices.get(id + lat + 1).z,
@@ -222,6 +262,40 @@ public class AndroidCamera implements ApplicationListener {
         return modelBuilder.end();
     }
 
+    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, String> fileName, List<Integer> ids) {
+        int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
+        modelBuilder.begin();
+
+        for (int id : ids) {
+            String bytes = fileName.get(id);
+            Texture texture;
+            if (bytes != null) {
+                try {
+                    LOG.d(TAG, "loading texture " + id + ".png");
+                    texture = new Texture(Gdx.files.internal("data/numbers/" + bytes));
+                } catch (Exception e) {
+                    LOG.e(TAG, "texture load failed, loading empty ", e);
+                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+                }
+            } else {
+                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+            }
+            Material material = new Material();
+            material.set(
+                    TextureAttribute.createDiffuse(texture),
+                    ColorAttribute.createSpecular(1f, 1f, 1f, 1f),
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f));
+            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
+                    .rect(
+                            fourVertices.get(id + lat + 1).x, fourVertices.get(id + lat + 1).y, fourVertices.get(id + lat + 1).z,//00
+                            fourVertices.get(id + lat + 2).x, fourVertices.get(id + lat + 2).y, fourVertices.get(id + lat + 2).z,//01
+                            fourVertices.get(id + 1).x, fourVertices.get(id + 1).y, fourVertices.get(id + 1).z,//11
+                            fourVertices.get(id).x, fourVertices.get(id).y, fourVertices.get(id).z,//10
+                            -1, -1, -1);
+        }
+        return modelBuilder.end();
+    }
 
     private Vector3 meshToWorld(float x, float y, float z, Matrix4 transformation) {
         float[] q = transformation.getValues();
@@ -231,7 +305,6 @@ public class AndroidCamera implements ApplicationListener {
         r.z = q[Matrix4.M20] * x + q[Matrix4.M21] * y + q[Matrix4.M22] * z + q[Matrix4.M23];
         return r;
     }
-
 
     private Map<Integer, Vector3> calculateCenterList(List<Vector3> fourVertices, List<Integer> ids) {
         Map<Integer, Vector3> centersOfGrid = new HashMap<Integer, Vector3>();
@@ -245,35 +318,41 @@ public class AndroidCamera implements ApplicationListener {
                             (fourVertices.get(id + 1).z + fourVertices.get(id).z) / 2));
             centersOfGrid.put(id, centerOfTex);
         }
-        calculated = true;
         return centersOfGrid;
     }
 
     private int whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid, List<Integer> ids) {
 /**
  * we have a camera direction vector which changes with camera move
- * now we have to calculate the center point of rectangle where we what to take photo
- * if the center point and camera direction vectors are colinear than we know which rectangle
+ * now we have to calculate the center point of all rectangles where we what to take photo
+ * if the center point and camera direction vectors are collinear than we know which rectangle
  * is in center so we can take photo and put it on as a texture
  */
 
 
 /**
- * is colinear when c{x,y,z}==0
+ * is collinear when c{x,y,z}==0
  { c_{x}=a_{y}b_{z}-a_{z}b_{y}}
  { c_{y}=a_{z}b_{x}-a_{x}b_{z}}
  { c_{z}=a_{x}b_{y}-a_{y}b_{x}}
  */
-        Vector3 worldPoint = camera.direction;
-        Vector3 isColinear;
+        Vector3 direction = camera.direction;
+        Vector3 isCollinear;
         for (int i : ids) {
-            isColinear = new Vector3(worldPoint.y * centersOfGrid.get(i).z - worldPoint.z * centersOfGrid.get(i).y,
-                    worldPoint.z * centersOfGrid.get(i).x - worldPoint.x * centersOfGrid.get(i).z,
-                    worldPoint.x * centersOfGrid.get(i).y - worldPoint.y * centersOfGrid.get(i).x);
-            if ((isColinear.x < 0.5f && isColinear.x > -0.5f)
-                    && (isColinear.y < 0.5f && isColinear.y > -0.5f)
-                    && (isColinear.z < 0.5f && isColinear.z > -0.5f)) {
-                return i;
+            //check if the point is in front of us and not on the opposite side
+            if (direction.x * centersOfGrid.get(i).x >= 0
+                    && direction.y * centersOfGrid.get(i).y >= 0
+                    && direction.z * centersOfGrid.get(i).z >= 0) {
+                isCollinear = new Vector3(
+                        direction.y * centersOfGrid.get(i).z - direction.z * centersOfGrid.get(i).y,
+                        direction.z * centersOfGrid.get(i).x - direction.x * centersOfGrid.get(i).z,
+                        direction.x * centersOfGrid.get(i).y - direction.y * centersOfGrid.get(i).x
+                );
+                if ((isCollinear.x < 0.5f && isCollinear.x > -0.5f)
+                        && (isCollinear.y < 0.5f && isCollinear.y > -0.5f)
+                        && (isCollinear.z < 0.5f && isCollinear.z > -0.5f)) {
+                    return i;
+                }
             }
         }
         return -1;

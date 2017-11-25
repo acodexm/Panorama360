@@ -7,12 +7,15 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.hardware.Camera;
+import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.WindowManager;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,14 +29,25 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private boolean safeToTakePicture = false;
     private AndroidSphereControl mSphereControl;
     private int currentPictureId;
+    private int PHOTO_WIDTH;
+    private int PHOTO_HEIGHT;
+    private ViewControl mViewControl;
 
     @SuppressLint("UseSparseArrays")
-    public CameraSurface(Context context) {
-        super(context);
+    public CameraSurface(MainActivity activity) {
+        super(activity.getContext());
+        mViewControl = activity;
         getHolder().addCallback(this);
         getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mSphereControl = new AndroidSphereControl(this);
         mPictures = new HashMap<>();
+        DisplayMetrics metrics = new DisplayMetrics();
+        WindowManager windowManager = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager != null) {
+            windowManager.getDefaultDisplay().getMetrics(metrics);
+            PHOTO_HEIGHT = metrics.heightPixels;
+            PHOTO_WIDTH = metrics.widthPixels;
+        }
     }
 
 
@@ -52,6 +66,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         Camera.Size myBestSize = getBestPreviewSize(myParameters);
         if (myBestSize != null) {
             myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
+//            myParameters.setPictureFormat(ImageFormat.RGB_565);
             camera.setParameters(myParameters);
             camera.setDisplayOrientation(0);
             camera.startPreview();
@@ -80,8 +95,19 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
 
     @Override
-    public void onPictureTaken(byte[] bytes, Camera camera) {
-        mPictures.put(currentPictureId, bytes);
+    public void onPictureTaken(final byte[] bytes, Camera camera) {
+        long time = System.currentTimeMillis();
+//        mPictures.put(currentPictureId, bytes);
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                mViewControl.showProcessingDialog();
+                mPictures.put(currentPictureId, resizeImage(bytes));
+                mSphereControl.setPictures(mPictures);
+                mViewControl.hideProcessingDialog();
+            }
+        };
+        post(r);
         Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         Matrix matrix = new Matrix();
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
@@ -90,7 +116,16 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         Utils.bitmapToMat(bitmap, mat);
         listImage.add(mat);
         camera.startPreview();
+        System.out.println("onPictureTaken process time: " + (System.currentTimeMillis() - time));
         safeToTakePicture = true;
+    }
+
+    private byte[] resizeImage(byte[] input) {
+        Bitmap original = BitmapFactory.decodeByteArray(input, 0, input.length);
+        Bitmap resized = Bitmap.createScaledBitmap(original, PHOTO_WIDTH, PHOTO_HEIGHT, true);
+        ByteArrayOutputStream blob = new ByteArrayOutputStream();
+        resized.compress(Bitmap.CompressFormat.PNG, 0, blob);
+        return blob.toByteArray();
     }
 
     @Override

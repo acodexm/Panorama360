@@ -33,7 +33,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends AndroidApplication implements SensorEventListener {
+public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     static {
@@ -161,6 +161,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     protected void onResume() {
         super.onResume();
         mCameraControl.startPreview();
+
     }
 
     @Override
@@ -201,7 +202,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
 
-    private void showToast(final String message) {
+    public void showToast(final String message) {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -212,8 +213,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         post(r);
     }
 
-
-    private void showProcessingDialog() {
+    public void showProcessingDialog() {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -226,7 +226,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         post(r);
     }
 
-    private void closeProcessingDialog() {
+    public void hideProcessingDialog() {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -249,7 +249,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             public void run() {
                 showProcessingDialog();
                 processPicture();
-                closeProcessingDialog();
+                hideProcessingDialog();
             }
         };
         post(r);
