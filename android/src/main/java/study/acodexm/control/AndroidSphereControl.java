@@ -1,7 +1,9 @@
-package study.acodexm;
+package study.acodexm.control;
 
 import java.util.List;
 import java.util.Map;
+
+import study.acodexm.SphereControl;
 
 public class AndroidSphereControl implements SphereControl {
     private Map<Integer, byte[]> mPictures;

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="study.acodexm.AndroidLauncher"
+    tools:context="study.acodexm.MainActivity"
     android:id="@+id/ui_layout">
 
     <SurfaceView
@@ -12,28 +12,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <Button
+    <ImageView
         android:id="@+id/capture"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:layout_margin="10dp"
-        android:background="@android:color/holo_blue_dark"
         android:padding="10dp"
-        android:text="Capture"
-        android:textColor="#FFF"
         />
 
-    <Button
-        android:id="@+id/save"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="10dp"
-        android:background="@android:color/holo_purple"
-        android:padding="10dp"
-        android:text="Save"
-        android:textColor="#FFF"/>
+
 </RelativeLayout>

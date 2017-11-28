@@ -1,4 +1,6 @@
-package study.acodexm;
+package study.acodexm.control;
+
+import study.acodexm.RotationVector;
 
 public class AndroidRotationVector implements RotationVector {
 

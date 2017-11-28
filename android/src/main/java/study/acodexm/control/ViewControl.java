@@ -1,4 +1,4 @@
-package study.acodexm;
+package study.acodexm.control;
 
 
 public interface ViewControl {

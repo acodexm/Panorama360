@@ -10,21 +10,18 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g3d.Attribute;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.NodePart;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
-import com.badlogic.gdx.graphics.g3d.utils.DefaultTextureBinder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
@@ -36,6 +33,7 @@ import java.util.Map;
 import study.acodexm.Utils.LOG;
 import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.PictureMode;
+import study.acodexm.settings.SettingsControl;
 
 public class AndroidCamera implements ApplicationListener {
     private static final String TAG = AndroidCamera.class.getSimpleName();
@@ -43,8 +41,6 @@ public class AndroidCamera implements ApplicationListener {
     private ModelInstance instance;
     private ModelBatch modelBatch;
     private CameraInputController camController;
-    private Shader shader;
-    private RenderContext renderContext;
     private Model sphereTemplate;
     private Model photoSphere;
     private Renderable renderable;
@@ -55,18 +51,22 @@ public class AndroidCamera implements ApplicationListener {
     private FPSLogger fpsLogger;
     private Matrix4 mat4;
     private RotationVector mRotationVector;
+    private SphereControl mSphereControl;
+    private SettingsControl mSettingsControl;
     private Map<Integer, Vector3> centersOfGrid;
     private ActionMode mActionMode = ActionMode.FullAuto;
     private PictureMode mPictureMode = PictureMode.panorama;
-    private SphereControl mSphereControl;
     private Map<Integer, byte[]> mPictures;
     private List<Integer> ids;
     private List<Integer> takenPictures;
     private Map<Integer, String> stringSet;
+    private int position;
+    private long time;
 
-    public AndroidCamera(RotationVector rotationVector, SphereControl sphereControl) {
+    public AndroidCamera(RotationVector rotationVector, SphereControl sphereControl, SettingsControl settingsControl) {
         mRotationVector = rotationVector;
         mSphereControl = sphereControl;
+        mSettingsControl = settingsControl;
     }
 
     @Override
@@ -86,31 +86,35 @@ public class AndroidCamera implements ApplicationListener {
         isUpdated = false;
         modelBatch = new ModelBatch();
         setIdList();
-
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            renderPhotosAndroid();
+        } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+            renderPhotosDesktop();
+        }
+        time = System.currentTimeMillis();
     }
 
     @Override
     public void dispose() {
         LOG.d(TAG, "dispose method begin");
-        shader.dispose();
-        sphereTemplate.dispose();
         photoSphere.dispose();
         modelBatch.dispose();
     }
 
     @Override
     public void render() {
-//        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-//        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-//        Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         camController.update();
         if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");
             if (Gdx.app.getType() == Application.ApplicationType.Android) {
-                renderPhotosAndroid();
+                mPictures = mSphereControl.getPictures();
+                if (mPictures == null)
+                    mPictures = new HashMap<Integer, byte[]>();
+                updateTextureAndroid(mPictures);
+//                updateTextureDesktop(stringSet);
             } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-                renderPhotosDesktop();
+                updateTextureDesktop(stringSet);
             }
             isUpdated = true;
         }
@@ -119,18 +123,13 @@ public class AndroidCamera implements ApplicationListener {
         modelBatch.render(instance);
         modelBatch.end();
 
-        renderContext.begin();
-        shader.begin(camera, renderContext);
-        shader.render(renderable);
-        shader.end();
-        renderContext.end();
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
             mat4.set(mRotationVector.getValues());
             camera.up.set(mat4.val[Matrix4.M01], mat4.val[Matrix4.M02], mat4.val[Matrix4.M00]);
             camera.direction.set(-mat4.val[Matrix4.M21], -mat4.val[Matrix4.M22], -mat4.val[Matrix4.M20]);
             camera.update();
         }
-        int position = whereIsCameraLooking(centersOfGrid, ids);
+        position = whereIsCameraLooking(centersOfGrid, ids);
         if (position != -1) {
             if (!takenPictures.contains(position)) {
                 LOG.d(TAG, "take picture!! at: " + position);
@@ -145,8 +144,16 @@ public class AndroidCamera implements ApplicationListener {
             }
         }
         fpsLogger.log();
-        System.out.println("getJavaHeap: " + Gdx.app.getJavaHeap()
-                + " getNativeHeap: " + Gdx.app.getNativeHeap());
+//        forceGC();
+//        System.out.println("getJavaHeap: " + Gdx.app.getJavaHeap()
+//                + " getNativeHeap: " + Gdx.app.getNativeHeap());
+    }
+
+    private void forceGC() {
+        if (System.currentTimeMillis() - time > 5000) {
+            time = System.currentTimeMillis();
+            System.gc();
+        }
     }
 
     private void setupCamera() {
@@ -175,13 +182,6 @@ public class AndroidCamera implements ApplicationListener {
         NodePart blockPart = sphereTemplate.nodes.get(0).parts.get(0);
         renderable = new Renderable();
         blockPart.setRenderable(renderable);
-        renderable.meshPart.primitiveType = GL20.GL_POINTS;
-        renderable.environment = null;
-        renderable.worldTransform.idt();
-        renderContext = new RenderContext(
-                new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED, 1));
-        shader = new DefaultShader(renderable);
-        shader.init();
     }
 
     private void makeListOfSphereVertices() {
@@ -217,14 +217,16 @@ public class AndroidCamera implements ApplicationListener {
         mPictures = mSphereControl.getPictures();
         if (mPictures == null)
             mPictures = new HashMap<Integer, byte[]>();
-        photoSphere = null;
+        if (photoSphere != null)
+            photoSphere.dispose();
         photoSphere = setPhotoOnSphereAndroid(vector3s, mModelBuilder, mPictures, ids);
         instance = null;
         instance = new ModelInstance(photoSphere);
     }
 
     private void renderPhotosDesktop() {
-        photoSphere = null;
+        if (photoSphere != null)
+            photoSphere.dispose();
         photoSphere = setPhotoOnSphereDesktop(vector3s, mModelBuilder, stringSet, ids);
         instance = null;
         instance = new ModelInstance(photoSphere);
@@ -233,9 +235,13 @@ public class AndroidCamera implements ApplicationListener {
     private Model setPhotoOnSphereAndroid(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, byte[]> fileName, List<Integer> ids) {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
+        byte[] bytes;
+        Texture texture;
+        Material material;
+        BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
+        ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
         for (int id : ids) {
-            byte[] bytes = fileName.get(id);
-            Texture texture;
+            bytes = fileName.get(id);
             if (bytes != null) {
                 try {
                     LOG.d(TAG, "loading byte[] texture " + id);
@@ -248,9 +254,9 @@ public class AndroidCamera implements ApplicationListener {
                 LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            Material material = new Material(TextureAttribute.createDiffuse(texture),
-                    ColorAttribute.createSpecular(1f, 1f, 1f, 1f),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f));
+            material = new Material(TextureAttribute.createDiffuse(texture),
+                    attribute,
+                    colorAttribute);
             modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
                     .rect(
                             fourVertices.get(id + lat + 1).x, fourVertices.get(id + lat + 1).y, fourVertices.get(id + lat + 1).z,
@@ -262,13 +268,43 @@ public class AndroidCamera implements ApplicationListener {
         return modelBuilder.end();
     }
 
-    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, String> fileName, List<Integer> ids) {
-        int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
-        modelBuilder.begin();
-
+    private void updateTextureAndroid(Map<Integer, byte[]> fileName) {
+        byte[] bytes;
+        Texture texture;
         for (int id : ids) {
-            String bytes = fileName.get(id);
-            Texture texture;
+            bytes = fileName.get(id);
+            if (bytes != null) {
+                try {
+                    LOG.d(TAG, "loading byte[] texture " + id);
+                    texture = new Texture(new Pixmap(bytes, 0, bytes.length));
+                } catch (Exception e) {
+                    LOG.e(TAG, "texture load failed, loading empty ", e);
+                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+                }
+            } else {
+                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+            }
+            Material mat = instance.materials.get(id - lat);
+            for (Attribute att : mat) {
+                if (att.type == TextureAttribute.Diffuse) {
+                    ((TextureAttribute) att).textureDescription.set(texture,
+                            Texture.TextureFilter.Linear,
+                            Texture.TextureFilter.Linear,
+                            Texture.TextureWrap.ClampToEdge,
+                            Texture.TextureWrap.ClampToEdge);
+                }
+            }
+
+        }
+    }
+
+    private void updateTextureDesktop(Map<Integer, String> fileName) {
+        String bytes;
+        Texture texture;
+        Material mat;
+        for (int id : ids) {
+            bytes = fileName.get(id);
             if (bytes != null) {
                 try {
                     LOG.d(TAG, "loading texture " + id + ".png");
@@ -281,11 +317,47 @@ public class AndroidCamera implements ApplicationListener {
                 LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            Material material = new Material();
+            mat = instance.materials.get(id - lat);
+            for (Attribute att : mat) {
+                if (att.type == TextureAttribute.Diffuse) {
+                    ((TextureAttribute) att).textureDescription.set(
+                            texture,
+                            Texture.TextureFilter.Linear,
+                            Texture.TextureFilter.Linear,
+                            Texture.TextureWrap.ClampToEdge,
+                            Texture.TextureWrap.ClampToEdge);
+                }
+            }
+        }
+    }
+
+    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, String> fileName, List<Integer> ids) {
+        int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
+        modelBuilder.begin();
+        String bytes;
+        Texture texture;
+        Material material;
+        BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
+        ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
+        for (int id : ids) {
+            bytes = fileName.get(id);
+            if (bytes != null) {
+                try {
+                    LOG.d(TAG, "loading texture " + id + ".png");
+                    texture = new Texture(Gdx.files.internal("data/numbers/" + bytes));
+                } catch (Exception e) {
+                    LOG.e(TAG, "texture load failed, loading empty ", e);
+                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+                }
+            } else {
+                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+            }
+            material = new Material();
             material.set(
                     TextureAttribute.createDiffuse(texture),
-                    ColorAttribute.createSpecular(1f, 1f, 1f, 1f),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f));
+                    colorAttribute,
+                    attribute);
             modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
                     .rect(
                             fourVertices.get(id + lat + 1).x, fourVertices.get(id + lat + 1).y, fourVertices.get(id + lat + 1).z,//00

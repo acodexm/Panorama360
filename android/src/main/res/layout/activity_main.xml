@@ -1,23 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<android.support.v4.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    tools:context="study.acodexm.AndroidLauncher">
+    android:fitsSystemWindows="false"
+    tools:openDrawer="start">
 
-    <FrameLayout
-        android:id="@+id/fragment_container"
+    <include
+        layout="@layout/camera_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-    <!--<include layout="@layout/libgdx_layout"/>-->
 
-    <!--<View-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="match_parent"-->
-    <!--android:background="@color/colorPrimary"/>-->
-    <!--&lt;!&ndash;<include layout="@layout/test_layout"/>&ndash;&gt;-->
-    <!--<include layout="@layout/camera_layout"/>-->
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        >
 
-</FrameLayout>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="@string/settings"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="@string/taking_picture_mode"/>
+
+                <Switch
+                    android:id="@+id/mode_auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:checked="true"
+                    android:text="@string/full_auto"/>
+
+                <Switch
+                    android:id="@+id/mode_manual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/manual"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="@string/type_of_picture"/>
+
+                <Switch
+                    android:id="@+id/picture_auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/smart_auto"/>
+
+                <Switch
+                    android:id="@+id/picture_panorama"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/panorama"/>
+
+                <Switch
+                    android:id="@+id/picture_wide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/wide_picture"/>
+
+                <Switch
+                    android:id="@+id/picture_360"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/picture_360"/>
+
+                <TextView
+                    android:id="@+id/save_dir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="@string/save_destination"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="@string/picture_settings"/>
+
+                <Switch
+                    android:id="@+id/quality_high"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/high_quality"/>
+
+                <Switch
+                    android:id="@+id/quality_low"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/low_quality"/>
+            </LinearLayout>
+        </ScrollView>
+    </android.support.design.widget.NavigationView>
+
+</android.support.v4.widget.DrawerLayout>

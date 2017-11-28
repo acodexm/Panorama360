@@ -9,4 +9,8 @@ public interface SettingsControl {
     ActionMode getActionMode();
 
     void setActionMode(ActionMode actionMode);
+
+    PictureQuality getPictureQuality();
+
+    void setPictureQuality(PictureQuality pictureQuality);
 }

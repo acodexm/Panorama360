@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Panorama</string>
+    <string name="taking_picture_mode">Taking picture mode:</string>
+    <string name="full_auto">Full Auto</string>
+    <string name="manual">Manual</string>
+    <string name="type_of_picture">Type of picture:</string>
+    <string name="panorama">Panorama</string>
+    <string name="wide_picture">Wide picture</string>
+    <string name="picture_360">Picture 360</string>
+    <string name="save_destination">Save destination:</string>
+    <string name="settings">Settings:</string>
+    <string name="picture_settings">Picture settings:</string>
+    <string name="high_quality">High quality</string>
+    <string name="low_quality">Low quality</string>
+    <string name="smart_auto">Smart Auto</string>
 </resources>

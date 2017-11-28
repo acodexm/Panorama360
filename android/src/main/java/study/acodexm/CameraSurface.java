@@ -5,14 +5,12 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 import java.io.ByteArrayOutputStream;
@@ -20,6 +18,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import study.acodexm.control.AndroidSphereControl;
+import study.acodexm.control.CameraControl;
+import study.acodexm.control.ViewControl;
 
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, CameraControl {
     private Map<Integer, byte[]> mPictures;
@@ -45,8 +47,8 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         WindowManager windowManager = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
         if (windowManager != null) {
             windowManager.getDefaultDisplay().getMetrics(metrics);
-            PHOTO_HEIGHT = metrics.heightPixels;
-            PHOTO_WIDTH = metrics.widthPixels;
+            PHOTO_HEIGHT = metrics.heightPixels / 4;
+            PHOTO_WIDTH = metrics.widthPixels / 4;
         }
     }
 
@@ -105,24 +107,25 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
                 mPictures.put(currentPictureId, resizeImage(bytes));
                 mSphereControl.setPictures(mPictures);
                 mViewControl.hideProcessingDialog();
+                safeToTakePicture = true;
             }
         };
         post(r);
-        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        Matrix matrix = new Matrix();
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-                bitmap.getHeight(), matrix, false);
-        Mat mat = new Mat();
-        Utils.bitmapToMat(bitmap, mat);
-        listImage.add(mat);
-        camera.startPreview();
+//        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//        Matrix matrix = new Matrix();
+//        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
+//                bitmap.getHeight(), matrix, false);
+//        Mat mat = new Mat();
+//        Utils.bitmapToMat(bitmap, mat);
+//        listImage.add(mat);
+//        camera.startPreview();
         System.out.println("onPictureTaken process time: " + (System.currentTimeMillis() - time));
-        safeToTakePicture = true;
+
     }
 
-    private byte[] resizeImage(byte[] input) {
-        Bitmap original = BitmapFactory.decodeByteArray(input, 0, input.length);
-        Bitmap resized = Bitmap.createScaledBitmap(original, PHOTO_WIDTH, PHOTO_HEIGHT, true);
+    private byte[] resizeImage(byte[] bytes) {
+        Bitmap original = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        Bitmap resized = Bitmap.createScaledBitmap(original, PHOTO_WIDTH, PHOTO_HEIGHT, false);
         ByteArrayOutputStream blob = new ByteArrayOutputStream();
         resized.compress(Bitmap.CompressFormat.PNG, 0, blob);
         return blob.toByteArray();
