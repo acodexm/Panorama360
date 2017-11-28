@@ -49,7 +49,6 @@
                     android:layout_height="wrap_content"
                     android:gravity="start"
                     android:padding="10dp"
-                    android:checked="true"
                     android:text="@string/full_auto"/>
 
                 <Switch
@@ -78,7 +77,6 @@
                     android:id="@+id/picture_panorama"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:checked="true"
                     android:gravity="start"
                     android:padding="10dp"
                     android:text="@string/panorama"/>
@@ -100,11 +98,18 @@
                     android:text="@string/picture_360"/>
 
                 <TextView
-                    android:id="@+id/save_dir"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="10dp"
                     android:text="@string/save_destination"/>
+
+                <TextView
+                    android:id="@+id/save_dir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="30dp"
+                    android:textStyle="italic"
+                    android:padding="10dp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -116,7 +121,6 @@
                     android:id="@+id/quality_high"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:checked="true"
                     android:gravity="start"
                     android:padding="10dp"
                     android:text="@string/high_quality"/>

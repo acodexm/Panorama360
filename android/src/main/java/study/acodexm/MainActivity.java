@@ -41,6 +41,7 @@ import acodexm.panorama.R;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import study.acodexm.Utils.LOG;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
@@ -49,6 +50,7 @@ import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.PictureMode;
 import study.acodexm.settings.PictureQuality;
 import study.acodexm.settings.SettingsControl;
+import study.acodexm.settings.UserPreferences;
 
 public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -60,6 +62,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @BindView(R.id.capture)
     ImageView captureBtn;
+    @BindView(R.id.open_gallery)
+    ImageView galleryBtn;
     //    @BindView(R.id.save)
     Button saveBtn;
     @BindView(R.id.mode_auto)
@@ -90,6 +94,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private List<Mat> listImage = new ArrayList<>();
     private ProgressDialog ringProgressDialog;
     private CameraControl mCameraControl;
+    private ShutterState mShutterState;
+    private UserPreferences mPreferences;
 
 //    };
 
@@ -173,7 +179,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         cfg.g = 8;
         cfg.b = 8;
         cfg.a = 8;
-        initializeForView(new AndroidCamera(rotationVector, mCameraControl.getSphereControl()), cfg);
+        initializeForView(new AndroidCamera(rotationVector, mCameraControl.getSphereControl(), mSettingsControl), cfg);
 
         if (graphics.getView() instanceof GLSurfaceView) {
             Log.d(TAG, "creating layout");
@@ -189,13 +195,16 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         ButterKnife.bind(this);
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        mPreferences = new UserPreferences(this);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mCameraControl.startPreview();
-
+        mShutterState = ShutterState.ready;
+        loadPreferences();
+        setCaptureBtnImage();
     }
 
     @Override
@@ -231,7 +240,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr());
             // Save the image to external storage
             savePicture(result);
-            showToast("picture saved");
+            showToastRunnable("picture saved");
             listImage.clear();
         } catch (Exception e) {
             e.printStackTrace();
@@ -245,7 +254,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         Imgcodecs.imwrite(fileName, result);
     }
 
-    public void showToast(final String message) {
+    public void showToastRunnable(final String message) {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -254,6 +263,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             }
         };
         post(r);
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     public void showProcessingDialog() {
@@ -280,36 +293,131 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         post(r);
     }
 
-    private void captureBtnBehabior() {
-        switch (mSettingsControl.getActionMode()) {
-            case FullAuto:
-                captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.shutter));
-                break;
+    private void loadPreferences() {
+        switch (mPreferences.getActionMode()) {
             case Manual:
+                mSwitchManual.setChecked(true);
+                break;
+            case FullAuto:
+                mSwitchAuto.setChecked(true);
                 break;
         }
-        captureBtn.setBackground(
-                mSettingsControl.getActionMode() == ActionMode.FullAuto ?
-                        ContextCompat.getDrawable(this, R.drawable.shutter) :
-                        ContextCompat.getDrawable(this, R.drawable.shutter2));
+        switch (mPreferences.getPictureMode()) {
+            case auto:
+                mSwitchAutoPicture.setChecked(true);
+                break;
+            case panorama:
+                mSwitchPanorama.setChecked(true);
+                break;
+            case widePicture:
+                mSwitchWide.setChecked(true);
+                break;
+            case picture360:
+                mSwitch360.setChecked(true);
+                break;
+        }
+        switch (mPreferences.getPictureQuality()) {
+            case LOW:
+                mSwitchLow.setChecked(true);
+                break;
+            case HIGH:
+                mSwitchHigh.setChecked(true);
+                break;
+        }
+        mSettingsControl.setActionMode(mPreferences.getActionMode());
+        mSettingsControl.setPictureMode(mPreferences.getPictureMode());
+        mSettingsControl.setPictureQuality(mPreferences.getPictureQuality());
+        mSaveDir.setText(mPreferences.getSaveDir());
+    }
+
+    private void setCaptureBtnImage() {
+        switch (mShutterState) {
+            case ready:
+                switch (mSettingsControl.getActionMode()) {
+                    case FullAuto:
+                        captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready_auto));
+                        break;
+                    case Manual:
+                        captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready));
+                        break;
+                }
+                break;
+            case recording:
+                captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
+                break;
+            case capture:
+                captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.capture));
+                break;
+        }
+    }
+
+    private void onCaptureBtnClickAction() {
+        switch (mShutterState) {
+            case ready:
+                showToast("ready");
+                switch (mSettingsControl.getActionMode()) {
+                    case FullAuto:
+                        captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
+                        showToast("FullAuto");
+                        break;
+                    case Manual:
+                        showToast("Manual");
+                        captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.capture));
+                        break;
+                }
+                mShutterState = ShutterState.capture;
+                break;
+
+            case recording:
+                showToast("recording");
+                switch (mSettingsControl.getPictureMode()) {
+                    case auto:
+                        showToast("auto");
+                        break;
+                    case panorama:
+                        showToast("panorama");
+                        break;
+                    case widePicture:
+                        showToast("widePicture");
+                        break;
+                    case picture360:
+                        showToast("picture360");
+                        break;
+                }
+                mShutterState = ShutterState.ready;
+                break;
+            case capture:
+                showToast("capture");
+//                takePhotoManualy();
+                mShutterState = ShutterState.ready;
+                break;
+        }
+        setCaptureBtnImage();
     }
 
     @OnClick(R.id.capture)
     void captureOnClickListener() {
-        mCameraControl.takePicture(-1);
+        onCaptureBtnClickAction();
+//        mCameraControl.takePicture(-1);
     }
 
-    @OnClick(R.id.save)
+    @OnClick(R.id.open_gallery)
+    void onGalleryClickAction() {
+        showToast("open gallery");
+    }
+
+    @OnClick(R.id.save_picture)
     void saveOnClickListener() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                showProcessingDialog();
-                processPicture();
-                hideProcessingDialog();
-            }
-        };
-        post(r);
+        showToast("save");
+//        Runnable r = new Runnable() {
+//            @Override
+//            public void run() {
+//                showProcessingDialog();
+//                processPicture();
+//                hideProcessingDialog();
+//            }
+//        };
+//        post(r);
     }
 
     @Override
@@ -332,18 +440,23 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.mode_auto)
     void onSwitchAuto() {
+        mPreferences.setActionMode(ActionMode.FullAuto);
         mSettingsControl.setActionMode(ActionMode.FullAuto);
         mSwitchManual.setChecked(false);
+        setCaptureBtnImage();
     }
 
     @OnClick(R.id.mode_manual)
     void onSwitchManual() {
+        mPreferences.setActionMode(ActionMode.Manual);
         mSettingsControl.setActionMode(ActionMode.Manual);
         mSwitchAuto.setChecked(false);
+        setCaptureBtnImage();
     }
 
     @OnClick(R.id.picture_auto)
     void onSwitchAutoPanorama() {
+        mPreferences.setPictureMode(PictureMode.auto);
         mSettingsControl.setPictureMode(PictureMode.auto);
         mSwitchPanorama.setChecked(false);
         mSwitchWide.setChecked(false);
@@ -352,6 +465,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.picture_panorama)
     void onSwitchPanorama() {
+        mPreferences.setPictureMode(PictureMode.panorama);
         mSettingsControl.setPictureMode(PictureMode.panorama);
         mSwitchAutoPicture.setChecked(false);
         mSwitchWide.setChecked(false);
@@ -360,6 +474,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.picture_wide)
     void onSwitchWide() {
+        mPreferences.setPictureMode(PictureMode.widePicture);
         mSettingsControl.setPictureMode(PictureMode.widePicture);
         mSwitchAutoPicture.setChecked(false);
         mSwitchPanorama.setChecked(false);
@@ -368,6 +483,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.picture_360)
     void onSwitch360() {
+        mPreferences.setPictureMode(PictureMode.picture360);
         mSettingsControl.setPictureMode(PictureMode.picture360);
         mSwitchAutoPicture.setChecked(false);
         mSwitchWide.setChecked(false);
@@ -376,13 +492,28 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.quality_high)
     void onSwitchHigh() {
+        mPreferences.setPictureQuality(PictureQuality.HIGH);
         mSettingsControl.setPictureQuality(PictureQuality.HIGH);
         mSwitchLow.setChecked(false);
     }
 
     @OnClick(R.id.quality_low)
     void onSwitchLow() {
+        mPreferences.setPictureQuality(PictureQuality.LOW);
         mSettingsControl.setPictureQuality(PictureQuality.LOW);
         mSwitchHigh.setChecked(false);
+    }
+
+    private enum ShutterState {
+        ready, capture, recording;
+
+        public static ShutterState stringToEnum(String s) {
+            try {
+                return valueOf(s);
+            } catch (Exception e) {
+                LOG.e("ShutterState", "string casting failed", e);
+                return ready;
+            }
+        }
     }
 }

@@ -2,7 +2,7 @@ package study.acodexm.control;
 
 
 public interface ViewControl {
-    void showToast(String message);
+    void showToastRunnable(String message);
 
     void showProcessingDialog();
 
