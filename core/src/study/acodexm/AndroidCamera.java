@@ -32,10 +32,11 @@ import java.util.Map;
 
 import study.acodexm.Utils.LOG;
 import study.acodexm.settings.ActionMode;
-import study.acodexm.settings.PictureMode;
 import study.acodexm.settings.SettingsControl;
 
-public class AndroidCamera implements ApplicationListener {
+public class AndroidCamera implements ApplicationListener, SphereManualControl {
+    public static final int LAT = 10;
+    public static final int LON = 7;
     private static final String TAG = AndroidCamera.class.getSimpleName();
     private PerspectiveCamera camera;
     private ModelInstance instance;
@@ -45,7 +46,6 @@ public class AndroidCamera implements ApplicationListener {
     private Model photoSphere;
     private Renderable renderable;
     private ModelBuilder mModelBuilder;
-    private int lat, lon;
     private List<Vector3> vector3s;
     private boolean isUpdated;
     private FPSLogger fpsLogger;
@@ -54,14 +54,14 @@ public class AndroidCamera implements ApplicationListener {
     private SphereControl mSphereControl;
     private SettingsControl mSettingsControl;
     private Map<Integer, Vector3> centersOfGrid;
-    private ActionMode mActionMode = ActionMode.FullAuto;
-    private PictureMode mPictureMode = PictureMode.panorama;
+    private ActionMode mActionMode;
     private Map<Integer, byte[]> mPictures;
     private List<Integer> ids;
     private List<Integer> takenPictures;
     private Map<Integer, String> stringSet;
     private int position;
     private long time;
+    private boolean canRender = false;
 
     public AndroidCamera(RotationVector rotationVector, SphereControl sphereControl, SettingsControl settingsControl) {
         mRotationVector = rotationVector;
@@ -78,6 +78,7 @@ public class AndroidCamera implements ApplicationListener {
         setupSphere();
         makeListOfSphereVertices();
         //initialize variables
+
         fpsLogger = new FPSLogger();
         mat4 = new Matrix4();
         takenPictures = new ArrayList<Integer>();
@@ -104,8 +105,9 @@ public class AndroidCamera implements ApplicationListener {
     @Override
     public void render() {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+        mActionMode = mSettingsControl.getActionMode();
         camController.update();
-        if (!isUpdated) {
+        if (canRender && !isUpdated) {
             LOG.d(TAG, "update sphere textures");
             if (Gdx.app.getType() == Application.ApplicationType.Android) {
                 mPictures = mSphereControl.getPictures();
@@ -130,9 +132,9 @@ public class AndroidCamera implements ApplicationListener {
             camera.update();
         }
         position = whereIsCameraLooking(centersOfGrid, ids);
-        if (position != -1) {
+        if (canRender && position != -1 && mActionMode == ActionMode.FullAuto) {
             if (!takenPictures.contains(position)) {
-                LOG.d(TAG, "take picture!! at: " + position);
+                LOG.d(TAG, "auto take picture!! at: " + position);
                 takenPictures.add(position);
                 if (Gdx.app.getType() == Application.ApplicationType.Android) {
                     mSphereControl.autoTakePicture(position);
@@ -140,10 +142,10 @@ public class AndroidCamera implements ApplicationListener {
                 } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                     stringSet.put(position, position + ".png");
                 }
-                isUpdated = false;
             }
         }
-        fpsLogger.log();
+
+//        fpsLogger.log();
 //        forceGC();
 //        System.out.println("getJavaHeap: " + Gdx.app.getJavaHeap()
 //                + " getNativeHeap: " + Gdx.app.getNativeHeap());
@@ -172,9 +174,7 @@ public class AndroidCamera implements ApplicationListener {
 
     private void setupSphere() {
         mModelBuilder = new ModelBuilder();
-        lat = 10;
-        lon = 7;
-        sphereTemplate = mModelBuilder.createSphere(4f, 4f, 4f, lat, lon,
+        sphereTemplate = mModelBuilder.createSphere(4f, 4f, 4f, LAT, LON,
                 new Material(),
                 VertexAttributes.Usage.Position
                         | VertexAttributes.Usage.Normal
@@ -203,8 +203,8 @@ public class AndroidCamera implements ApplicationListener {
     private void setIdList() {
         ids = new ArrayList<Integer>();
         //all row*col - last row + weird col switch hazard
-        int amount = lat * lon - lat + Math.round(lat / 2);
-        for (int i = lat; i <= amount; i++) {
+        int amount = LAT * LON - LAT + Math.round(LAT / 2);
+        for (int i = LAT; i <= amount; i++) {
             ids.add(i);
         }
         if (Gdx.app.getType() == Application.ApplicationType.Android && mSphereControl != null) {
@@ -244,14 +244,14 @@ public class AndroidCamera implements ApplicationListener {
             bytes = fileName.get(id);
             if (bytes != null) {
                 try {
-                    LOG.d(TAG, "loading byte[] texture " + id);
+//                    LOG.d(TAG, "loading byte[] texture " + id);
                     texture = new Texture(new Pixmap(bytes, 0, bytes.length));
                 } catch (Exception e) {
-                    LOG.e(TAG, "texture load failed, loading empty ", e);
+//                    LOG.e(TAG, "texture load failed, loading empty ", e);
                     texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
                 }
             } else {
-                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+//                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
             material = new Material(TextureAttribute.createDiffuse(texture),
@@ -259,8 +259,8 @@ public class AndroidCamera implements ApplicationListener {
                     colorAttribute);
             modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
                     .rect(
-                            fourVertices.get(id + lat + 1).x, fourVertices.get(id + lat + 1).y, fourVertices.get(id + lat + 1).z,
-                            fourVertices.get(id + lat + 2).x, fourVertices.get(id + lat + 2).y, fourVertices.get(id + lat + 2).z,
+                            fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,
+                            fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,
                             fourVertices.get(id + 1).x, fourVertices.get(id + 1).y, fourVertices.get(id + 1).z,
                             fourVertices.get(id).x, fourVertices.get(id).y, fourVertices.get(id).z,
                             -1, -1, -1);
@@ -275,17 +275,17 @@ public class AndroidCamera implements ApplicationListener {
             bytes = fileName.get(id);
             if (bytes != null) {
                 try {
-                    LOG.d(TAG, "loading byte[] texture " + id);
+//                    LOG.d(TAG, "loading byte[] texture " + id);
                     texture = new Texture(new Pixmap(bytes, 0, bytes.length));
                 } catch (Exception e) {
-                    LOG.e(TAG, "texture load failed, loading empty ", e);
+//                    LOG.e(TAG, "texture load failed, loading empty ", e);
                     texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
                 }
             } else {
-                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+//                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            Material mat = instance.materials.get(id - lat);
+            Material mat = instance.materials.get(id - LAT);
             for (Attribute att : mat) {
                 if (att.type == TextureAttribute.Diffuse) {
                     ((TextureAttribute) att).textureDescription.set(texture,
@@ -307,17 +307,17 @@ public class AndroidCamera implements ApplicationListener {
             bytes = fileName.get(id);
             if (bytes != null) {
                 try {
-                    LOG.d(TAG, "loading texture " + id + ".png");
+//                    LOG.d(TAG, "loading texture " + id + ".png");
                     texture = new Texture(Gdx.files.internal("data/numbers/" + bytes));
                 } catch (Exception e) {
-                    LOG.e(TAG, "texture load failed, loading empty ", e);
+//                    LOG.e(TAG, "texture load failed, loading empty ", e);
                     texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
                 }
             } else {
-                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+//                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            mat = instance.materials.get(id - lat);
+            mat = instance.materials.get(id - LAT);
             for (Attribute att : mat) {
                 if (att.type == TextureAttribute.Diffuse) {
                     ((TextureAttribute) att).textureDescription.set(
@@ -360,8 +360,8 @@ public class AndroidCamera implements ApplicationListener {
                     attribute);
             modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
                     .rect(
-                            fourVertices.get(id + lat + 1).x, fourVertices.get(id + lat + 1).y, fourVertices.get(id + lat + 1).z,//00
-                            fourVertices.get(id + lat + 2).x, fourVertices.get(id + lat + 2).y, fourVertices.get(id + lat + 2).z,//01
+                            fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,//00
+                            fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,//01
                             fourVertices.get(id + 1).x, fourVertices.get(id + 1).y, fourVertices.get(id + 1).z,//11
                             fourVertices.get(id).x, fourVertices.get(id).y, fourVertices.get(id).z,//10
                             -1, -1, -1);
@@ -382,11 +382,11 @@ public class AndroidCamera implements ApplicationListener {
         Map<Integer, Vector3> centersOfGrid = new HashMap<Integer, Vector3>();
         for (int id : ids) {
             Vector3 centerOfTex = new Vector3(
-                    ((fourVertices.get(id + lat + 1).x + fourVertices.get(id + lat + 2).x) / 2 +
+                    ((fourVertices.get(id + LAT + 1).x + fourVertices.get(id + LAT + 2).x) / 2 +
                             (fourVertices.get(id + 1).x + fourVertices.get(id).x) / 2),
-                    ((fourVertices.get(id + lat + 1).y + fourVertices.get(id + lat + 2).y) / 2 +
+                    ((fourVertices.get(id + LAT + 1).y + fourVertices.get(id + LAT + 2).y) / 2 +
                             (fourVertices.get(id + 1).y + fourVertices.get(id).y) / 2),
-                    ((fourVertices.get(id + lat + 1).z + fourVertices.get(id + lat + 2).z) / 2 +
+                    ((fourVertices.get(id + LAT + 1).z + fourVertices.get(id + LAT + 2).z) / 2 +
                             (fourVertices.get(id + 1).z + fourVertices.get(id).z) / 2));
             centersOfGrid.put(id, centerOfTex);
         }
@@ -423,6 +423,8 @@ public class AndroidCamera implements ApplicationListener {
                 if ((isCollinear.x < 0.5f && isCollinear.x > -0.5f)
                         && (isCollinear.y < 0.5f && isCollinear.y > -0.5f)
                         && (isCollinear.z < 0.5f && isCollinear.z > -0.5f)) {
+                    if (i == 10 || i == 21 || i == 32 || i == 43 || i == 54 || i == 65)
+                        return -1;
                     return i;
                 }
             }
@@ -442,5 +444,23 @@ public class AndroidCamera implements ApplicationListener {
     public void resume() {
     }
 
+    @Override
+    public int canTakePicture() {
+        return whereIsCameraLooking(centersOfGrid, ids);
+    }
 
+    @Override
+    public void startRendering() {
+        canRender = true;
+    }
+
+    @Override
+    public void stopRendering() {
+        canRender = false;
+    }
+
+    @Override
+    public void updateRender() {
+        isUpdated = false;
+    }
 }

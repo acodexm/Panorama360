@@ -2,7 +2,7 @@
 #include "opencv2/opencv.hpp"
 #include <android/log.h>
 
-#define  LOG_TAG    "your-log-tag"
+#define  LOG_TAG    "NativePanorama"
 
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -10,7 +10,7 @@ using namespace std;
 using namespace cv;
 
 JNIEXPORT void JNICALL
-Java_acodexm_panorama_NativePanorama_processPanorama
+Java_study_acodexm_NativePanorama_processPanorama
         (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress) {
     // Get the length of the long array
     jsize a_len = env->GetArrayLength(imageAddressArray);

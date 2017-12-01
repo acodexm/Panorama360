@@ -11,6 +11,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.2.2'
+//        classpath 'com.jakewharton:butterknife-gradle-plugin:8.8.1'
+
     }
 }
 
@@ -57,7 +59,8 @@ project(":desktop") {
 
 project(":android") {
     apply plugin: "android"
-
+//    apply plugin: 'com.android.library'
+//    apply plugin: 'com.jakewharton.butterknife'
     configurations { natives }
 
     dependencies {

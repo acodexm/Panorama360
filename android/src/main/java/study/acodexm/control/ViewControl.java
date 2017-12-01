@@ -7,4 +7,8 @@ public interface ViewControl {
     void showProcessingDialog();
 
     void hideProcessingDialog();
+
+    void post(Runnable runnable);
+
+    void updateRender();
 }

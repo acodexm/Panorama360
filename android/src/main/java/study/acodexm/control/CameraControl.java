@@ -1,6 +1,10 @@
 package study.acodexm.control;
 
 
+import org.opencv.core.Mat;
+
+import java.util.List;
+
 import study.acodexm.CameraSurface;
 import study.acodexm.SphereControl;
 
@@ -14,5 +18,7 @@ public interface CameraControl {
     CameraSurface getSurface();
 
     SphereControl getSphereControl();
+
+    List<List<Mat>> getPictureList();
 
 }

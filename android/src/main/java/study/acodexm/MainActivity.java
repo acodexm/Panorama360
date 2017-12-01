@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Switch;
@@ -34,7 +33,6 @@ import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import acodexm.panorama.R;
@@ -64,8 +62,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     ImageView captureBtn;
     @BindView(R.id.open_gallery)
     ImageView galleryBtn;
-    //    @BindView(R.id.save)
-    Button saveBtn;
     @BindView(R.id.mode_auto)
     Switch mSwitchAuto;
     @BindView(R.id.mode_manual)
@@ -91,74 +87,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private RotationVector rotationVector = new AndroidRotationVector();
     private SettingsControl mSettingsControl = new AndroidSettingsControl();
     private float[] rotationMatrix = rotationVector.getValues();
-    private List<Mat> listImage = new ArrayList<>();
     private ProgressDialog ringProgressDialog;
     private CameraControl mCameraControl;
     private ShutterState mShutterState;
     private UserPreferences mPreferences;
+    private SphereManualControl mManualControl;
 
-//    };
-
-    //    private Camera mCam;
-//    Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
-//        public void onPictureTaken(byte[] data, Camera camera) {
-//            Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-//            Matrix matrix = new Matrix();
-//            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-//                    bitmap.getHeight(), matrix, false);
-//            Mat mat = new Mat();
-//            Utils.bitmapToMat(bitmap, mat);
-//            listImage.add(mat);
-////            Canvas canvas = null;
-////            try {
-////                canvas = glView.getHolder().lockCanvas(null);
-////                synchronized (glView.getHolder()) {
-////                    canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-////                    float scale = 1.0f * mSurfaceView.getHeight() / bitmap.getHeight();
-////                    Bitmap scaleImage = Bitmap.createScaledBitmap(bitmap,
-////                            (int) (scale * bitmap.getWidth()), mSurfaceView.getHeight(), false);
-////                    Paint paint = new Paint();
-////                    paint.setAlpha(200);
-////                    canvas.drawBitmap(scaleImage, -scaleImage.getWidth() * 2 / 3, 0, paint);
-////                }
-////            } catch (Exception e) {
-////                e.printStackTrace();
-////            } finally {
-////                if (canvas != null) {
-////                    glView.getHolder().unlockCanvasAndPost(canvas);
-////                }
-////            }
-//            mCam.startPreview();
-//            safeToTakePicture = true;
-//        }
-//    };
-//    private boolean isPreview;
-//    SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
-//        @Override
-//        public void surfaceCreated(SurfaceHolder holder) {
-//            try {
-//                mCam.setPreviewDisplay(holder);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        @Override
-//        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-//            Camera.Parameters myParameters = mCam.getParameters();
-//            Camera.Size myBestSize = getBestPreviewSize(myParameters);
-//            if (myBestSize != null) {
-//                myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
-//                mCam.setParameters(myParameters);
-//                mCam.setDisplayOrientation(0);
-//                mCam.startPreview();
-//                isPreview = true;
-//            }
-//        }
-//
-//        @Override
-//        public void surfaceDestroyed(SurfaceHolder holder) {
-//        }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -179,7 +113,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         cfg.g = 8;
         cfg.b = 8;
         cfg.a = 8;
-        initializeForView(new AndroidCamera(rotationVector, mCameraControl.getSphereControl(), mSettingsControl), cfg);
+        AndroidCamera androidCamera = new AndroidCamera(rotationVector, mCameraControl.getSphereControl(),
+                mSettingsControl);
+        mManualControl = androidCamera;
+        initializeForView(androidCamera, cfg);
 
         if (graphics.getView() instanceof GLSurfaceView) {
             Log.d(TAG, "creating layout");
@@ -227,24 +164,51 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         handler.post(r);
     }
 
-    private void processPicture() {
-        try {
-            int images = listImage.size();
-            Log.d(TAG, "Pictures taken:" + images);
-            long[] tempObjAddress = new long[images];
-            for (int i = 0; i < images; i++) {
-                tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
-            }
-            Mat result = new Mat();
-            // Call the OpenCV C++ Code to perform stitching process
-            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr());
-            // Save the image to external storage
-            savePicture(result);
-            showToastRunnable("picture saved");
-            listImage.clear();
-        } catch (Exception e) {
-            e.printStackTrace();
+    @Override
+    public void updateRender() {
+        mManualControl.updateRender();
+    }
+
+    private void processPictureList() {
+        for (List<Mat> imageList : mCameraControl.getPictureList()) {
+            processPicture(imageList);
         }
+    }
+
+    private void processPicture(final List<Mat> listImage) {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                showProcessingDialog();
+                try {
+                    int images = listImage.size();
+                    if (images > 0) {
+                        Log.d(TAG, "Pictures taken:" + images);
+                        long[] tempObjAddress = new long[images];
+                        for (int i = 0; i < images; i++) {
+                            tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
+                        }
+                        Mat result = new Mat();
+                        // Call the OpenCV C++ Code to perform stitching process
+                        try {
+                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr());
+                            savePicture(result);
+                            showToastRunnable("picture saved");
+                        } catch (Exception e) {
+                            Log.e(TAG, "native processPanorama not working ", e);
+                        }
+                        // Save the image to external storage
+
+                        listImage.clear();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                hideProcessingDialog();
+            }
+        };
+        post(r);
+
     }
 
     private void savePicture(Mat result) {
@@ -345,52 +309,35 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             case recording:
                 captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
                 break;
-            case capture:
-                captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.capture));
-                break;
+
         }
     }
 
     private void onCaptureBtnClickAction() {
         switch (mShutterState) {
             case ready:
-                showToast("ready");
+//                showToast("ready");
                 switch (mSettingsControl.getActionMode()) {
                     case FullAuto:
-                        captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
-                        showToast("FullAuto");
+                        mManualControl.startRendering();
+                        mShutterState = ShutterState.recording;
                         break;
                     case Manual:
-                        showToast("Manual");
-                        captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.capture));
+                        mManualControl.startRendering();
+                        int position = mManualControl.canTakePicture();
+                        if (position != -1)
+                            mCameraControl.takePicture(position);
+                        else showToast("You can't take picture here!");
                         break;
                 }
-                mShutterState = ShutterState.capture;
                 break;
 
             case recording:
-                showToast("recording");
-                switch (mSettingsControl.getPictureMode()) {
-                    case auto:
-                        showToast("auto");
-                        break;
-                    case panorama:
-                        showToast("panorama");
-                        break;
-                    case widePicture:
-                        showToast("widePicture");
-                        break;
-                    case picture360:
-                        showToast("picture360");
-                        break;
-                }
+//                showToast("recording");
+                mManualControl.stopRendering();
                 mShutterState = ShutterState.ready;
                 break;
-            case capture:
-                showToast("capture");
-//                takePhotoManualy();
-                mShutterState = ShutterState.ready;
-                break;
+
         }
         setCaptureBtnImage();
     }
@@ -409,15 +356,18 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
         showToast("save");
-//        Runnable r = new Runnable() {
-//            @Override
-//            public void run() {
-//                showProcessingDialog();
-//                processPicture();
-//                hideProcessingDialog();
-//            }
-//        };
-//        post(r);
+        switch (mSettingsControl.getPictureMode()) {
+            case auto:
+                break;
+            case panorama:
+                break;
+            case widePicture:
+                break;
+            case picture360:
+                break;
+        }
+        processPictureList();
+
     }
 
     @Override
@@ -505,7 +455,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     private enum ShutterState {
-        ready, capture, recording;
+        ready, recording;
 
         public static ShutterState stringToEnum(String s) {
             try {
