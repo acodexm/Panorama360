@@ -18,6 +18,7 @@ import org.opencv.core.Mat;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,11 @@ import java.util.TreeMap;
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
+import study.acodexm.settings.SettingsControl;
 
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
+    List<Mat> listOfPictureLayers = new ArrayList<>();
     private Map<Integer, byte[]> mPictures;
     private List<Integer> ids;
     private Camera camera;
@@ -37,9 +40,9 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private Map<Integer, Mat> listImageL3 = new TreeMap<>();
     private Map<Integer, Mat> listImageL4 = new TreeMap<>();
     private Map<Integer, Mat> listImageL5 = new TreeMap<>();
-    List<List<Mat>> listOfPictureLayers = new ArrayList<>();
     private boolean safeToTakePicture = false;
     private SphereControl mSphereControl;
+    private SettingsControl mSettingsControl;
     private int currentPictureId;
     private int PHOTO_WIDTH;
     private int PHOTO_HEIGHT;
@@ -48,9 +51,10 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private int LON = AndroidCamera.LON;
 
     @SuppressLint("UseSparseArrays")
-    public CameraSurface(MainActivity activity) {
+    public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
         super(activity.getContext());
         mViewControl = activity;
+        mSettingsControl = settingsControl;
         getHolder().addCallback(this);
         getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mSphereControl = new AndroidSphereControl(this);
@@ -145,16 +149,38 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void addPictures(Mat mat) {
-        if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
-            listImageL1.put(currentPictureId, mat);
-        else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
-            listImageL2.put(currentPictureId, mat);
-        else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
-            listImageL3.put(currentPictureId, mat);
-        else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
-            listImageL4.put(currentPictureId, mat);
-        else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
-            listImageL5.put(currentPictureId, mat);
+        switch (mSettingsControl.getPictureMode()) {
+            case auto:
+                listImageL1.put(currentPictureId, mat);
+                break;
+            case panorama:
+                if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
+                    listImageL1.put(currentPictureId, mat);
+                else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
+                    listImageL2.put(currentPictureId, mat);
+                else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
+                    listImageL3.put(currentPictureId, mat);
+                else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
+                    listImageL4.put(currentPictureId, mat);
+                else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
+                    listImageL5.put(currentPictureId, mat);
+                break;
+            case widePicture:
+                if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
+                    listImageL1.put(currentPictureId, mat);
+                else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
+                    listImageL2.put(currentPictureId, mat);
+                else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
+                    listImageL3.put(currentPictureId, mat);
+                else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
+                    listImageL4.put(currentPictureId, mat);
+                else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
+                    listImageL5.put(currentPictureId, mat);
+                break;
+            case picture360:
+                listImageL1.put(currentPictureId, mat);
+                break;
+        }
     }
 
     private byte[] resizeImage(byte[] bytes) {
@@ -199,12 +225,65 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     }
 
     @Override
-    public List<List<Mat>> getPictureList() {
-        listOfPictureLayers.add(new ArrayList<>(listImageL1.values()));
-        listOfPictureLayers.add(new ArrayList<>(listImageL2.values()));
-        listOfPictureLayers.add(new ArrayList<>(listImageL3.values()));
-        listOfPictureLayers.add(new ArrayList<>(listImageL4.values()));
-        listOfPictureLayers.add(new ArrayList<>(listImageL5.values()));
+    public List<Mat> getPictureList() {
+        switch (mSettingsControl.getPictureMode()) {
+            case auto:
+                listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
+                break;
+            case panorama:
+                chooseLongestList();
+                break;
+            case widePicture:
+                choosePicturesForWide();
+                break;
+            case picture360:
+                if (listImageL1.size() == LAT * LON)
+                    listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
+                break;
+        }
         return listOfPictureLayers;
     }
+
+    private void choosePicturesForWide() {
+        if (listImageL1.size() > 2)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
+        if (listImageL2.size() > 2)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL2.values()));
+        if (listImageL3.size() > 2)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL3.values()));
+        if (listImageL4.size() > 2)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL4.values()));
+        if (listImageL5.size() > 2)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL5.values()));
+    }
+
+    private void chooseLongestList() {
+        int L1 = listImageL1.size();
+        int L2 = listImageL2.size();
+        int L3 = listImageL3.size();
+        int L4 = listImageL4.size();
+        int L5 = listImageL5.size();
+        int max = chooseLongest(new ArrayList<>(Arrays.asList(
+                L1, L2, L3, L4, L5)));
+        if (max == L1)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
+        if (max == L2)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL2.values()));
+        if (max == L3)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL3.values()));
+        if (max == L4)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL4.values()));
+        if (max == L5)
+            listOfPictureLayers.addAll(new ArrayList<>(listImageL5.values()));
+    }
+
+    private int chooseLongest(List<Integer> integers) {
+        int max = 0;
+        for (int i : integers) {
+            if (i > max)
+                max = i;
+        }
+        return max;
+    }
+
 }

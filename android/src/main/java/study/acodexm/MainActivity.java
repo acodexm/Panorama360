@@ -97,7 +97,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mCameraControl = new CameraSurface(this);
+        mCameraControl = new CameraSurface(this, mSettingsControl);
         mSurfaceView = mCameraControl.getSurface();
         FrameLayout layout = new FrameLayout(getContext());
         View view2 = LayoutInflater.from(getContext()).inflate(R.layout.activity_main, layout, false);
@@ -167,12 +167,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     public void updateRender() {
         mManualControl.updateRender();
-    }
-
-    private void processPictureList() {
-        for (List<Mat> imageList : mCameraControl.getPictureList()) {
-            processPicture(imageList);
-        }
     }
 
     private void processPicture(final List<Mat> listImage) {
@@ -366,7 +360,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             case picture360:
                 break;
         }
-        processPictureList();
+        processPicture(mCameraControl.getPictureList());
 
     }
 

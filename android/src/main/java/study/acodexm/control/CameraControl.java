@@ -19,6 +19,6 @@ public interface CameraControl {
 
     SphereControl getSphereControl();
 
-    List<List<Mat>> getPictureList();
+    List<Mat> getPictureList();
 
 }
