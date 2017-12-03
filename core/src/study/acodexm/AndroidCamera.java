@@ -38,6 +38,9 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     public static final int LAT = 10;
     public static final int LON = 7;
     private static final String TAG = AndroidCamera.class.getSimpleName();
+    private static Texture texture;
+    private static Material mat;
+    private static Pixmap pixmap;
     private PerspectiveCamera camera;
     private ModelInstance instance;
     private ModelBatch modelBatch;
@@ -54,7 +57,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private SphereControl mSphereControl;
     private SettingsControl mSettingsControl;
     private Map<Integer, Vector3> centersOfGrid;
-    private ActionMode mActionMode;
+    private ActionMode mActionMode = ActionMode.FullAuto;
     private Map<Integer, byte[]> mPictures;
     private List<Integer> ids;
     private List<Integer> takenPictures;
@@ -105,16 +108,18 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     @Override
     public void render() {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        mActionMode = mSettingsControl.getActionMode();
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            mActionMode = mSettingsControl.getActionMode();
+        }
         camController.update();
-        if (canRender && !isUpdated) {
+        if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");
-            if (Gdx.app.getType() == Application.ApplicationType.Android) {
-                mPictures = mSphereControl.getPictures();
-                if (mPictures == null)
-                    mPictures = new HashMap<Integer, byte[]>();
-                updateTextureAndroid(mPictures);
-//                updateTextureDesktop(stringSet);
+            if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
+//                mPictures = mSphereControl.getPictures();
+//                if (mPictures == null)
+//                    mPictures = new HashMap<Integer, byte[]>();
+//                updateTextureAndroid(mPictures);
+                updateTextureDesktop(stringSet);
             } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                 updateTextureDesktop(stringSet);
             }
@@ -132,15 +137,18 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             camera.update();
         }
         position = whereIsCameraLooking(centersOfGrid, ids);
-        if (canRender && position != -1 && mActionMode == ActionMode.FullAuto) {
+        if (position != -1 && mActionMode == ActionMode.FullAuto) {
             if (!takenPictures.contains(position)) {
                 LOG.d(TAG, "auto take picture!! at: " + position);
-                takenPictures.add(position);
-                if (Gdx.app.getType() == Application.ApplicationType.Android) {
-                    mSphereControl.autoTakePicture(position);
-//                    stringSet.put(position, position + ".png");
-                } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
+                    takenPictures.add(position);
+//                    mSphereControl.autoTakePicture(position);
                     stringSet.put(position, position + ".png");
+                    isUpdated = false;
+                } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                    takenPictures.add(position);
+                    stringSet.put(position, position + ".png");
+                    isUpdated = false;
                 }
             }
         }
@@ -236,8 +244,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         byte[] bytes;
-        Texture texture;
-        Material material;
         BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
         ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
         for (int id : ids) {
@@ -254,10 +260,10 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 //                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            material = new Material(TextureAttribute.createDiffuse(texture),
+            mat = new Material(TextureAttribute.createDiffuse(texture),
                     attribute,
                     colorAttribute);
-            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
+            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, mat)
                     .rect(
                             fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,
                             fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,
@@ -270,13 +276,13 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     private void updateTextureAndroid(Map<Integer, byte[]> fileName) {
         byte[] bytes;
-        Texture texture;
         for (int id : ids) {
             bytes = fileName.get(id);
             if (bytes != null) {
                 try {
 //                    LOG.d(TAG, "loading byte[] texture " + id);
-                    texture = new Texture(new Pixmap(bytes, 0, bytes.length));
+                    pixmap = new Pixmap(bytes, 0, bytes.length);
+                    texture = new Texture(pixmap);
                 } catch (Exception e) {
 //                    LOG.e(TAG, "texture load failed, loading empty ", e);
                     texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
@@ -285,7 +291,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 //                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            Material mat = instance.materials.get(id - LAT);
+            mat = instance.materials.get(id - LAT);
             for (Attribute att : mat) {
                 if (att.type == TextureAttribute.Diffuse) {
                     ((TextureAttribute) att).textureDescription.set(texture,
@@ -301,20 +307,18 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     private void updateTextureDesktop(Map<Integer, String> fileName) {
         String bytes;
-        Texture texture;
-        Material mat;
         for (int id : ids) {
             bytes = fileName.get(id);
             if (bytes != null) {
                 try {
-//                    LOG.d(TAG, "loading texture " + id + ".png");
+                    LOG.d(TAG, "loading texture " + id + ".png");
                     texture = new Texture(Gdx.files.internal("data/numbers/" + bytes));
                 } catch (Exception e) {
-//                    LOG.e(TAG, "texture load failed, loading empty ", e);
+                    LOG.e(TAG, "texture load failed, loading empty ", e);
                     texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
                 }
             } else {
-//                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
             mat = instance.materials.get(id - LAT);
@@ -335,8 +339,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         String bytes;
-        Texture texture;
-        Material material;
         BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
         ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
         for (int id : ids) {
@@ -353,12 +355,12 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                 LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            material = new Material();
-            material.set(
+            mat = new Material();
+            mat.set(
                     TextureAttribute.createDiffuse(texture),
                     colorAttribute,
                     attribute);
-            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, material)
+            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, mat)
                     .rect(
                             fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,//00
                             fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,//01
