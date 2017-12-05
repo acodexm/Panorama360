@@ -38,9 +38,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     public static final int LAT = 10;
     public static final int LON = 7;
     private static final String TAG = AndroidCamera.class.getSimpleName();
-    private static Texture texture;
-    private static Material mat;
-    private static Pixmap pixmap;
     private PerspectiveCamera camera;
     private ModelInstance instance;
     private ModelBatch modelBatch;
@@ -95,14 +92,15 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
             renderPhotosDesktop();
         }
-        time = System.currentTimeMillis();
+//        time = System.currentTimeMillis();
     }
 
     @Override
     public void dispose() {
         LOG.d(TAG, "dispose method begin");
-        photoSphere.dispose();
-        modelBatch.dispose();
+        if (sphereTemplate != null) sphereTemplate.dispose();
+        if (photoSphere != null) photoSphere.dispose();
+        if (modelBatch != null) modelBatch.dispose();
     }
 
     @Override
@@ -115,11 +113,11 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");
             if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
-//                mPictures = mSphereControl.getPictures();
-//                if (mPictures == null)
-//                    mPictures = new HashMap<Integer, byte[]>();
-//                updateTextureAndroid(mPictures);
-                updateTextureDesktop(stringSet);
+                mPictures = mSphereControl.getPictures();
+                if (mPictures == null)
+                    mPictures = new HashMap<Integer, byte[]>();
+                updateTextureAndroid(mPictures);
+//                updateTextureDesktop(stringSet);
             } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                 updateTextureDesktop(stringSet);
             }
@@ -142,9 +140,9 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                 LOG.d(TAG, "auto take picture!! at: " + position);
                 if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
                     takenPictures.add(position);
-//                    mSphereControl.autoTakePicture(position);
-                    stringSet.put(position, position + ".png");
-                    isUpdated = false;
+                    mSphereControl.autoTakePicture(position);
+//                    stringSet.put(position, position + ".png");
+//                    isUpdated = false;
                 } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                     takenPictures.add(position);
                     stringSet.put(position, position + ".png");
@@ -153,17 +151,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             }
         }
 
-//        fpsLogger.log();
-//        forceGC();
-//        System.out.println("getJavaHeap: " + Gdx.app.getJavaHeap()
-//                + " getNativeHeap: " + Gdx.app.getNativeHeap());
-    }
+        fpsLogger.log();
 
-    private void forceGC() {
-        if (System.currentTimeMillis() - time > 5000) {
-            time = System.currentTimeMillis();
-            System.gc();
-        }
     }
 
     private void setupCamera() {
@@ -228,7 +217,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         if (photoSphere != null)
             photoSphere.dispose();
         photoSphere = setPhotoOnSphereAndroid(vector3s, mModelBuilder, mPictures, ids);
-        instance = null;
         instance = new ModelInstance(photoSphere);
     }
 
@@ -236,7 +224,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         if (photoSphere != null)
             photoSphere.dispose();
         photoSphere = setPhotoOnSphereDesktop(vector3s, mModelBuilder, stringSet, ids);
-        instance = null;
         instance = new ModelInstance(photoSphere);
     }
 
@@ -244,6 +231,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         byte[] bytes;
+        Texture texture;
         BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
         ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
         for (int id : ids) {
@@ -260,10 +248,9 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 //                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            mat = new Material(TextureAttribute.createDiffuse(texture),
+            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, new Material(TextureAttribute.createDiffuse(texture),
                     attribute,
-                    colorAttribute);
-            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, mat)
+                    colorAttribute))
                     .rect(
                             fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,
                             fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,
@@ -274,14 +261,50 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return modelBuilder.end();
     }
 
+    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, String> fileName, List<Integer> ids) {
+        int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
+        modelBuilder.begin();
+        String texName;
+        Texture texture;
+        BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
+        ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
+        for (int id : ids) {
+            texName = fileName.get(id);
+            if (texName != null) {
+                try {
+//                    LOG.d(TAG, "loading texture " + id + ".png");
+                    texture = new Texture(Gdx.files.internal("data/numbers/" + texName));
+                } catch (Exception e) {
+//                    LOG.e(TAG, "texture load failed, loading empty ", e);
+                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+                }
+            } else {
+//                LOG.d(TAG, "texture load failed, texName=null, loading empty ");
+                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+            }
+            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, new Material(
+                    TextureAttribute.createDiffuse(texture),
+                    colorAttribute,
+                    attribute))
+                    .rect(
+                            fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,//00
+                            fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,//01
+                            fourVertices.get(id + 1).x, fourVertices.get(id + 1).y, fourVertices.get(id + 1).z,//11
+                            fourVertices.get(id).x, fourVertices.get(id).y, fourVertices.get(id).z,//10
+                            -1, -1, -1);
+        }
+        return modelBuilder.end();
+    }
+
     private void updateTextureAndroid(Map<Integer, byte[]> fileName) {
         byte[] bytes;
+        Texture texture;
         for (int id : ids) {
             bytes = fileName.get(id);
             if (bytes != null) {
                 try {
 //                    LOG.d(TAG, "loading byte[] texture " + id);
-                    pixmap = new Pixmap(bytes, 0, bytes.length);
+                    Pixmap pixmap = new Pixmap(bytes, 0, bytes.length);
                     texture = new Texture(pixmap);
                 } catch (Exception e) {
 //                    LOG.e(TAG, "texture load failed, loading empty ", e);
@@ -291,9 +314,9 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 //                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            mat = instance.materials.get(id - LAT);
-            for (Attribute att : mat) {
+            for (Attribute att : instance.materials.get(id - LAT)) {
                 if (att.type == TextureAttribute.Diffuse) {
+                    ((TextureAttribute) att).textureDescription.texture.dispose();
                     ((TextureAttribute) att).textureDescription.set(texture,
                             Texture.TextureFilter.Linear,
                             Texture.TextureFilter.Linear,
@@ -306,26 +329,26 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     }
 
     private void updateTextureDesktop(Map<Integer, String> fileName) {
-        String bytes;
+        String texName;
+        Texture texture;
         for (int id : ids) {
-            bytes = fileName.get(id);
-            if (bytes != null) {
+            texName = fileName.get(id);
+            if (texName != null) {
                 try {
-                    LOG.d(TAG, "loading texture " + id + ".png");
-                    texture = new Texture(Gdx.files.internal("data/numbers/" + bytes));
+//                    LOG.d(TAG, "loading texture " + id + ".png");
+                    texture = new Texture(Gdx.files.internal("data/numbers/" + texName));
                 } catch (Exception e) {
-                    LOG.e(TAG, "texture load failed, loading empty ", e);
+//                    LOG.e(TAG, "texture load failed, loading empty ", e);
                     texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
                 }
             } else {
-                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
+//                LOG.d(TAG, "texture load failed, texName=null, loading empty ");
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
-            mat = instance.materials.get(id - LAT);
-            for (Attribute att : mat) {
+            for (Attribute att : instance.materials.get(id - LAT)) {
                 if (att.type == TextureAttribute.Diffuse) {
-                    ((TextureAttribute) att).textureDescription.set(
-                            texture,
+                    ((TextureAttribute) att).textureDescription.texture.dispose();
+                    ((TextureAttribute) att).textureDescription.set(texture,
                             Texture.TextureFilter.Linear,
                             Texture.TextureFilter.Linear,
                             Texture.TextureWrap.ClampToEdge,
@@ -333,42 +356,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                 }
             }
         }
-    }
-
-    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, Map<Integer, String> fileName, List<Integer> ids) {
-        int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
-        modelBuilder.begin();
-        String bytes;
-        BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
-        ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
-        for (int id : ids) {
-            bytes = fileName.get(id);
-            if (bytes != null) {
-                try {
-                    LOG.d(TAG, "loading texture " + id + ".png");
-                    texture = new Texture(Gdx.files.internal("data/numbers/" + bytes));
-                } catch (Exception e) {
-                    LOG.e(TAG, "texture load failed, loading empty ", e);
-                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-                }
-            } else {
-                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
-                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-            }
-            mat = new Material();
-            mat.set(
-                    TextureAttribute.createDiffuse(texture),
-                    colorAttribute,
-                    attribute);
-            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, mat)
-                    .rect(
-                            fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,//00
-                            fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,//01
-                            fourVertices.get(id + 1).x, fourVertices.get(id + 1).y, fourVertices.get(id + 1).z,//11
-                            fourVertices.get(id).x, fourVertices.get(id).y, fourVertices.get(id).z,//10
-                            -1, -1, -1);
-        }
-        return modelBuilder.end();
     }
 
     private Vector3 meshToWorld(float x, float y, float z, Matrix4 transformation) {

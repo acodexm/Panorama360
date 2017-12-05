@@ -186,13 +186,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         // Call the OpenCV C++ Code to perform stitching process
                         try {
                             NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr());
+                            //save to external storage
                             savePicture(result);
                             showToastRunnable("picture saved");
                         } catch (Exception e) {
                             Log.e(TAG, "native processPanorama not working ", e);
                         }
-                        // Save the image to external storage
 
+                        for (Mat mat : listImage) mat.release();
                         listImage.clear();
                     }
                 } catch (Exception e) {

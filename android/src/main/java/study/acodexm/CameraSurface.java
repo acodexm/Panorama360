@@ -29,9 +29,10 @@ import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
 import study.acodexm.settings.SettingsControl;
 
+@SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
-    List<Mat> listOfPictureLayers = new ArrayList<>();
+    private List<Mat> listOfPictureLayers = new ArrayList<>();
     private Map<Integer, byte[]> mPictures;
     private List<Integer> ids;
     private Camera camera;
@@ -85,7 +86,6 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         Camera.Size myBestSize = getBestPreviewSize(myParameters);
         if (myBestSize != null) {
             myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
-//            myParameters.setPictureFormat(ImageFormat.RGB_565);
             camera.setParameters(myParameters);
             camera.setDisplayOrientation(0);
             camera.startPreview();
@@ -139,6 +139,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
                 Mat mat = new Mat();
                 Utils.bitmapToMat(bitmap, mat);
                 addPictures(mat);
+                bitmap.recycle();
             }
         };
 
@@ -188,7 +189,10 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         Bitmap resized = Bitmap.createScaledBitmap(original, PHOTO_WIDTH, PHOTO_HEIGHT, false);
         ByteArrayOutputStream blob = new ByteArrayOutputStream();
         resized.compress(Bitmap.CompressFormat.PNG, 0, blob);
-        return blob.toByteArray();
+        byte[] resizedImg = blob.toByteArray();
+        resized.recycle();
+        original.recycle();
+        return resizedImg;
     }
 
     @Override
@@ -229,6 +233,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         switch (mSettingsControl.getPictureMode()) {
             case auto:
                 listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
+                disposeImages(listImageL1);
                 break;
             case panorama:
                 chooseLongestList();
@@ -237,24 +242,36 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
                 choosePicturesForWide();
                 break;
             case picture360:
-                if (listImageL1.size() == LAT * LON)
+                if (listImageL1.size() == LAT * LON) {
                     listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
+                    disposeImages(listImageL1);
+                }
                 break;
         }
         return listOfPictureLayers;
     }
 
     private void choosePicturesForWide() {
-        if (listImageL1.size() > 2)
+        if (listImageL1.size() > 2) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
-        if (listImageL2.size() > 2)
+            disposeImages(listImageL1);
+        }
+        if (listImageL2.size() > 2) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL2.values()));
-        if (listImageL3.size() > 2)
+            disposeImages(listImageL2);
+        }
+        if (listImageL3.size() > 2) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL3.values()));
-        if (listImageL4.size() > 2)
+            disposeImages(listImageL3);
+        }
+        if (listImageL4.size() > 2) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL4.values()));
-        if (listImageL5.size() > 2)
+            disposeImages(listImageL4);
+        }
+        if (listImageL5.size() > 2) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL5.values()));
+            disposeImages(listImageL5);
+        }
     }
 
     private void chooseLongestList() {
@@ -265,16 +282,31 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         int L5 = listImageL5.size();
         int max = chooseLongest(new ArrayList<>(Arrays.asList(
                 L1, L2, L3, L4, L5)));
-        if (max == L1)
+        if (max == L1) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
-        if (max == L2)
+            disposeImages(listImageL1);
+        }
+        if (max == L2) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL2.values()));
-        if (max == L3)
+            disposeImages(listImageL2);
+        }
+        if (max == L3) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL3.values()));
-        if (max == L4)
+            disposeImages(listImageL3);
+        }
+        if (max == L4) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL4.values()));
-        if (max == L5)
+            disposeImages(listImageL4);
+        }
+        if (max == L5) {
             listOfPictureLayers.addAll(new ArrayList<>(listImageL5.values()));
+            disposeImages(listImageL5);
+        }
+    }
+
+    private void disposeImages(Map<Integer, Mat> matMap) {
+        for (Mat mat : matMap.values()) mat.release();
+        matMap.clear();
     }
 
     private int chooseLongest(List<Integer> integers) {
