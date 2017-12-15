@@ -49,6 +49,8 @@ import study.acodexm.settings.PictureMode;
 import study.acodexm.settings.PictureQuality;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.settings.UserPreferences;
+import study.acodexm.utils.ImageChooser;
+import study.acodexm.utils.ImageRW;
 
 public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -133,6 +135,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         mPreferences = new UserPreferences(this);
+        ImageRW.deleteTempFiles();
     }
 
     @Override
@@ -169,10 +172,18 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mManualControl.updateRender();
     }
 
-    private void processPicture(final List<Mat> listImage) {
+    private void processPicture(final PictureMode pictureMode) {
         Runnable r = new Runnable() {
             @Override
             public void run() {
+                final List<Mat> listImage;
+                try {
+                    listImage = ImageChooser.loadPictures(pictureMode,
+                            mCameraControl.getIdsTable());
+                } catch (Exception e) {
+                    Log.e(TAG, "run: loadPictures failed", e);
+                    return;
+                }
                 showProcessingDialog();
                 try {
                     int images = listImage.size();
@@ -353,15 +364,18 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         showToast("save");
         switch (mSettingsControl.getPictureMode()) {
             case auto:
+                processPicture(PictureMode.auto);
                 break;
             case panorama:
+                processPicture(PictureMode.panorama);
                 break;
             case widePicture:
+                processPicture(PictureMode.widePicture);
                 break;
             case picture360:
+                processPicture(PictureMode.picture360);
                 break;
         }
-        processPicture(mCameraControl.getPictureList());
 
     }
 

@@ -18,6 +18,7 @@ Java_study_acodexm_NativePanorama_processPanorama
     jlong *imgAddressArr = env->GetLongArrayElements(imageAddressArray, 0);
     // Create a vector to store all the image
     vector<Mat> imgVec;
+
     for (int k = 0; k < a_len; k++) {
         // Get the image
         Mat &curimage = *(Mat *) imgAddressArr[k];

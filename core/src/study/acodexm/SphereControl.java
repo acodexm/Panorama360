@@ -2,17 +2,22 @@ package study.acodexm;
 
 
 import java.util.List;
-import java.util.Map;
 
 public interface SphereControl {
     void autoTakePicture(int id);
 
-    Map<Integer, byte[]> getPictures();
+    byte[] getPicture();
 
-    void setPictures(Map<Integer, byte[]> pictures);
+    void setPicture(byte[] picture);
+
+    int getLastPosition();
+
+    void setLastPosition(int position);
 
     List<Integer> getIdTable();
 
     void setIdTable(List<Integer> ids);
+
+    List<Integer> getTakenPicturesIds();
 
 }
