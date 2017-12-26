@@ -272,68 +272,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return modelBuilder.end();
     }
 
-//    private void updateTextureAndroid(Map<Integer, byte[]> fileName) {
-//        byte[] bytes;
-//        Texture texture;
-//        for (int id : ids) {
-//            bytes = fileName.get(id);
-//            if (bytes != null) {
-//                try {
-////                    LOG.d(TAG, "loading byte[] texture " + id);
-//                    Pixmap pixmap = new Pixmap(bytes, 0, bytes.length);
-//                    texture = new Texture(pixmap);
-//                } catch (Exception e) {
-////                    LOG.e(TAG, "texture load failed, loading empty ", e);
-//                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-//                }
-//            } else {
-////                LOG.d(TAG, "texture load failed, bytes=null, loading empty ");
-//                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-//            }
-//            for (Attribute att : instance.materials.get(id - LAT)) {
-//                if (att.type == TextureAttribute.Diffuse) {
-//                    ((TextureAttribute) att).textureDescription.texture.dispose();
-//                    ((TextureAttribute) att).textureDescription.set(texture,
-//                            Texture.TextureFilter.Linear,
-//                            Texture.TextureFilter.Linear,
-//                            Texture.TextureWrap.ClampToEdge,
-//                            Texture.TextureWrap.ClampToEdge);
-//                }
-//            }
-//
-//        }
-//    }
-//
-//    private void updateTextureDesktop(Map<Integer, String> fileName) {
-//        String texName;
-//        Texture texture;
-//        for (int id : ids) {
-//            texName = fileName.get(id);
-//            if (texName != null) {
-//                try {
-////                    LOG.d(TAG, "loading texture " + id + ".png");
-//                    texture = new Texture(Gdx.files.internal("data/numbers/" + texName));
-//                } catch (Exception e) {
-////                    LOG.e(TAG, "texture load failed, loading empty ", e);
-//                    texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-//                }
-//            } else {
-////                LOG.d(TAG, "texture load failed, texName=null, loading empty ");
-//                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-//            }
-//            for (Attribute att : instance.materials.get(id - LAT)) {
-//                if (att.type == TextureAttribute.Diffuse) {
-//                    ((TextureAttribute) att).textureDescription.texture.dispose();
-//                    ((TextureAttribute) att).textureDescription.set(texture,
-//                            Texture.TextureFilter.Linear,
-//                            Texture.TextureFilter.Linear,
-//                            Texture.TextureWrap.ClampToEdge,
-//                            Texture.TextureWrap.ClampToEdge);
-//                }
-//            }
-//        }
-//    }
-
     private void updateSingleTextureAndroid(int id, byte[] bytes) {
         Texture texture;
         try {

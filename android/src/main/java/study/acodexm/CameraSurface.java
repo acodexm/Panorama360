@@ -12,12 +12,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
-import org.opencv.core.Mat;
-
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
@@ -28,24 +24,25 @@ import study.acodexm.utils.ImageRW;
 @SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
-    //    private List<Mat> listOfPictureLayers = new ArrayList<>();
-    private byte[] mPicture;
     private List<Integer> ids;
     private Camera camera;
-    private Map<Integer, Mat> listImageL1 = new TreeMap<>();
-    private Map<Integer, Mat> listImageL2 = new TreeMap<>();
-    private Map<Integer, Mat> listImageL3 = new TreeMap<>();
-    private Map<Integer, Mat> listImageL4 = new TreeMap<>();
-    private Map<Integer, Mat> listImageL5 = new TreeMap<>();
+    private byte[] mPicture;
     private boolean safeToTakePicture = false;
+    private ViewControl mViewControl;
     private SphereControl mSphereControl;
     private SettingsControl mSettingsControl;
     private int currentPictureId;
     private int PHOTO_WIDTH;
     private int PHOTO_HEIGHT;
-    private ViewControl mViewControl;
-    private int LAT = AndroidCamera.LAT;
-    private int LON = AndroidCamera.LON;
+
+//    private List<Mat> listOfPictureLayers = new ArrayList<>();
+//    private Map<Integer, Mat> listImageL1 = new TreeMap<>();
+//    private Map<Integer, Mat> listImageL2 = new TreeMap<>();
+//    private Map<Integer, Mat> listImageL3 = new TreeMap<>();
+//    private Map<Integer, Mat> listImageL4 = new TreeMap<>();
+//    private Map<Integer, Mat> listImageL5 = new TreeMap<>();
+//    private int LAT = AndroidCamera.LAT;
+//    private int LON = AndroidCamera.LON;
 
     @SuppressLint("UseSparseArrays")
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
@@ -133,59 +130,11 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         };
         mViewControl.post(processTexture);
 
-//        Runnable processPicture = new Runnable() {
-//            @Override
-//            public void run() {
-//                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//                Matrix matrix = new Matrix();
-//                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-//                        bitmap.getHeight(), matrix, false);
-//                Mat mat = new Mat();
-//                Utils.bitmapToMat(bitmap, mat);
-//                addPictures(mat);
-//                bitmap.recycle();
-//            }
-//        };
-//        mViewControl.post(processPicture);
         camera.startPreview();
         Log.d(TAG, "onPictureTaken process time: " + (System.currentTimeMillis() - time));
 
     }
 
-    private void addPictures(Mat mat) {
-        switch (mSettingsControl.getPictureMode()) {
-            case auto:
-                listImageL1.put(currentPictureId, mat);
-                break;
-            case panorama:
-                if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
-                    listImageL1.put(currentPictureId, mat);
-                else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
-                    listImageL2.put(currentPictureId, mat);
-                else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
-                    listImageL3.put(currentPictureId, mat);
-                else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
-                    listImageL4.put(currentPictureId, mat);
-                else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
-                    listImageL5.put(currentPictureId, mat);
-                break;
-            case widePicture:
-                if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
-                    listImageL1.put(currentPictureId, mat);
-                else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
-                    listImageL2.put(currentPictureId, mat);
-                else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
-                    listImageL3.put(currentPictureId, mat);
-                else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
-                    listImageL4.put(currentPictureId, mat);
-                else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
-                    listImageL5.put(currentPictureId, mat);
-                break;
-            case picture360:
-                listImageL1.put(currentPictureId, mat);
-                break;
-        }
-    }
 
     private byte[] resizeImage(byte[] bytes) {
         Bitmap original = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -233,7 +182,45 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         return mSphereControl;
     }
 
+    @Override
+    public List<Integer> getIdsTable() {
+        return mSphereControl.getTakenPicturesIds();
+    }
 
+    //    private void addPictures(Mat mat) {
+//        switch (mSettingsControl.getPictureMode()) {
+//            case auto:
+//                listImageL1.put(currentPictureId, mat);
+//                break;
+//            case panorama:
+//                if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
+//                    listImageL1.put(currentPictureId, mat);
+//                else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
+//                    listImageL2.put(currentPictureId, mat);
+//                else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
+//                    listImageL3.put(currentPictureId, mat);
+//                else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
+//                    listImageL4.put(currentPictureId, mat);
+//                else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
+//                    listImageL5.put(currentPictureId, mat);
+//                break;
+//            case widePicture:
+//                if (currentPictureId > LAT && currentPictureId <= 2 * LAT)
+//                    listImageL1.put(currentPictureId, mat);
+//                else if (currentPictureId > 2 * LAT + 1 && currentPictureId <= 3 * LAT + 1)
+//                    listImageL2.put(currentPictureId, mat);
+//                else if (currentPictureId > 3 * LAT + 2 && currentPictureId <= 4 * LAT + 2)
+//                    listImageL3.put(currentPictureId, mat);
+//                else if (currentPictureId > 4 * LAT + 3 && currentPictureId <= 5 * LAT + 3)
+//                    listImageL4.put(currentPictureId, mat);
+//                else if (currentPictureId > 5 * LAT + 4 && currentPictureId <= 6 * LAT + 4)
+//                    listImageL5.put(currentPictureId, mat);
+//                break;
+//            case picture360:
+//                listImageL1.put(currentPictureId, mat);
+//                break;
+//        }
+//    }
 //    public List<Mat> getPictureList() {
 //        switch (mSettingsControl.getPictureMode()) {
 //            case auto:
@@ -255,12 +242,6 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 //        }
 //        return listOfPictureLayers;
 //    }
-
-    @Override
-    public List<Integer> getIdsTable() {
-        return mSphereControl.getTakenPicturesIds();
-    }
-
 //    private void choosePicturesForWide() {
 //        if (listImageL1.size() > 2) {
 //            listOfPictureLayers.addAll(new ArrayList<>(listImageL1.values()));
@@ -322,8 +303,8 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 //        return max;
 //    }
 
-    private void disposeImages(Map<Integer, Mat> matMap) {
-        for (Mat mat : matMap.values()) mat.release();
-        matMap.clear();
-    }
+//    private void disposeImages(Map<Integer, Mat> matMap) {
+//        for (Mat mat : matMap.values()) mat.release();
+//        matMap.clear();
+//    }
 }

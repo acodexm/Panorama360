@@ -35,7 +35,6 @@ www-test/
 .idea/
 *.ipr
 *.iws
-*.iml
 /android/out/
 com_crashlytics_export_strings.xml
 
@@ -106,19 +105,10 @@ nb-configuration.xml
 
 ## Gradle
 
-/local.properties
 .gradle/
 gradle-app.setting
-/build/
-/android/build/
-/core/build/
-/desktop/build/
-/html/build/
-/ios/build/
-/ios-moe/build/
 
 ## OS Specific
-.DS_Store
 Thumbs.db
 
 ## iOS
@@ -131,3 +121,4 @@ Thumbs.db
 !/ios-moe/xcode/*.xcodeproj/xcshareddata
 !/ios-moe/xcode/*.xcodeproj/project.pbxproj
 /ios-moe/xcode/native/
+/android/assets/
