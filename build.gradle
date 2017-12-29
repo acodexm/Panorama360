@@ -92,12 +92,16 @@ project(":android") {
         //ButterKnife
         compile 'com.jakewharton:butterknife:8.8.1'
         compile "com.jakewharton:butterknife-compiler:8.8.1"
-        //Mockito testing
-        testCompile 'org.mockito:mockito-core:2.10.0'
-        androidTestCompile 'org.mockito:mockito-android:2.10.0'
+//        //Mockito testing
+//        testCompile 'org.mockito:mockito-core:2.10.0'
+//        androidTestCompile 'org.mockito:mockito-android:2.10.0'
         //OpenCV
         compile project(":opencv-java")
-
+        //Robolectic
+        testCompile ("org.robolectric:robolectric:3.6.1"){
+            exclude group: 'com.google.guava', module:'guava'
+        }
+        androidTestCompile 'com.android.support:support-annotations:26.1.0'
     }
 }
 

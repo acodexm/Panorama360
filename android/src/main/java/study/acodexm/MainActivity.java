@@ -172,7 +172,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mManualControl.updateRender();
     }
 
-    private void processPicture(final PictureMode pictureMode) {
+    void processPicture(final PictureMode pictureMode) {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -217,7 +217,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     }
 
-    private void savePicture(Mat result) {
+    void savePicture(Mat result) {
         File sdcard = Environment.getExternalStorageDirectory();
         final String fileName = sdcard.getAbsolutePath() + "/PanoramaApp/opencv_" +
                 System.currentTimeMillis() + ".png";

@@ -62,7 +62,7 @@ public class ImageChooser {
         return pictures;
     }
 
-    private static Mat bitmapToMat(Bitmap bitmap) {
+    static Mat bitmapToMat(Bitmap bitmap) {
         Matrix matrix = new Matrix();
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
                 bitmap.getHeight(), matrix, false);
@@ -79,14 +79,14 @@ public class ImageChooser {
      * @param integers
      * @return
      */
-    private static List<List<Integer>> chooseBiggest(List<List<Integer>> integers) {
+    static List<List<Integer>> chooseBiggest(List<List<Integer>> integers) {
         int max = 0;
-        System.out.println(integers);
+//        System.out.println(integers);
         List<List<Integer>> biggest = new ArrayList<>();
         for (List<Integer> i : integers) {
             if (i.size() > max) {
                 max = i.size();
-                System.out.println(max);
+//                System.out.println(max);
             }
         }
         for (List<Integer> i : integers) {
@@ -103,7 +103,7 @@ public class ImageChooser {
      * @param ids
      * @return
      */
-    private static List<List<Integer>> idsForWide(List<Integer> ids) {
+    static List<List<Integer>> idsForWide(List<Integer> ids) {
         List<Integer> list1 = new ArrayList<>();
         List<Integer> list2 = new ArrayList<>();
         List<Integer> list3 = new ArrayList<>();
@@ -192,7 +192,7 @@ public class ImageChooser {
      * @param s
      * @param vector
      */
-    private static void makeValidMatrix(List<Integer> matrix, int s, List<Integer> vector) {
+    static void makeValidMatrix(List<Integer> matrix, int s, List<Integer> vector) {
         if (matrix.size() % vector.size() == 0 && s % vector.size() == 0) {
 //            System.out.println(matrix.get(matrix.size() - 1)== (vector.get(vector.size() - 1) - 11));
             if (matrix.get(matrix.size() - 1) == vector.get(vector.size() - 1) - 11) {
@@ -210,7 +210,7 @@ public class ImageChooser {
      * @param i
      * @return
      */
-    private static List<Integer> collinearIds(List<List<Integer>> allPossibleLists, List<Integer> ids, int i) {
+    static List<Integer> collinearIds(List<List<Integer>> allPossibleLists, List<Integer> ids, int i) {
         int tmp = ids.get(i);
         List<Integer> tmpList = new ArrayList<>();
         for (int a = i; a < ids.size(); a++) {
@@ -235,7 +235,7 @@ public class ImageChooser {
         return tmpList;
     }
 
-    private static void addIfNotContains(List<List<Integer>> matrix, List<Integer> list) {
+    static void addIfNotContains(List<List<Integer>> matrix, List<Integer> list) {
         if (!matrix.contains(list))
             matrix.add(new ArrayList<>(list));
     }
@@ -247,7 +247,7 @@ public class ImageChooser {
      * @param ids
      * @return
      */
-    private static List<Integer> idsForPanorama(List<Integer> ids) {
+    static List<Integer> idsForPanorama(List<Integer> ids) {
         Collections.sort(ids);
         List<Integer> list1 = new ArrayList<>();
         List<Integer> list2 = new ArrayList<>();
@@ -293,7 +293,7 @@ public class ImageChooser {
      * @param integers
      * @return
      */
-    private static int chooseLongest(List<Integer> integers) {
+    static int chooseLongest(List<Integer> integers) {
         int max = 0;
         for (int i : integers) {
             if (i > max)

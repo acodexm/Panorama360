@@ -1,7 +1,6 @@
 package study.acodexm;
 
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -44,7 +43,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 //    private int LAT = AndroidCamera.LAT;
 //    private int LON = AndroidCamera.LON;
 
-    @SuppressLint("UseSparseArrays")
+    //    @SuppressLint("UseSparseArrays")
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
         super(activity.getContext());
         mViewControl = activity;
