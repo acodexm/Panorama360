@@ -58,6 +58,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private byte[] mPicture;
     private List<Integer> ids;
     private List<Integer> takenPictures;
+    private Vector3 cameraOld;
+    private int frames;
 
     private int position;
     private int lastPosition = -1;
@@ -92,6 +94,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
             renderPhotosDesktop();
         }
+        cameraOld = new Vector3();
+        frames = 0;
 //        time = System.currentTimeMillis();
     }
 
@@ -138,8 +142,10 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             if (!takenPictures.contains(position)) {
                 LOG.d(TAG, "auto take picture!! at: " + position);
                 if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
-                    takenPictures.add(position);
-                    mSphereControl.autoTakePicture(position);
+                    if (isCameraSteady()) {
+                        takenPictures.add(position);
+                        mSphereControl.autoTakePicture(position);
+                    }
                 } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                     takenPictures.add(position);
                     lastPosition = position;
@@ -148,11 +154,15 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             }
         }
 
-        fpsLogger.log();
-
+//        fpsLogger.log();
+        if (frames == 10) {
+            cameraOld = new Vector3(camera.direction);
+            frames = 0;
+        }
+        frames++;
     }
 
-    private void setupCamera() {
+    void setupCamera() {
         float aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
         camera = new PerspectiveCamera(30, 2f * aspectRatio, 2f);
         camera.position.set(0f, 0f, 0f);
@@ -166,7 +176,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         }
     }
 
-    private void setupSphere() {
+    void setupSphere() {
         mModelBuilder = new ModelBuilder();
         sphereTemplate = mModelBuilder.createSphere(4f, 4f, 4f, LAT, LON,
                 new Material(),
@@ -178,7 +188,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         blockPart.setRenderable(renderable);
     }
 
-    private void makeListOfSphereVertices() {
+    void makeListOfSphereVertices() {
         int verticesAmount = renderable.meshPart.mesh.getNumVertices()
                 * renderable.meshPart.mesh.getVertexSize() / 4;
         float vertices[] = new float[verticesAmount];
@@ -194,7 +204,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         }
     }
 
-    private void setIdList() {
+    void setIdList() {
         ids = new ArrayList<Integer>();
         //all row*col - last row + weird col switch hazard
         int amount = LAT * LON - LAT + Math.round(LAT / 2);
@@ -207,21 +217,21 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         centersOfGrid = calculateCenterList(vector3s, ids);
     }
 
-    private void renderPhotosAndroid() {
+    void renderPhotosAndroid() {
         if (photoSphere != null)
             photoSphere.dispose();
         photoSphere = setPhotoOnSphereAndroid(vector3s, mModelBuilder, ids);
         instance = new ModelInstance(photoSphere);
     }
 
-    private void renderPhotosDesktop() {
+    void renderPhotosDesktop() {
         if (photoSphere != null)
             photoSphere.dispose();
         photoSphere = setPhotoOnSphereDesktop(vector3s, mModelBuilder, ids);
         instance = new ModelInstance(photoSphere);
     }
 
-    private Model setPhotoOnSphereAndroid(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
+    Model setPhotoOnSphereAndroid(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         Texture texture = null;
@@ -246,7 +256,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return modelBuilder.end();
     }
 
-    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
+    Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         Texture texture = null;
@@ -272,7 +282,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return modelBuilder.end();
     }
 
-    private void updateSingleTextureAndroid(int id, byte[] bytes) {
+    void updateSingleTextureAndroid(int id, byte[] bytes) {
         Texture texture;
         try {
             Pixmap pixmap = new Pixmap(bytes, 0, bytes.length);
@@ -296,7 +306,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     }
 
-    private void updateSingleTextureDesktop(int id) {
+    void updateSingleTextureDesktop(int id) {
         Texture texture;
         try {
 //                    LOG.d(TAG, "loading texture " + id + ".png");
@@ -319,7 +329,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     }
 
-    private Vector3 meshToWorld(float x, float y, float z, Matrix4 transformation) {
+    Vector3 meshToWorld(float x, float y, float z, Matrix4 transformation) {
         float[] q = transformation.getValues();
         Vector3 r = new Vector3();
         r.x = q[Matrix4.M00] * x + q[Matrix4.M01] * y + q[Matrix4.M02] * z + q[Matrix4.M03];
@@ -328,7 +338,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return r;
     }
 
-    private Map<Integer, Vector3> calculateCenterList(List<Vector3> fourVertices, List<Integer> ids) {
+    Map<Integer, Vector3> calculateCenterList(List<Vector3> fourVertices, List<Integer> ids) {
         Map<Integer, Vector3> centersOfGrid = new HashMap<Integer, Vector3>();
         for (int id : ids) {
             Vector3 centerOfTex = new Vector3(
@@ -343,7 +353,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return centersOfGrid;
     }
 
-    private int whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid, List<Integer> ids) {
+    int whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid, List<Integer> ids) {
+        float offset = 0.3f;
 /**
  * we have a camera direction vector which changes with camera move
  * now we have to calculate the center point of all rectangles where we what to take photo
@@ -370,16 +381,23 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                         direction.z * centersOfGrid.get(i).x - direction.x * centersOfGrid.get(i).z,
                         direction.x * centersOfGrid.get(i).y - direction.y * centersOfGrid.get(i).x
                 );
-                if ((isCollinear.x < 0.5f && isCollinear.x > -0.5f)
-                        && (isCollinear.y < 0.5f && isCollinear.y > -0.5f)
-                        && (isCollinear.z < 0.5f && isCollinear.z > -0.5f)) {
-                    if (i == 10 || i == 21 || i == 32 || i == 43 || i == 54 || i == 65)
+                if ((isCollinear.x < offset && isCollinear.x > -offset)
+                        && (isCollinear.y < offset && isCollinear.y > -offset)
+                        && (isCollinear.z < offset && isCollinear.z > -offset)) {
+                    if (i == LAT || i == 2 * LAT + 1 || i == 3 * LAT + 2 || i == 4 * LAT + 3 || i == 5 * LAT + 4 || i == 6 * LAT + 5)
                         return -1;
                     return i;
                 }
             }
         }
         return -1;
+    }
+
+    boolean isCameraSteady(Vector3 cameraOld, Vector3 camera) {
+        float offset = 0.003f;
+        return !((camera.x > cameraOld.x + offset) || (camera.y > cameraOld.y + offset)
+                || (camera.z > cameraOld.z + offset) || (camera.x < cameraOld.x - offset)
+                || (camera.y < cameraOld.y - offset) || (camera.z < cameraOld.z - offset));
     }
 
     @Override
@@ -397,6 +415,11 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     @Override
     public int canTakePicture() {
         return whereIsCameraLooking(centersOfGrid, ids);
+    }
+
+    @Override
+    public boolean isCameraSteady() {
+        return isCameraSteady(cameraOld, camera.direction);
     }
 
     @Override

@@ -11,6 +11,10 @@ import acodexm.panorama.BuildConfig;
 @Config(constants = BuildConfig.class)
 public class ImageRWTest {
     @Test
+    public void resizeImage() throws Exception {
+    }
+
+    @Test
     public void saveImageExternal() throws Exception {
     }
 

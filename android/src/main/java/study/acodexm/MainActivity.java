@@ -1,7 +1,6 @@
 package study.acodexm;
 
 
-import android.app.ProgressDialog;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -9,7 +8,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
@@ -22,6 +20,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,9 +29,7 @@ import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 
 import org.opencv.core.Mat;
-import org.opencv.imgcodecs.Imgcodecs;
 
-import java.io.File;
 import java.util.List;
 
 import acodexm.panorama.R;
@@ -82,6 +79,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     Switch mSwitchLow;
     @BindView(R.id.save_dir)
     TextView mSaveDir;
+    @BindView(R.id.steady_shot)
+    ProgressBar mProgressBar;
     private SurfaceView mSurfaceView;
     private GLSurfaceView glView;
     private SensorManager mSensorManager;
@@ -89,11 +88,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private RotationVector rotationVector = new AndroidRotationVector();
     private SettingsControl mSettingsControl = new AndroidSettingsControl();
     private float[] rotationMatrix = rotationVector.getValues();
-    private ProgressDialog ringProgressDialog;
     private CameraControl mCameraControl;
     private ShutterState mShutterState;
     private UserPreferences mPreferences;
     private SphereManualControl mManualControl;
+    private boolean test = true;
 
 
     @Override
@@ -141,6 +140,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onResume() {
         super.onResume();
+        //todo ask for permission for camera and storage
         mCameraControl.startPreview();
         mShutterState = ShutterState.ready;
         loadPreferences();
@@ -173,7 +173,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     void processPicture(final PictureMode pictureMode) {
-        Runnable r = new Runnable() {
+        showProcessingDialog();
+        final Runnable r = new Runnable() {
             @Override
             public void run() {
                 final List<Mat> listImage;
@@ -184,7 +185,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     Log.e(TAG, "run: loadPictures failed", e);
                     return;
                 }
-                showProcessingDialog();
                 try {
                     int images = listImage.size();
                     if (images > 0) {
@@ -198,8 +198,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         try {
                             NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr());
                             //save to external storage
-                            savePicture(result);
-                            showToastRunnable("picture saved");
+                            boolean isSaved = ImageRW.saveResultImageExternal(result);
+                            showToastRunnable("picture saved: " + isSaved);
                         } catch (Exception e) {
                             Log.e(TAG, "native processPanorama not working ", e);
                         }
@@ -217,12 +217,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     }
 
-    void savePicture(Mat result) {
-        File sdcard = Environment.getExternalStorageDirectory();
-        final String fileName = sdcard.getAbsolutePath() + "/PanoramaApp/opencv_" +
-                System.currentTimeMillis() + ".png";
-        Imgcodecs.imwrite(fileName, result);
-    }
 
     public void showToastRunnable(final String message) {
         Runnable r = new Runnable() {
@@ -244,9 +238,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             @Override
             public void run() {
                 mCameraControl.stopPreview();
-                ringProgressDialog = ProgressDialog.show(MainActivity.this, "",
-                        "Panorama", true);
-                ringProgressDialog.setCancelable(false);
+                mProgressBar.setVisibility(View.VISIBLE);
             }
         };
         post(r);
@@ -257,7 +249,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             @Override
             public void run() {
                 mCameraControl.startPreview();
-                ringProgressDialog.dismiss();
+                mProgressBar.setVisibility(View.GONE);
             }
         };
         post(r);
@@ -349,13 +341,21 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     @OnClick(R.id.capture)
-    void captureOnClickListener() {
-        onCaptureBtnClickAction();
-//        mCameraControl.takePicture(-1);
+    void onCaptureClickListener() {
+        if (mManualControl.isCameraSteady()) {
+            onCaptureBtnClickAction();
+        } else showToast("please don't move");
     }
 
     @OnClick(R.id.open_gallery)
     void onGalleryClickAction() {
+        if (test) {
+            showProcessingDialog();
+            test = false;
+        } else {
+            hideProcessingDialog();
+            test = true;
+        }
         showToast("open gallery");
     }
 
@@ -389,7 +389,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
-
     }
 
     @Override

@@ -96,6 +96,7 @@ public class MainActivityTest {
 
     @Test
     public void onSwitchWide() throws Exception {
+
     }
 
     @Test

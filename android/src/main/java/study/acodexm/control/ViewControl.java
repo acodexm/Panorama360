@@ -11,4 +11,6 @@ public interface ViewControl {
     void post(Runnable runnable);
 
     void updateRender();
+
+
 }
