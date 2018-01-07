@@ -239,7 +239,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    public void showProcessingDialog() {
+    public synchronized void showProcessingDialog() {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -250,7 +250,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         post(r);
     }
 
-    public void hideProcessingDialog() {
+    public synchronized void hideProcessingDialog() {
         Runnable r = new Runnable() {
             @Override
             public void run() {

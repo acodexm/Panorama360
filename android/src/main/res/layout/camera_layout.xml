@@ -28,6 +28,7 @@
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/capture"
         android:layout_centerInParent="true"
+        android:indeterminateTint="@color/progressRunning"
         android:visibility="gone"
         />
 

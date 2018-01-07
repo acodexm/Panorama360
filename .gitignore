@@ -10,10 +10,11 @@
 *.ipr
 *.iws
 /android/build/
+/desktop/build/
+/opencv-java/build/
 /android/assets/
 classes/
 tmp/
 libs/
 debug/
 release/
-opencv-java/build

@@ -3,8 +3,7 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="progressRunning">#FF4000</color>
-    <color name="progressFinished">#009f00</color>
+    <color name="progressRunning">#fb8c00</color>
     <color name="blueGray">#263238</color>
     <color name="colorWelcome">#039be5</color>
 </resources>

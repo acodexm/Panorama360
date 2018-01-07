@@ -28,8 +28,11 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class WelcomeActivity extends Activity implements ActivityCompat.OnRequestPermissionsResultCallback {
-    private static final String TAG = WelcomeActivity.class.getSimpleName();
     public static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 1;
+    private static final String TAG = WelcomeActivity.class.getSimpleName();
+    private final String CAMERA = Manifest.permission.CAMERA;
+    private final String STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
+    private final String MESSAGE = "Camera and Read&Write Services Permissions are required for this app";
     @BindView(R.id.right_btn)
     ImageView rightBtn;
 
@@ -58,18 +61,18 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
     }
 
     private boolean checkAndRequestPermissions() {
-        int permissionSendMessage = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
-        int locationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        List<String> listPermissionsNeeded = new ArrayList<>();
-        if (locationPermission != PackageManager.PERMISSION_GRANTED) {
-            listPermissionsNeeded.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        int cameraPerm = ContextCompat.checkSelfPermission(this, CAMERA);
+        int storagePerm = ContextCompat.checkSelfPermission(this, STORAGE);
+        List<String> neededPerms = new ArrayList<>();
+        if (storagePerm != PackageManager.PERMISSION_GRANTED) {
+            neededPerms.add(STORAGE);
         }
-        if (permissionSendMessage != PackageManager.PERMISSION_GRANTED) {
-            listPermissionsNeeded.add(Manifest.permission.CAMERA);
+        if (cameraPerm != PackageManager.PERMISSION_GRANTED) {
+            neededPerms.add(CAMERA);
         }
-        if (!listPermissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(
-                    new String[listPermissionsNeeded.size()]), REQUEST_ID_MULTIPLE_PERMISSIONS);
+        if (!neededPerms.isEmpty()) {
+            ActivityCompat.requestPermissions(this, neededPerms.toArray(
+                    new String[neededPerms.size()]), REQUEST_ID_MULTIPLE_PERMISSIONS);
             return false;
         }
         return true;
@@ -80,25 +83,22 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
         Log.d(TAG, "Permission callback called-------");
         switch (requestCode) {
             case REQUEST_ID_MULTIPLE_PERMISSIONS: {
-
                 Map<String, Integer> perms = new HashMap<>();
-                perms.put(Manifest.permission.CAMERA, PackageManager.PERMISSION_GRANTED);
-                perms.put(Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_GRANTED);
+                perms.put(CAMERA, PackageManager.PERMISSION_GRANTED);
+                perms.put(STORAGE, PackageManager.PERMISSION_GRANTED);
                 if (grantResults.length > 0) {
                     for (int i = 0; i < permissions.length; i++)
                         perms.put(permissions[i], grantResults[i]);
-                    if (perms.get(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                            && perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    if (perms.get(CAMERA) == PackageManager.PERMISSION_GRANTED
+                            && perms.get(STORAGE) == PackageManager.PERMISSION_GRANTED) {
                         Log.d(TAG, "Camera and Read&Write services permission granted");
                         rightBtn.setVisibility(View.VISIBLE);
                     } else {
                         Log.d(TAG, "Some permissions are not granted ask again ");
-                        if (ActivityCompat.shouldShowRequestPermissionRationale(
-                                this, Manifest.permission.CAMERA) ||
-                                ActivityCompat.shouldShowRequestPermissionRationale(
-                                        this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                            showDialogOK("Camera and Read&Write Services Permission required for this app",
-                                    new DialogInterface.OnClickListener() {
+                        if (ActivityCompat.shouldShowRequestPermissionRationale(this, CAMERA) ||
+                                ActivityCompat.shouldShowRequestPermissionRationale(this, STORAGE)) {
+
+                            showDialogOK(MESSAGE, new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
                                             switch (which) {
