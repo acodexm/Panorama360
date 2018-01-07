@@ -9,7 +9,6 @@ import android.util.Log;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -67,28 +66,6 @@ public class ImageRW {
         return false;
     }
 
-    public static void saveImageForTextureExternal(byte[] bytes, int currentPictureId,
-                                                   int PHOTO_WIDTH, int PHOTO_HEIGHT) {
-        File folder = new File(Environment.getExternalStorageDirectory()
-                + "/PanoramaApp/temp/texture/");
-        final String fileName = Environment.getExternalStorageDirectory().getAbsolutePath()
-                + "/PanoramaApp/temp/texture/" + currentPictureId + ".png";
-        boolean success = true;
-        if (!folder.exists()) {
-            success = folder.mkdirs();
-        }
-        if (success) {
-            try {
-                FileOutputStream fos = new FileOutputStream(fileName);
-                fos.write(resizeImage(bytes, PHOTO_WIDTH, PHOTO_HEIGHT));
-                fos.close();
-            } catch (IOException e) {
-                Log.e(TAG, "File saving failed", e);
-            }
-        } else {
-            Log.d(TAG, "File saving failed");
-        }
-    }
 
     public static void deleteTempFiles() {
         File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
@@ -120,14 +97,4 @@ public class ImageRW {
         return bitmap;
     }
 
-    static byte[] resizeImage(byte[] bytes, int PHOTO_WIDTH, int PHOTO_HEIGHT) {
-        Bitmap original = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        Bitmap resized = Bitmap.createScaledBitmap(original, PHOTO_WIDTH, PHOTO_HEIGHT, false);
-        ByteArrayOutputStream blob = new ByteArrayOutputStream();
-        resized.compress(Bitmap.CompressFormat.PNG, 0, blob);
-        byte[] resizedImg = blob.toByteArray();
-        resized.recycle();
-        original.recycle();
-        return resizedImg;
-    }
 }

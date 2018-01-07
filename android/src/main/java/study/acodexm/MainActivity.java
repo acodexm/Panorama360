@@ -43,6 +43,7 @@ import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
+import study.acodexm.gallery.GalleryActivity;
 import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.PictureMode;
 import study.acodexm.settings.PictureQuality;
@@ -102,6 +103,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         mCameraControl = new CameraSurface(this, mSettingsControl);
         mSurfaceView = mCameraControl.getSurface();
         FrameLayout layout = new FrameLayout(getContext());
@@ -144,7 +146,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onResume() {
         super.onResume();
-        //todo ask for permission for camera and storage
         mCameraControl.startPreview();
         mShutterState = ShutterState.ready;
         loadPreferences();
@@ -166,6 +167,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             super.onBackPressed();
         }
     }
+
 
     public void post(Runnable r) {
         handler.post(r);
@@ -318,7 +320,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private void onCaptureBtnClickAction() {
         switch (mShutterState) {
             case ready:
-//                showToast("ready");
                 switch (mSettingsControl.getActionMode()) {
                     case FullAuto:
                         mManualControl.startRendering();
@@ -335,7 +336,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 break;
 
             case recording:
-//                showToast("recording");
                 mManualControl.stopRendering();
                 mShutterState = ShutterState.ready;
                 break;
@@ -346,7 +346,9 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.capture)
     void onCaptureClickListener() {
-        if (mManualControl.isCameraSteady()) {
+        if (mShutterState == ShutterState.recording)
+            onCaptureBtnClickAction();
+        else if (mManualControl.isCameraSteady()) {
             onCaptureBtnClickAction();
         } else showToast("please don't move");
     }
@@ -360,11 +362,9 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     void onGalleryClickAction() {
         Intent intent = new Intent(MainActivity.this, GalleryActivity.class);
 
-        //uncomment this line to change images folder
         String folder = Environment.getExternalStorageDirectory() + "/PanoramaApp";
         intent.putExtra(GalleryActivity.INTENT_EXTRAS_FOLDER, folder);
 
-        //uncomment this line to change start image
         intent.putExtra(GalleryActivity.INTENT_EXTRAS_POSITION, "1");
 
         startActivity(intent);

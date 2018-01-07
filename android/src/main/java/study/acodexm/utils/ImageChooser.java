@@ -81,12 +81,10 @@ public class ImageChooser {
      */
     static List<List<Integer>> chooseBiggest(List<List<Integer>> integers) {
         int max = 0;
-//        System.out.println(integers);
         List<List<Integer>> biggest = new ArrayList<>();
         for (List<Integer> i : integers) {
             if (i.size() > max) {
                 max = i.size();
-//                System.out.println(max);
             }
         }
         for (List<Integer> i : integers) {
@@ -122,11 +120,6 @@ public class ImageChooser {
             if (id > 54 && id < 65)
                 list5.add(id);
         }
-//        System.out.println(list1);
-//        System.out.println(list2);
-//        System.out.println(list3);
-//        System.out.println(list4);
-//        System.out.println(list5);
         int L1 = list1.size();
         int L2 = list2.size();
         int L3 = list3.size();
@@ -153,12 +146,7 @@ public class ImageChooser {
         if (L5 > 2) {
             collinearIds(pList5, list5, 0);
         }
-//        System.out.println("----------");
-//        System.out.println(pList1);
-//        System.out.println(pList2);
-//        System.out.println(pList3);
-//        System.out.println(pList4);
-//        System.out.println(pList5);
+
         allCombinations.addAll(new ArrayList<>(pList1));
         allCombinations.addAll(new ArrayList<>(pList2));
         allCombinations.addAll(new ArrayList<>(pList3));
@@ -171,17 +159,13 @@ public class ImageChooser {
             matrix = allCombination;
             tmp = matrix.size();
             for (int j = 1; j < allCombinations.size(); j++) {
-//                System.out.println(matrix+" "+ allCombinations.get(j));
                 makeValidMatrix(matrix, tmp, allCombinations.get(j));
                 if (!matrices.contains(matrix)) {
                     matrices.add(new ArrayList<>(matrix));
                 }
             }
         }
-//        System.out.println("--------------");
-//        for (List<Integer>m:matrices)
-//            System.out.print(m.size()+", ");
-//        System.out.println("paczaj tu" + matrices);
+
         return chooseBiggest(matrices);
     }
 
