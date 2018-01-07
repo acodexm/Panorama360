@@ -16,3 +16,4 @@ tmp/
 libs/
 debug/
 release/
+opencv-java/build

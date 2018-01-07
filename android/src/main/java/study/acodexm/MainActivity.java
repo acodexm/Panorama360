@@ -1,6 +1,7 @@
 package study.acodexm;
 
 
+import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -8,6 +9,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
@@ -59,6 +61,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @BindView(R.id.capture)
     ImageView captureBtn;
+    @BindView(R.id.refresh_picture)
+    ImageView refreshBtn;
     @BindView(R.id.open_gallery)
     ImageView galleryBtn;
     @BindView(R.id.mode_auto)
@@ -347,15 +351,23 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         } else showToast("please don't move");
     }
 
+    @OnClick(R.id.refresh_picture)
+    void onRefreshClickListener() {
+        recreate();
+    }
+
     @OnClick(R.id.open_gallery)
     void onGalleryClickAction() {
-        if (test) {
-            showProcessingDialog();
-            test = false;
-        } else {
-            hideProcessingDialog();
-            test = true;
-        }
+        Intent intent = new Intent(MainActivity.this, GalleryActivity.class);
+
+        //uncomment this line to change images folder
+        String folder = Environment.getExternalStorageDirectory() + "/PanoramaApp";
+        intent.putExtra(GalleryActivity.INTENT_EXTRAS_FOLDER, folder);
+
+        //uncomment this line to change start image
+        intent.putExtra(GalleryActivity.INTENT_EXTRAS_POSITION, "1");
+
+        startActivity(intent);
         showToast("open gallery");
     }
 
