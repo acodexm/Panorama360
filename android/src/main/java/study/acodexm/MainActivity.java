@@ -221,7 +221,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 hideProcessingDialog();
             }
         };
-        post(r);
+        new Thread(r).start();
 
     }
 
@@ -241,17 +241,27 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     public synchronized void showProcessingDialog() {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                mCameraControl.stopPreview();
+                mProgressBar.setVisibility(View.VISIBLE);
+            }
+        };
+        post(r);
 
-        mCameraControl.stopPreview();
-        mProgressBar.setVisibility(View.VISIBLE);
 
     }
 
     public synchronized void hideProcessingDialog() {
-
-        mCameraControl.startPreview();
-        mProgressBar.setVisibility(View.GONE);
-
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                mCameraControl.startPreview();
+                mProgressBar.setVisibility(View.GONE);
+            }
+        };
+        post(r);
     }
 
     private void loadPreferences() {
