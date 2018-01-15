@@ -98,6 +98,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private UserPreferences mPreferences;
     private SphereManualControl mManualControl;
     private boolean test = true;
+    private boolean isCompressed;
 
 
     @Override
@@ -111,7 +112,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mSensorManager = (SensorManager) getContext().getSystemService(SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
-
         AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
         cfg.useGyroscope = true;
         cfg.useAccelerometer = false;
@@ -178,6 +178,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mManualControl.updateRender();
     }
 
+
     void processPicture(final PictureMode pictureMode) {
         showProcessingDialog();
         final Runnable r = new Runnable() {
@@ -199,10 +200,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         for (int i = 0; i < images; i++) {
                             tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
                         }
+
                         Mat result = new Mat();
                         // Call the OpenCV C++ Code to perform stitching process
                         try {
-                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr());
+                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), isCompressed);
                             //save to external storage
                             boolean isSaved = ImageRW.saveResultImageExternal(result);
                             showToastRunnable("picture saved: " + isSaved);
@@ -223,7 +225,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     }
 
-
     public void showToastRunnable(final String message) {
         Runnable r = new Runnable() {
             @Override
@@ -240,25 +241,17 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     public synchronized void showProcessingDialog() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                mCameraControl.stopPreview();
-                mProgressBar.setVisibility(View.VISIBLE);
-            }
-        };
-        post(r);
+
+        mCameraControl.stopPreview();
+        mProgressBar.setVisibility(View.VISIBLE);
+
     }
 
     public synchronized void hideProcessingDialog() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                mCameraControl.startPreview();
-                mProgressBar.setVisibility(View.GONE);
-            }
-        };
-        post(r);
+
+        mCameraControl.startPreview();
+        mProgressBar.setVisibility(View.GONE);
+
     }
 
     private void loadPreferences() {
@@ -287,9 +280,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         switch (mPreferences.getPictureQuality()) {
             case LOW:
                 mSwitchLow.setChecked(true);
+                isCompressed = true;
                 break;
             case HIGH:
                 mSwitchHigh.setChecked(true);
+                isCompressed = false;
                 break;
         }
         mSettingsControl.setActionMode(mPreferences.getActionMode());
@@ -364,8 +359,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
         String folder = Environment.getExternalStorageDirectory() + "/PanoramaApp";
         intent.putExtra(GalleryActivity.INTENT_EXTRAS_FOLDER, folder);
-
-        intent.putExtra(GalleryActivity.INTENT_EXTRAS_POSITION, "1");
 
         startActivity(intent);
         showToast("open gallery");
@@ -465,6 +458,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mPreferences.setPictureQuality(PictureQuality.HIGH);
         mSettingsControl.setPictureQuality(PictureQuality.HIGH);
         mSwitchLow.setChecked(false);
+        isCompressed = false;
     }
 
     @OnClick(R.id.quality_low)
@@ -472,6 +466,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mPreferences.setPictureQuality(PictureQuality.LOW);
         mSettingsControl.setPictureQuality(PictureQuality.LOW);
         mSwitchHigh.setChecked(false);
+        isCompressed = true;
     }
 
     private enum ShutterState {

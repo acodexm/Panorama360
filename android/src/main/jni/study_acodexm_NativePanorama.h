@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ([JJ)V
  */
 JNIEXPORT void JNICALL Java_study_acodexm_NativePanorama_processPanorama
-        (JNIEnv *, jclass, jlongArray, jlong);
+        (JNIEnv *, jclass, jlongArray, jlong, jboolean);
 
 #ifdef __cplusplus
 }

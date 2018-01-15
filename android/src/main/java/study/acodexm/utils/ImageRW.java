@@ -46,7 +46,7 @@ public class ImageRW {
         File folder = new File(Environment.getExternalStorageDirectory()
                 + "/PanoramaApp");
         Date date = new Date();
-        SimpleDateFormat simple = new SimpleDateFormat("HH-mm-ss__dd_MM_yyyy");
+        SimpleDateFormat simple = new SimpleDateFormat("ddMMyyyyHHmmss");
         final String fileName = folder.getAbsolutePath() + "/panorama_" +
                 simple.format(date) + ".png";
         Log.d(TAG, "saveResultImageExternal: filename: " + fileName);

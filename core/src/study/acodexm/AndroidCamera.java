@@ -63,7 +63,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     private int position;
     private int lastPosition = -1;
-    private long time;
     private boolean canRender = false;
 
     public AndroidCamera(RotationVector rotationVector, SphereControl sphereControl, SettingsControl settingsControl) {
@@ -96,7 +95,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         }
         cameraOld = new Vector3();
         frames = 0;
-//        time = System.currentTimeMillis();
     }
 
     @Override

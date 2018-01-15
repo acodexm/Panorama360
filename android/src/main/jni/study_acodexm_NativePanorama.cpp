@@ -9,35 +9,37 @@
 using namespace std;
 using namespace cv;
 
-bool
-checkInteriorExterior(const Mat &mask, const Rect &interiorBB, int &top, int &bottom, int &left,
-                      int &right) {
+bool checkInteriorExterior(const Mat &mask, const Rect &interiorBB,
+                           int &top,
+                           int &bottom,
+                           int &left,
+                           int &right) {
     // return true if the rectangle is fine as it is!
     bool returnVal = true;
 
     Mat sub = mask(interiorBB);
 
-    unsigned int x = 0;
-    unsigned int y = 0;
+    int x = 0;
+    int y = 0;
 
     // count how many exterior pixels are at the
-    unsigned int cTop = 0; // top row
-    unsigned int cBottom = 0; // bottom row
-    unsigned int cLeft = 0; // left column
-    unsigned int cRight = 0; // right column
-    // and choose that side for reduction where mose exterior pixels occured (that's the heuristic)
+    int cTop = 0; // top row
+    int cBottom = 0; // bottom row
+    int cLeft = 0; // left column
+    int cRight = 0; // right column
+    // and choose that side for reduction where mose exterior pixels occurred (that's the heuristic)
 
     for (y = 0, x = 0; x < sub.cols; ++x) {
         // if there is an exterior part in the interior we have to move the top side of the rect a bit to the bottom
-        if (sub.at<unsigned char>(y, x) == 0) {
+        if (sub.at<char>(y, x) == 0) {
             returnVal = false;
             ++cTop;
         }
     }
 
-    for (y = (unsigned int) (sub.rows - 1), x = 0; x < sub.cols; ++x) {
+    for (y = (sub.rows - 1), x = 0; x < sub.cols; ++x) {
         // if there is an exterior part in the interior we have to move the bottom side of the rect a bit to the top
-        if (sub.at<unsigned char>(y, x) == 0) {
+        if (sub.at<char>(y, x) == 0) {
             returnVal = false;
             ++cBottom;
         }
@@ -45,22 +47,21 @@ checkInteriorExterior(const Mat &mask, const Rect &interiorBB, int &top, int &bo
 
     for (y = 0, x = 0; y < sub.rows; ++y) {
         // if there is an exterior part in the interior
-        if (sub.at<unsigned char>(y, x) == 0) {
+        if (sub.at<char>(y, x) == 0) {
             returnVal = false;
             ++cLeft;
         }
     }
 
-    for (x = (unsigned int) (sub.cols - 1), y = 0; y < sub.rows; ++y) {
+    for (x = (sub.cols - 1), y = 0; y < sub.rows; ++y) {
         // if there is an exterior part in the interior
-        if (sub.at<unsigned char>(y, x) == 0) {
+        if (sub.at<char>(y, x) == 0) {
             returnVal = false;
             ++cRight;
         }
     }
 
-    // that part is ugly and maybe not correct, didn't check whether all possible combinations
-    // are handled. Check that one please. The idea is to set `top = 1` iff it's better to reduce
+    // The idea is to set `top = 1` iff it's better to reduce
     // the rect at the top than anywhere else.
     if (cTop > cBottom) {
         if (cTop > cLeft)
@@ -110,11 +111,11 @@ void cropResult(Mat &result) {
     // find contour with max elements
     // remark: in theory there should be only one single outer contour surrounded by black regions!!
 
-    unsigned int maxSize = 0;
-    unsigned int id = 0;
-    for (unsigned int i = 0; i < contours.size(); ++i) {
-        if (contours.at(i).size() > maxSize) {
-            maxSize = (unsigned int) contours.at(i).size();
+    int maxSize = 0;
+    int id = 0;
+    for (int i = 0; i < contours.size(); ++i) {
+        if (contours.at((unsigned long) i).size() > maxSize) {
+            maxSize = (int) contours.at((unsigned long) i).size();
             id = i;
         }
     }
@@ -126,18 +127,18 @@ void cropResult(Mat &result) {
 
 
     // sort contour in x/y directions to easily find min/max and next
-    std::vector<Point> cSortedX = contours.at(id);
+    std::vector<Point> cSortedX = contours.at((unsigned long) id);
     std::sort(cSortedX.begin(), cSortedX.end(), sortX);
 
-    std::vector<Point> cSortedY = contours.at(id);
+    std::vector<Point> cSortedY = contours.at((unsigned long) id);
     std::sort(cSortedY.begin(), cSortedY.end(), sortY);
 
 
-    unsigned int minXId = 0;
-    unsigned int maxXId = (unsigned int) (cSortedX.size() - 1);
+    int minXId = 0;
+    int maxXId = (int) (cSortedX.size() - 1);
 
-    unsigned int minYId = 0;
-    unsigned int maxYId = (unsigned int) (cSortedY.size() - 1);
+    int minYId = 0;
+    int maxYId = (int) (cSortedY.size() - 1);
 
     Rect interiorBB;
 
@@ -172,7 +173,8 @@ void cropResult(Mat &result) {
 
 JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_processPanorama
-        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress) {
+        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress,
+         jboolean isCompressed) {
     // Get the length of the long array
     jsize a_len = env->GetArrayLength(imageAddressArray);
     // Convert the jlongArray to an array of jlong
@@ -187,9 +189,11 @@ Java_study_acodexm_NativePanorama_processPanorama
         // Convert to a 3 channel Mat to use with Stitcher module
         cvtColor(curimage, newimage, CV_BGRA2RGB);
         // Reduce the resolution for fast computation
-        float scale = 1000.0f / curimage.cols;
-        resize(newimage, newimage, Size((int) (scale * curimage.cols),
-                                        (int) (scale * curimage.rows)));
+        if (isCompressed) {
+            float scale = 1000.0f / curimage.cols;
+            resize(newimage, newimage, Size((int) (scale * curimage.cols),
+                                            (int) (scale * curimage.rows)));
+        }
         imgVec.push_back(newimage);
     }
     Mat &result = *(Mat *) outputAddress;
@@ -202,8 +206,6 @@ Java_study_acodexm_NativePanorama_processPanorama
         LOGD("Success code = %d", int(status));
         cropResult(result);
     }
-
-
     // Release the jlong array
     env->ReleaseLongArrayElements(imageAddressArray, imgAddressArr, 0);
 }

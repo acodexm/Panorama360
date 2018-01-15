@@ -18,8 +18,11 @@ import android.widget.ViewFlipper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import acodexm.panorama.R;
 import butterknife.ButterKnife;
@@ -27,14 +30,13 @@ import butterknife.OnClick;
 
 public class GalleryActivity extends Activity {
 
-    public static final String INTENT_EXTRAS_POSITION = "position";
     public static final String INTENT_EXTRAS_FOLDER = "folder";
     private static final String TAG = GalleryActivity.class.getName();
     private ViewFlipper viewFlipper;
     private ImageView currentView;
     private String imagesFolder;
-    private List<String> imagesPath;
-    private int current;
+    private NavigableMap<Double, String> imagesPath;
+    private double current;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +49,6 @@ public class GalleryActivity extends Activity {
         ButterKnife.bind(this);
         viewFlipper = findViewById(R.id.gallery_view_flipper);
         current = 0;
-
         loadImages();
         start();
 
@@ -111,8 +112,8 @@ public class GalleryActivity extends Activity {
     private void loadImages() {
 
         Bundle extras = getIntent().getExtras();
-        imagesPath = new LinkedList<>();
-        int position = 0;
+        imagesPath = new TreeMap<>();
+
 
         if (extras != null) {
 
@@ -121,15 +122,6 @@ public class GalleryActivity extends Activity {
             if (extrasFolder != null) {
                 imagesFolder = extrasFolder;
             }
-
-            String positionSt = extras.getString(INTENT_EXTRAS_POSITION);
-
-            try {
-                position = Integer.parseInt(positionSt);
-            } catch (NumberFormatException e) {
-                Log.e(TAG, "loadImages " + e);
-            }
-
 
         }
 
@@ -148,17 +140,20 @@ public class GalleryActivity extends Activity {
                 for (File fileCurrent : listFiles) {
                     if (fileCurrent.isFile()) {
                         Log.d(TAG, "loadImages added file:" + fileCurrent.getPath());
-                        imagesPath.add(fileCurrent.getPath());
+                        Pattern num = Pattern.compile("\\d+");
+                        Matcher mN = num.matcher(fileCurrent.getPath().substring(fileCurrent.getPath().indexOf("panorama_")));
+                        double s;
+                        if (mN.find()) {
+                            s = Double.parseDouble(mN.group());
+                            Log.d(TAG, "number found: " + s);
+                            imagesPath.put(s, fileCurrent.getPath());
+                            if (current < s)
+                                current = s;
+                        }
                     }
                 }
             }
-
-
             Log.d(TAG, "loadImages images count :" + imagesPath.size());
-            if (position < imagesPath.size()) {
-                current = position;
-            }
-
         }
 
     }
@@ -166,8 +161,6 @@ public class GalleryActivity extends Activity {
     private void start() {
 
         if (imagesPath.size() > 0) {
-
-            // load firs image
             currentView = createImageView(this);
             viewFlipper.addView(currentView);
             loadImageInView(currentView, imagesPath.get(current));
@@ -181,35 +174,49 @@ public class GalleryActivity extends Activity {
 
     private void nextImage() {
 
-        current++;
-        if (current == imagesPath.size())
-            current = 0;
-        setSlideToLeftAnimation(viewFlipper, this);
 
-        // load firs image
+        setSlideToLeftAnimation(viewFlipper, this);
         currentView = createImageView(this);
         viewFlipper.addView(currentView);
-        loadImageInView(currentView, imagesPath.get(current));
-
-        viewFlipper.showNext();
-        viewFlipper.removeViewAt(0);
-
+        String picture;
+        Map.Entry<Double, String> next = imagesPath.higherEntry(current);
+        if (next == null) {
+            picture = imagesPath.firstEntry().getValue();
+            current = imagesPath.firstEntry().getKey();
+        } else {
+            picture = imagesPath.higherEntry(current).getValue();
+            current = imagesPath.higherEntry(current).getKey();
+        }
+        if (picture != null) {
+            loadImageInView(currentView, picture);
+            viewFlipper.showNext();
+            viewFlipper.removeViewAt(0);
+        } else {
+            Log.d(TAG, "no more pictures!");
+        }
     }
 
     private void previousImage() {
 
-        current--;
-        if (current == -1)
-            current = imagesPath.size() - 1;
         setSlideToRightAnimation(viewFlipper, this);
-
-        // load firs image
         currentView = createImageView(this);
         viewFlipper.addView(currentView);
-        loadImageInView(currentView, imagesPath.get(current));
-
-        viewFlipper.showNext();
-        viewFlipper.removeViewAt(0);
+        String picture;
+        Map.Entry<Double, String> prev = imagesPath.lowerEntry(current);
+        if (prev == null) {
+            picture = imagesPath.lastEntry().getValue();
+            current = imagesPath.lastEntry().getKey();
+        } else {
+            picture = imagesPath.lowerEntry(current).getValue();
+            current = imagesPath.lowerEntry(current).getKey();
+        }
+        if (picture != null) {
+            loadImageInView(currentView, picture);
+            viewFlipper.showNext();
+            viewFlipper.removeViewAt(0);
+        } else {
+            Log.d(TAG, "no more pictures!");
+        }
 
     }
 
@@ -218,13 +225,9 @@ public class GalleryActivity extends Activity {
             Bitmap decodeStream;
             FileInputStream fileInputStream = new FileInputStream(path);
             decodeStream = BitmapFactory.decodeStream(fileInputStream);
-
             imageView.setImageBitmap(decodeStream);
-
         } catch (FileNotFoundException e) {
             Log.e(TAG, "FileNotFoundException " + e);
         }
     }
-
-
 }
