@@ -32,13 +32,15 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
     private static final String TAG = WelcomeActivity.class.getSimpleName();
     private final String CAMERA = Manifest.permission.CAMERA;
     private final String STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-    private final String MESSAGE = "Camera and Read&Write Services Permissions are required for this app";
     @BindView(R.id.right_btn)
     ImageView rightBtn;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getIntent().getBooleanExtra("EXIT", false)) {
+            finish();
+        }
         setContentView(R.layout.welcome_activity);
         ButterKnife.bind(this);
         if (checkAndRequestPermissions()) {
@@ -60,6 +62,11 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
         startActivity(intent);
     }
 
+    /**
+     * method checks if permissions are granted, if they are not then it request them to be granted
+     *
+     * @return
+     */
     private boolean checkAndRequestPermissions() {
         int cameraPerm = ContextCompat.checkSelfPermission(this, CAMERA);
         int storagePerm = ContextCompat.checkSelfPermission(this, STORAGE);
@@ -78,6 +85,13 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
         return true;
     }
 
+    /**
+     * method handles permission request.
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         Log.d(TAG, "Permission callback called-------");
@@ -97,21 +111,20 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
                         Log.d(TAG, "Some permissions are not granted ask again ");
                         if (ActivityCompat.shouldShowRequestPermissionRationale(this, CAMERA) ||
                                 ActivityCompat.shouldShowRequestPermissionRationale(this, STORAGE)) {
-
-                            showDialogOK(MESSAGE, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            switch (which) {
-                                                case DialogInterface.BUTTON_POSITIVE:
-                                                    checkAndRequestPermissions();
-                                                    break;
-                                                case DialogInterface.BUTTON_NEGATIVE:
-                                                    break;
-                                            }
-                                        }
-                                    });
+                            showDialogOK(getString(R.string.dialog_rw_perms_required), new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    switch (which) {
+                                        case DialogInterface.BUTTON_POSITIVE:
+                                            checkAndRequestPermissions();
+                                            break;
+                                        case DialogInterface.BUTTON_NEGATIVE:
+                                            break;
+                                    }
+                                }
+                            });
                         } else {
-                            Toast.makeText(this, "Go to settings and enable permissions", Toast.LENGTH_LONG).show();
+                            Toast.makeText(this, R.string.msg_go_to_settings, Toast.LENGTH_LONG).show();
                         }
                     }
                 }
@@ -123,8 +136,8 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
     private void showDialogOK(String message, DialogInterface.OnClickListener okListener) {
         new AlertDialog.Builder(this)
                 .setMessage(message)
-                .setPositiveButton("OK", okListener)
-                .setNegativeButton("Cancel", okListener)
+                .setPositiveButton(R.string.dialog_ok, okListener)
+                .setNegativeButton(R.string.dialog_cancel, okListener)
                 .create()
                 .show();
     }

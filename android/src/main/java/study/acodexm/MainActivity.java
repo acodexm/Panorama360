@@ -20,6 +20,8 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -33,6 +35,8 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import org.opencv.core.Mat;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import acodexm.panorama.R;
 import butterknife.BindView;
@@ -99,19 +103,27 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private SphereManualControl mManualControl;
     private boolean test = true;
     private boolean isCompressed;
-
+    private boolean onBackBtnPressed = false;
+    private int DOUBLE_BACK_PRESSED_DELAY = 2500;
+    private boolean isNotSaving = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         mCameraControl = new CameraSurface(this, mSettingsControl);
+        //getting camera surface view
         mSurfaceView = mCameraControl.getSurface();
         FrameLayout layout = new FrameLayout(getContext());
-        View view2 = LayoutInflater.from(getContext()).inflate(R.layout.activity_main, layout, false);
+        //crating main view from activity_main layout
+        View mainView = LayoutInflater.from(getContext()).inflate(R.layout.activity_main, layout, false);
+        // setting up gyroscope
         mSensorManager = (SensorManager) getContext().getSystemService(SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        //creating and configuring new instance of LibGDX spherical view
         AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
         cfg.useGyroscope = true;
         cfg.useAccelerometer = false;
@@ -123,8 +135,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         AndroidCamera androidCamera = new AndroidCamera(rotationVector, mCameraControl.getSphereControl(),
                 mSettingsControl);
         mManualControl = androidCamera;
+        //initializing LibGDX spherical view
         initializeForView(androidCamera, cfg);
-
         if (graphics.getView() instanceof GLSurfaceView) {
             Log.d(TAG, "creating layout");
             glView = (GLSurfaceView) graphics.getView();
@@ -133,13 +145,17 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             glView.setKeepScreenOn(true);
             layout.addView(mSurfaceView);
             layout.addView(glView);
-            layout.addView(view2);
+            layout.addView(mainView);
         }
+        //attach layout to view
         setContentView(layout);
+        //injecting view components
         ButterKnife.bind(this);
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        //load preferences
         mPreferences = new UserPreferences(this);
+        //delete files from temporary picture folder
         ImageRW.deleteTempFiles();
     }
 
@@ -163,8 +179,21 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
+        } else if (onBackBtnPressed) {
+            Intent intent = new Intent(getApplicationContext(), WelcomeActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.putExtra("EXIT", true);
+            startActivity(intent);
         } else {
-            super.onBackPressed();
+            onBackBtnPressed = true;
+            showToast(R.string.msg_exit);
+            Timer t = new Timer();
+            t.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    onBackBtnPressed = false;
+                }
+            }, DOUBLE_BACK_PRESSED_DELAY);
         }
     }
 
@@ -178,12 +207,32 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mManualControl.updateRender();
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, sensorEvent.values);
+            rotationVector.updateRotationVector(rotationMatrix);
+        }
+    }
 
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+    }
+
+    /**
+     * this method is executed on new Thread.
+     * first depending on selected picture mode method loads selected pictures to be processed.
+     * Next pictures are passed to native openCV stitcher to be processed.
+     * If the stitching process is successful the picture is saved
+     *
+     * @param pictureMode
+     */
     void processPicture(final PictureMode pictureMode) {
         showProcessingDialog();
         final Runnable r = new Runnable() {
             @Override
             public void run() {
+                isNotSaving = false;
                 final List<Mat> listImage;
                 try {
                     listImage = ImageChooser.loadPictures(pictureMode,
@@ -204,7 +253,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         Mat result = new Mat();
                         // Call the OpenCV C++ Code to perform stitching process
                         try {
-                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), isCompressed);
+                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), true);
                             //save to external storage
                             boolean isSaved = ImageRW.saveResultImageExternal(result);
                             showToastRunnable("picture saved: " + isSaved);
@@ -219,6 +268,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     e.printStackTrace();
                 }
                 hideProcessingDialog();
+                isNotSaving = true;
             }
         };
         new Thread(r).start();
@@ -240,6 +290,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
+    private void showToast(int message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    /***
+     * when picture is processed, to release more cpu and gpu power camera preview is stopped, and
+     * additionally process circle is shown
+     */
     public synchronized void showProcessingDialog() {
         Runnable r = new Runnable() {
             @Override
@@ -249,8 +307,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             }
         };
         post(r);
-
-
     }
 
     public synchronized void hideProcessingDialog() {
@@ -335,7 +391,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         int position = mManualControl.canTakePicture();
                         if (position != -1)
                             mCameraControl.takePicture(position);
-                        else showToast("You can't take picture here!");
+                        else showToast(getString(R.string.msg_take_picture_not_allowed));
                         break;
                 }
                 break;
@@ -351,61 +407,61 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.capture)
     void onCaptureClickListener() {
-        if (mShutterState == ShutterState.recording)
-            onCaptureBtnClickAction();
-        else if (mManualControl.isCameraSteady()) {
-            onCaptureBtnClickAction();
-        } else showToast("please don't move");
+        if (isNotSaving)
+            if (mShutterState == ShutterState.recording
+                    || (mShutterState == ShutterState.ready
+                    && mSettingsControl.getActionMode() == ActionMode.FullAuto))
+                onCaptureBtnClickAction();
+            else if (mManualControl.isCameraSteady()) {
+                onCaptureBtnClickAction();
+            } else showToast(getString(R.string.msg_do_not_move));
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.refresh_picture)
     void onRefreshClickListener() {
-        recreate();
+        if (isNotSaving) recreate();
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.open_gallery)
     void onGalleryClickAction() {
-        Intent intent = new Intent(MainActivity.this, GalleryActivity.class);
-
-        String folder = Environment.getExternalStorageDirectory() + "/PanoramaApp";
-        intent.putExtra(GalleryActivity.INTENT_EXTRAS_FOLDER, folder);
-
-        startActivity(intent);
-        showToast("open gallery");
+        if (isNotSaving) {
+            Intent intent = new Intent(MainActivity.this, GalleryActivity.class);
+            String folder = Environment.getExternalStorageDirectory() + "/PanoramaApp";
+            intent.putExtra(GalleryActivity.INTENT_EXTRAS_FOLDER, folder);
+            startActivity(intent);
+            showToast(getString(R.string.msg_open_gallery));
+        } else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
-        showToast("save");
-        switch (mSettingsControl.getPictureMode()) {
-            case auto:
-                processPicture(PictureMode.auto);
-                break;
-            case panorama:
-                processPicture(PictureMode.panorama);
-                break;
-            case widePicture:
-                processPicture(PictureMode.widePicture);
-                break;
-            case picture360:
-                processPicture(PictureMode.picture360);
-                break;
-        }
-
+        if (isNotSaving) {
+            showToast(getString(R.string.msg_save));
+            switch (mSettingsControl.getPictureMode()) {
+                case auto:
+                    processPicture(PictureMode.auto);
+                    break;
+                case panorama:
+                    processPicture(PictureMode.panorama);
+                    break;
+                case widePicture:
+                    processPicture(PictureMode.widePicture);
+                    break;
+                case picture360:
+                    processPicture(PictureMode.picture360);
+                    break;
+            }
+        } else showToast(R.string.msg_wait);
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-            SensorManager.getRotationMatrixFromVector(rotationMatrix, sensorEvent.values);
-            rotationVector.updateRotationVector(rotationMatrix);
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-    }
-
+    /**
+     * this section is responsible to manage side navigation settings list
+     *
+     * @param item
+     * @return
+     */
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         return false;
@@ -413,70 +469,103 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @OnClick(R.id.mode_auto)
     void onSwitchAuto() {
-        mPreferences.setActionMode(ActionMode.FullAuto);
-        mSettingsControl.setActionMode(ActionMode.FullAuto);
-        mSwitchManual.setChecked(false);
-        setCaptureBtnImage();
+        if (isNotSaving) {
+            mPreferences.setActionMode(ActionMode.FullAuto);
+            mSettingsControl.setActionMode(ActionMode.FullAuto);
+            mSwitchManual.setChecked(false);
+            setCaptureBtnImage();
+            if (!mSwitchAuto.isChecked())
+                mSwitchAuto.setChecked(true);
+        } else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.mode_manual)
     void onSwitchManual() {
-        mPreferences.setActionMode(ActionMode.Manual);
-        mSettingsControl.setActionMode(ActionMode.Manual);
-        mSwitchAuto.setChecked(false);
-        setCaptureBtnImage();
+        if (isNotSaving)
+            if (mSwitchAuto.isChecked()) {
+                mPreferences.setActionMode(ActionMode.Manual);
+                mSettingsControl.setActionMode(ActionMode.Manual);
+                mSwitchAuto.setChecked(false);
+                setCaptureBtnImage();
+            } else onSwitchAuto();
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.picture_auto)
     void onSwitchAutoPanorama() {
-        mPreferences.setPictureMode(PictureMode.auto);
-        mSettingsControl.setPictureMode(PictureMode.auto);
-        mSwitchPanorama.setChecked(false);
-        mSwitchWide.setChecked(false);
-        mSwitch360.setChecked(false);
+        if (isNotSaving) {
+            mPreferences.setPictureMode(PictureMode.auto);
+            mSettingsControl.setPictureMode(PictureMode.auto);
+            mSwitchPanorama.setChecked(false);
+            mSwitchWide.setChecked(false);
+            mSwitch360.setChecked(false);
+            if (!mSwitchAutoPicture.isChecked())
+                mSwitchAutoPicture.setChecked(true);
+        } else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.picture_panorama)
     void onSwitchPanorama() {
-        mPreferences.setPictureMode(PictureMode.panorama);
-        mSettingsControl.setPictureMode(PictureMode.panorama);
-        mSwitchAutoPicture.setChecked(false);
-        mSwitchWide.setChecked(false);
-        mSwitch360.setChecked(false);
+        if (isNotSaving)
+            if (mSwitchPanorama.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+                mPreferences.setPictureMode(PictureMode.panorama);
+                mSettingsControl.setPictureMode(PictureMode.panorama);
+                mSwitchAutoPicture.setChecked(false);
+                mSwitchWide.setChecked(false);
+                mSwitch360.setChecked(false);
+            } else onSwitchAutoPanorama();
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.picture_wide)
     void onSwitchWide() {
-        mPreferences.setPictureMode(PictureMode.widePicture);
-        mSettingsControl.setPictureMode(PictureMode.widePicture);
-        mSwitchAutoPicture.setChecked(false);
-        mSwitchPanorama.setChecked(false);
-        mSwitch360.setChecked(false);
+        if (isNotSaving)
+            if (mSwitchPanorama.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+                mPreferences.setPictureMode(PictureMode.widePicture);
+                mSettingsControl.setPictureMode(PictureMode.widePicture);
+                mSwitchAutoPicture.setChecked(false);
+                mSwitchPanorama.setChecked(false);
+                mSwitch360.setChecked(false);
+            } else onSwitchAutoPanorama();
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.picture_360)
     void onSwitch360() {
-        mPreferences.setPictureMode(PictureMode.picture360);
-        mSettingsControl.setPictureMode(PictureMode.picture360);
-        mSwitchAutoPicture.setChecked(false);
-        mSwitchWide.setChecked(false);
-        mSwitchPanorama.setChecked(false);
+        if (isNotSaving)
+            if (mSwitchPanorama.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+                mPreferences.setPictureMode(PictureMode.picture360);
+                mSettingsControl.setPictureMode(PictureMode.picture360);
+                mSwitchAutoPicture.setChecked(false);
+                mSwitchWide.setChecked(false);
+                mSwitchPanorama.setChecked(false);
+            } else onSwitchAutoPanorama();
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.quality_high)
     void onSwitchHigh() {
-        mPreferences.setPictureQuality(PictureQuality.HIGH);
-        mSettingsControl.setPictureQuality(PictureQuality.HIGH);
-        mSwitchLow.setChecked(false);
-        isCompressed = false;
+        if (isNotSaving)
+            if (mSwitchLow.isChecked()) {
+                mPreferences.setPictureQuality(PictureQuality.HIGH);
+                mSettingsControl.setPictureQuality(PictureQuality.HIGH);
+                mSwitchLow.setChecked(false);
+                isCompressed = false;
+            } else onSwitchLow();
+        else showToast(R.string.msg_wait);
     }
 
     @OnClick(R.id.quality_low)
     void onSwitchLow() {
-        mPreferences.setPictureQuality(PictureQuality.LOW);
-        mSettingsControl.setPictureQuality(PictureQuality.LOW);
-        mSwitchHigh.setChecked(false);
-        isCompressed = true;
+        if (isNotSaving) {
+            mPreferences.setPictureQuality(PictureQuality.LOW);
+            mSettingsControl.setPictureQuality(PictureQuality.LOW);
+            mSwitchHigh.setChecked(false);
+            isCompressed = true;
+            if (!mSwitchLow.isChecked())
+                mSwitchLow.setChecked(true);
+        } else showToast(R.string.msg_wait);
+
     }
 
     private enum ShutterState {

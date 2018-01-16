@@ -29,8 +29,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class GalleryActivity extends Activity {
-
-    public static final String INTENT_EXTRAS_FOLDER = "folder";
+    public static final String INTENT_EXTRAS_FOLDER = "panorama_app_folder";
     private static final String TAG = GalleryActivity.class.getName();
     private ViewFlipper viewFlipper;
     private ImageView currentView;
@@ -44,14 +43,13 @@ public class GalleryActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
         setContentView(R.layout.gallery);
         ButterKnife.bind(this);
         viewFlipper = findViewById(R.id.gallery_view_flipper);
         current = 0;
         loadImages();
         start();
-
+        //attaching SwipeListener to view
         viewFlipper.setOnTouchListener(new SwipeListener(new Runnable() {
             @Override
             public void run() {
@@ -66,12 +64,16 @@ public class GalleryActivity extends Activity {
 
     }
 
+    /**
+     * method used to create current, next and previous view
+     *
+     * @param activity
+     * @return
+     */
     public ImageView createImageView(Activity activity) {
-
         ImageView imageView = new ImageView(activity);
         imageView.setLayoutParams(new GridView.LayoutParams(
                 LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
-
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         return imageView;
     }
@@ -109,46 +111,39 @@ public class GalleryActivity extends Activity {
         }
     }
 
+    /**
+     * method loads pictures from PanoramaApp folder
+     */
     private void loadImages() {
-
         Bundle extras = getIntent().getExtras();
         imagesPath = new TreeMap<>();
-
-
         if (extras != null) {
-
             String extrasFolder = extras.getString(INTENT_EXTRAS_FOLDER);
-
-            if (extrasFolder != null) {
+            if (extrasFolder != null)
                 imagesFolder = extrasFolder;
-            }
-
         }
-
         Log.d(TAG, "load images from imagesFolder:" + imagesFolder);
-
         if (imagesFolder != null) {
             File file = new File(imagesFolder);
-
             Log.d(TAG, "loadImages file exist: " + file.exists());
             Log.d(TAG, "loadImages file id folder: " + file.isDirectory());
-
-
             if (file.exists() && file.isDirectory()) {
                 File[] listFiles = file.listFiles();
-
                 for (File fileCurrent : listFiles) {
                     if (fileCurrent.isFile()) {
                         Log.d(TAG, "loadImages added file:" + fileCurrent.getPath());
                         Pattern num = Pattern.compile("\\d+");
-                        Matcher mN = num.matcher(fileCurrent.getPath().substring(fileCurrent.getPath().indexOf("panorama_")));
-                        double s;
+                        int offset = fileCurrent.getPath().indexOf("panorama_");
+                        //if found file is not named correctly than ignore that file
+                        if (offset == -1) continue;
+                        Matcher mN = num.matcher(fileCurrent.getPath().substring(offset));
+                        double date;
                         if (mN.find()) {
-                            s = Double.parseDouble(mN.group());
-                            Log.d(TAG, "number found: " + s);
-                            imagesPath.put(s, fileCurrent.getPath());
-                            if (current < s)
-                                current = s;
+                            date = Double.parseDouble(mN.group());
+                            Log.d(TAG, "number found: " + date);
+                            imagesPath.put(date, fileCurrent.getPath());
+                            if (current < date)
+                                current = date;
                         }
                     }
                 }
@@ -158,13 +153,14 @@ public class GalleryActivity extends Activity {
 
     }
 
+    /**
+     * create new view with the newest taken picture
+     */
     private void start() {
-
         if (imagesPath.size() > 0) {
             currentView = createImageView(this);
             viewFlipper.addView(currentView);
             loadImageInView(currentView, imagesPath.get(current));
-
             viewFlipper.setDisplayedChild(0);
         } else {
             Toast.makeText(this, "No images found", Toast.LENGTH_SHORT).show();
@@ -172,9 +168,10 @@ public class GalleryActivity extends Activity {
         }
     }
 
+    /**
+     * create new view with next picture
+     */
     private void nextImage() {
-
-
         setSlideToLeftAnimation(viewFlipper, this);
         currentView = createImageView(this);
         viewFlipper.addView(currentView);
@@ -196,8 +193,10 @@ public class GalleryActivity extends Activity {
         }
     }
 
+    /**
+     * create new view with previous picture
+     */
     private void previousImage() {
-
         setSlideToRightAnimation(viewFlipper, this);
         currentView = createImageView(this);
         viewFlipper.addView(currentView);
@@ -220,6 +219,12 @@ public class GalleryActivity extends Activity {
 
     }
 
+    /**
+     * method loads picture from storage to specified view
+     *
+     * @param imageView
+     * @param path
+     */
     public void loadImageInView(ImageView imageView, String path) {
         try {
             Bitmap decodeStream;

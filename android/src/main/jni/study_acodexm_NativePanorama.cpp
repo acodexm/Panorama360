@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cv;
 
-bool checkInteriorExterior(const Mat &mask, const Rect &interiorBB,
+bool checkInteriorExterior(const Mat &mask, const Rect &croppingMask,
                            int &top,
                            int &bottom,
                            int &left,
@@ -17,8 +17,7 @@ bool checkInteriorExterior(const Mat &mask, const Rect &interiorBB,
     // return true if the rectangle is fine as it is!
     bool returnVal = true;
 
-    Mat sub = mask(interiorBB);
-
+    Mat sub = mask(croppingMask);
     int x = 0;
     int y = 0;
 
@@ -61,7 +60,7 @@ bool checkInteriorExterior(const Mat &mask, const Rect &interiorBB,
         }
     }
 
-    // The idea is to set `top = 1` iff it's better to reduce
+    // The idea is to set `top = 1` if it's better to reduce
     // the rect at the top than anywhere else.
     if (cTop > cBottom) {
         if (cTop > cLeft)
@@ -82,14 +81,20 @@ bool checkInteriorExterior(const Mat &mask, const Rect &interiorBB,
     return returnVal;
 }
 
-bool sortX(Point a, Point b) {
+bool compareX(Point a, Point b) {
     return a.x < b.x;
 }
 
-bool sortY(Point a, Point b) {
+bool compareY(Point a, Point b) {
     return a.y < b.y;
 }
 
+/*
+ * This method is used to crop given image to get rid of black space surrounding the image after
+ * stitching.
+ * It search for the biggest rectangle that fits inside the image. The rectangle is not rotated
+ * relative to original picture edges.
+ */
 void cropResult(Mat &result) {
     LOGD("crop begin");
     Mat gray;
@@ -99,18 +104,14 @@ void cropResult(Mat &result) {
     // extract all the black background (and some interior parts maybe)
     Mat mask1 = gray > 0;
 
-
     // now extract the outer contour
     std::vector<std::vector<Point> > contours;
     std::vector<Vec4i> hierarchy;
 
     findContours(mask1, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0, 0));
-
     Mat contourImage = Mat::zeros(result.size(), CV_8UC3);;
 
     // find contour with max elements
-    // remark: in theory there should be only one single outer contour surrounded by black regions!!
-
     int maxSize = 0;
     int id = 0;
     for (int i = 0; i < contours.size(); ++i) {
@@ -120,41 +121,34 @@ void cropResult(Mat &result) {
         }
     }
 
-
     // Draw filled contour to obtain a mask with interior parts
     Mat contourMask = Mat::zeros(result.size(), CV_8UC1);
     drawContours(contourMask, contours, id, Scalar(255), -1, 8, hierarchy, 0, Point());
 
-
     // sort contour in x/y directions to easily find min/max and next
     std::vector<Point> cSortedX = contours.at((unsigned long) id);
-    std::sort(cSortedX.begin(), cSortedX.end(), sortX);
-
+    std::sort(cSortedX.begin(), cSortedX.end(), compareX);
     std::vector<Point> cSortedY = contours.at((unsigned long) id);
-    std::sort(cSortedY.begin(), cSortedY.end(), sortY);
+    std::sort(cSortedY.begin(), cSortedY.end(), compareY);
 
 
     int minXId = 0;
     int maxXId = (int) (cSortedX.size() - 1);
-
     int minYId = 0;
     int maxYId = (int) (cSortedY.size() - 1);
 
-    Rect interiorBB;
-
+    Rect croppingMask;
     while ((minXId < maxXId) && (minYId < maxYId)) {
         Point min(cSortedX[minXId].x, cSortedY[minYId].y);
         Point max(cSortedX[maxXId].x, cSortedY[maxYId].y);
-
-        interiorBB = Rect(min.x, min.y, max.x - min.x, max.y - min.y);
-
+        croppingMask = Rect(min.x, min.y, max.x - min.x, max.y - min.y);
         // out-codes: if one of them is set, the rectangle size has to be reduced at that border
         int ocTop = 0;
         int ocBottom = 0;
         int ocLeft = 0;
         int ocRight = 0;
 
-        bool finished = checkInteriorExterior(contourMask, interiorBB, ocTop, ocBottom, ocLeft,
+        bool finished = checkInteriorExterior(contourMask, croppingMask, ocTop, ocBottom, ocLeft,
                                               ocRight);
         if (finished) {
             break;
@@ -166,11 +160,14 @@ void cropResult(Mat &result) {
         if (ocTop) ++minYId;
         if (ocBottom)--maxYId;
     }
-    //crop image
-    result = result(interiorBB);
+    //crop image with created mask
+    result = result(croppingMask);
     LOGD("crop end");
 }
-
+/*
+ * This method uses the openCV Stitcher class to create panorama image from given pictures list
+ * Additionally if the stitching was successful it crops the image to rectangular shape
+ */
 JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_processPanorama
         (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress,

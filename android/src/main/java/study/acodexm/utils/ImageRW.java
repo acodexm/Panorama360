@@ -19,6 +19,12 @@ import java.util.Date;
 public class ImageRW {
     private static final String TAG = ImageRW.class.getSimpleName();
 
+    /**
+     * method saves taken individual pictures on external storage
+     *
+     * @param bytes
+     * @param currentPictureId
+     */
     public static void saveImageExternal(byte[] bytes, int currentPictureId) {
         File folder = new File(Environment.getExternalStorageDirectory()
                 + "/PanoramaApp/temp");
@@ -41,6 +47,13 @@ public class ImageRW {
         }
     }
 
+    /**
+     * method saves picture as a result from picture stitching and gives them unique names based on
+     * current date time
+     *
+     * @param result
+     * @return true if success
+     */
     public static boolean saveResultImageExternal(Mat result) {
         Log.d(TAG, "saveResultImageExternal: begin saving");
         File folder = new File(Environment.getExternalStorageDirectory()
@@ -66,7 +79,9 @@ public class ImageRW {
         return false;
     }
 
-
+    /**
+     * method deletes all pictures from temporary files if any exists
+     */
     public static void deleteTempFiles() {
         File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
                 + "/PanoramaApp/temp/");
@@ -83,6 +98,12 @@ public class ImageRW {
         }
     }
 
+    /**
+     * method loads images from temporary folder
+     *
+     * @param currentPictureId
+     * @return requested image
+     */
     static Bitmap loadImageExternal(int currentPictureId) {
         final String fileName = Environment.getExternalStorageDirectory().getAbsolutePath()
                 + "/PanoramaApp/temp/" + currentPictureId + ".png";

@@ -18,9 +18,20 @@ import study.acodexm.settings.PictureMode;
 import static study.acodexm.AndroidCamera.LAT;
 import static study.acodexm.AndroidCamera.LON;
 
+/**
+ * DISCLAIMER
+ * methods in this class are in alpha state, they are not scalable, they need testing and optimization!
+ */
 public class ImageChooser {
     private static final String TAG = ImageChooser.class.getSimpleName();
 
+    /**
+     * method returns list of pictures that have been chosen depending on picture mode
+     *
+     * @param pictureMode
+     * @param ids         are stored indexes of taken pictures depending on position on sphere
+     * @return
+     */
     public static List<Mat> loadPictures(PictureMode pictureMode, List<Integer> ids) {
         Log.d(TAG, "loadPictures: current ids" + ids);
         List<Mat> pictures = new ArrayList<>();
@@ -50,6 +61,7 @@ public class ImageChooser {
                             new Throwable("empty list or null"));
                 break;
             case picture360:
+                //this will work only when whole sphere is filled with pictures
                 if (ids.size() == LAT * LON)
                     for (int id : ids)
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
@@ -62,7 +74,13 @@ public class ImageChooser {
         return pictures;
     }
 
-    static Mat bitmapToMat(Bitmap bitmap) {
+    /**
+     * converts bitmap object to openCV Mat object
+     *
+     * @param bitmap
+     * @return
+     */
+    private static Mat bitmapToMat(Bitmap bitmap) {
         Matrix matrix = new Matrix();
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
                 bitmap.getHeight(), matrix, false);
@@ -95,6 +113,8 @@ public class ImageChooser {
     }
 
     /**
+     * This is an alpha method that needs optimization, refactoring, improvement and testing !!!
+     * <p>
      * Function should return list of ids which are pointing on pictures that should be
      * the best candidates for wide panorama picture
      *
@@ -256,8 +276,7 @@ public class ImageChooser {
         int L3 = list3.size();
         int L4 = list4.size();
         int L5 = list5.size();
-        int max = chooseLongest(new ArrayList<>(Arrays.asList(
-                L1, L2, L3, L4, L5)));
+        int max = chooseLongest(new ArrayList<>(Arrays.asList(L1, L2, L3, L4, L5)));
         if (max == L1)
             return list1;
         if (max == L2)
@@ -279,9 +298,14 @@ public class ImageChooser {
      */
     static int chooseLongest(List<Integer> integers) {
         int max = 0;
-        for (int i : integers) {
-            if (i > max)
-                max = i;
+        for (int i = 0; i < integers.size(); i++) {
+            if (integers.get(i) == max) {
+                if (i == 3)
+                    max = i;
+                else if (i > max)
+                    max = i;
+
+            }
         }
         return max;
     }
