@@ -4,7 +4,7 @@ package study.acodexm.settings;
 import study.acodexm.Utils.LOG;
 
 public enum PictureQuality {
-    LOW, HIGH;
+    VERY_LOW, LOW, HIGH;
 
     public static PictureQuality stringToEnum(String s) {
         try {

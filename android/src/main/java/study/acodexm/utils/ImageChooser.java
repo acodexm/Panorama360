@@ -298,14 +298,9 @@ public class ImageChooser {
      */
     static int chooseLongest(List<Integer> integers) {
         int max = 0;
-        for (int i = 0; i < integers.size(); i++) {
-            if (integers.get(i) == max) {
-                if (i == 3)
-                    max = i;
-                else if (i > max)
-                    max = i;
-
-            }
+        for (int i : integers) {
+            if (i > max)
+                max = i;
         }
         return max;
     }

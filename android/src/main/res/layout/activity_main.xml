@@ -108,8 +108,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="30dp"
-                    android:textStyle="italic"
-                    android:padding="10dp"/>
+                    android:padding="10dp"
+                    android:textStyle="italic"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -132,6 +132,14 @@
                     android:gravity="start"
                     android:padding="10dp"
                     android:text="@string/low_quality"/>
+
+                <Switch
+                    android:id="@+id/quality_very_low"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:padding="10dp"
+                    android:text="@string/very_low_quality"/>
             </LinearLayout>
         </ScrollView>
     </android.support.design.widget.NavigationView>

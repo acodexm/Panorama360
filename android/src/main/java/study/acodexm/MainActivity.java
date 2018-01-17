@@ -20,8 +20,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -86,6 +84,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     Switch mSwitchHigh;
     @BindView(R.id.quality_low)
     Switch mSwitchLow;
+    @BindView(R.id.quality_very_low)
+    Switch mSwitchVeryLow;
     @BindView(R.id.save_dir)
     TextView mSaveDir;
     @BindView(R.id.steady_shot)
@@ -110,9 +110,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        todo make fullscreen work with NavigationView
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         mCameraControl = new CameraSurface(this, mSettingsControl);
         //getting camera surface view
         mSurfaceView = mCameraControl.getSurface();
@@ -253,10 +254,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         Mat result = new Mat();
                         // Call the OpenCV C++ Code to perform stitching process
                         try {
-                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), true);
+                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
                             //save to external storage
-                            boolean isSaved = ImageRW.saveResultImageExternal(result);
-                            showToastRunnable("picture saved: " + isSaved);
+                            boolean isSaved = false;
+                            if (!result.empty())
+                                isSaved = ImageRW.saveResultImageExternal(result);
+                            showToastRunnable(getString(R.string.msg_is_saved) + isSaved);
                         } catch (Exception e) {
                             Log.e(TAG, "native processPanorama not working ", e);
                         }
@@ -279,8 +282,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(getApplicationContext(), "File saved at: " +
-                        message, Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
             }
         };
         post(r);
@@ -346,6 +348,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         switch (mPreferences.getPictureQuality()) {
             case LOW:
                 mSwitchLow.setChecked(true);
+                isCompressed = true;
+                break;
+            case VERY_LOW:
+                mSwitchVeryLow.setChecked(true);
                 isCompressed = true;
                 break;
             case HIGH:
@@ -546,11 +552,13 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @OnClick(R.id.quality_high)
     void onSwitchHigh() {
         if (isNotSaving)
-            if (mSwitchLow.isChecked()) {
+            if (mSwitchLow.isChecked() || mSwitchVeryLow.isChecked()) {
                 mPreferences.setPictureQuality(PictureQuality.HIGH);
                 mSettingsControl.setPictureQuality(PictureQuality.HIGH);
                 mSwitchLow.setChecked(false);
+                mSwitchVeryLow.setChecked(false);
                 isCompressed = false;
+                recreate();
             } else onSwitchLow();
         else showToast(R.string.msg_wait);
     }
@@ -561,10 +569,28 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             mPreferences.setPictureQuality(PictureQuality.LOW);
             mSettingsControl.setPictureQuality(PictureQuality.LOW);
             mSwitchHigh.setChecked(false);
+            mSwitchVeryLow.setChecked(false);
             isCompressed = true;
             if (!mSwitchLow.isChecked())
                 mSwitchLow.setChecked(true);
+            recreate();
         } else showToast(R.string.msg_wait);
+
+    }
+
+    @OnClick(R.id.quality_very_low)
+    void onSwitchVeryLow() {
+        if (isNotSaving) {
+            if (mSwitchLow.isChecked() || mSwitchHigh.isChecked()) {
+                mPreferences.setPictureQuality(PictureQuality.VERY_LOW);
+                mSettingsControl.setPictureQuality(PictureQuality.VERY_LOW);
+                mSwitchHigh.setChecked(false);
+                mSwitchLow.setChecked(false);
+                isCompressed = true;
+                recreate();
+            } else onSwitchLow();
+        } else showToast(R.string.msg_wait);
+
 
     }
 

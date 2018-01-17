@@ -36,7 +36,7 @@ public class UserPreferences {
     }
 
     public PictureQuality getPictureQuality() {
-        return PictureQuality.stringToEnum(mPreferences.getString(PREF_PICTURE_QUALITY, PictureQuality.HIGH.name()));
+        return PictureQuality.stringToEnum(mPreferences.getString(PREF_PICTURE_QUALITY, PictureQuality.LOW.name()));
     }
 
     public void setPictureQuality(PictureQuality pictureQuality) {
@@ -52,7 +52,7 @@ public class UserPreferences {
         mPreferences.edit().putString(PREF_SAVE_DIR, path).apply();
     }
 
-    public void ClearAll() {
+    public void clearAll() {
         mPreferences.getAll().clear();
     }
 }

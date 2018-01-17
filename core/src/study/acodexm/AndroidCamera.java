@@ -114,8 +114,9 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         //update action mode in case user changed it in settings
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
             mActionMode = mSettingsControl.getActionMode();
-        }
-        camController.update();
+        } else if (Gdx.app.getType() == Application.ApplicationType.Desktop)
+            camController.update();
+
         //update textures on sphere if user took a picture
         if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");

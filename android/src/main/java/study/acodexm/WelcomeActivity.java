@@ -40,11 +40,12 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
         super.onCreate(savedInstanceState);
         if (getIntent().getBooleanExtra("EXIT", false)) {
             finish();
+            return;
         }
         setContentView(R.layout.welcome_activity);
         ButterKnife.bind(this);
         if (checkAndRequestPermissions()) {
-            rightBtn.setVisibility(View.VISIBLE);
+            openMainActivity();
         }
     }
 
@@ -58,10 +59,13 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
 
     @OnClick(R.id.right_btn)
     void onStartClickListener() {
+        openMainActivity();
+    }
+
+    private void openMainActivity() {
         Intent intent = new Intent(WelcomeActivity.this, MainActivity.class);
         startActivity(intent);
     }
-
     /**
      * method checks if permissions are granted, if they are not then it request them to be granted
      *

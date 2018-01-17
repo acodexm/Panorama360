@@ -13,6 +13,7 @@ import java.util.List;
 import acodexm.panorama.BuildConfig;
 
 import static org.junit.Assert.assertEquals;
+import static study.acodexm.utils.ImageChooser.chooseLongest;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class)
@@ -70,7 +71,9 @@ public class ImageChooserTest {
     }
 
     @Test
-    public void chooseLongest() throws Exception {
+    public void chooseLongestTest() throws Exception {
+        int max = chooseLongest(new ArrayList<>(Arrays.asList(2, 4, 4, 3, 2)));
+        System.out.println(max);
     }
 
     @Test

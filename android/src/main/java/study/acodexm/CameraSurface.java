@@ -18,12 +18,11 @@ import java.util.List;
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
-import study.acodexm.settings.PictureQuality;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.utils.ImageRW;
 
 @SuppressWarnings("deprecation")
-public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, CameraControl {
+public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
     private List<Integer> ids;
     private Camera camera;
@@ -35,6 +34,9 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private int currentPictureId;
     private int PHOTO_WIDTH;
     private int PHOTO_HEIGHT;
+    private Camera.Size highestRes;
+    private Camera.Size lowRes;
+    private Camera.Size lowestRes;
 
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
         super(activity.getContext());
@@ -72,12 +74,25 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         Log.d(TAG, "surfaceChanged called");
         Camera.Parameters myParameters = camera.getParameters();
         Camera.Size myBestSize = getBestPreviewSize(myParameters);
+        getBestPictureSize(myParameters);
         if (myBestSize != null) {
             myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
-            if (mSettingsControl.getPictureQuality() == PictureQuality.LOW) {
-                myParameters.set("jpeg-quality", 70);
-                myParameters.setPictureFormat(PixelFormat.JPEG);
-                myParameters.setPictureSize(1280, 720);
+            switch (mSettingsControl.getPictureQuality()) {
+                case LOW:
+                    myParameters.set("jpeg-quality", 70);
+                    myParameters.setPictureFormat(PixelFormat.JPEG);
+                    myParameters.setPictureSize(lowRes.width, lowRes.height);
+                    break;
+                case VERY_LOW:
+                    myParameters.set("jpeg-quality", 70);
+                    myParameters.setPictureFormat(PixelFormat.JPEG);
+                    myParameters.setPictureSize(lowestRes.width, lowestRes.height);
+                    break;
+                case HIGH:
+                    myParameters.set("jpeg-quality", 70);
+                    myParameters.setPictureFormat(PixelFormat.JPEG);
+                    myParameters.setPictureSize(highestRes.width, highestRes.height);
+                    break;
             }
             camera.setParameters(myParameters);
             camera.setDisplayOrientation(0);
@@ -88,25 +103,64 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
     /**
      * this method finds the best resolution for preview for current device
+     *
      */
     private Camera.Size getBestPreviewSize(Camera.Parameters parameters) {
         Camera.Size bestSize;
-        List<Camera.Size> sizeList = parameters.getSupportedPreviewSizes();
-        bestSize = sizeList.get(0);
-        for (int i = 1; i < sizeList.size(); i++) {
-            if ((sizeList.get(i).width * sizeList.get(i).height) >
+        List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
+        bestSize = previewSizes.get(0);
+        for (int i = 1; i < previewSizes.size(); i++) {
+            if ((previewSizes.get(i).width * previewSizes.get(i).height) >
                     (bestSize.width * bestSize.height)) {
-                bestSize = sizeList.get(i);
+                bestSize = previewSizes.get(i);
             }
         }
         return bestSize;
     }
 
+    /**
+     * this method finds highest, low, and lowest picture resolutions
+     */
+    private void getBestPictureSize(Camera.Parameters parameters) {
+        List<Camera.Size> pictureSizes = parameters.getSupportedPictureSizes();
+        highestRes = pictureSizes.get(0);
+        lowRes = pictureSizes.get(pictureSizes.size() / 2);
+        lowestRes = pictureSizes.get(pictureSizes.size() - 1);
+    }
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         camera.stopPreview();
         camera.release();
         camera = null;
+    }
+
+    /**
+     * this is a trigger method for taking picture
+     *
+     * @param id
+     */
+    @Override
+    public void takePicture(int id) {
+        if (camera != null && safeToTakePicture) {
+            if (ids == null)
+                ids = mSphereControl.getIdTable();
+            currentPictureId = id;
+            mSphereControl.setLastPosition(id);
+            safeToTakePicture = false;
+            camera.autoFocus(this);
+        }
+    }
+
+    /**
+     * this method makes sure that taken picture is in focus
+     *
+     * @param success
+     * @param camera
+     */
+    @Override
+    public void onAutoFocus(boolean success, Camera camera) {
+        if (success && camera != null)
+            camera.takePicture(null, null, this);
     }
 
     /**
@@ -142,6 +196,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
     }
 
+
     /**
      * this method resize image to a given resolution
      */
@@ -154,19 +209,6 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         resized.recycle();
         original.recycle();
         return resizedImg;
-    }
-
-
-    @Override
-    public void takePicture(int id) {
-        if (camera != null && safeToTakePicture) {
-            if (ids == null)
-                ids = mSphereControl.getIdTable();
-            currentPictureId = id;
-            mSphereControl.setLastPosition(id);
-            safeToTakePicture = false;
-            camera.takePicture(null, null, this);
-        }
     }
 
     @Override
@@ -195,5 +237,4 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     public List<Integer> getIdsTable() {
         return mSphereControl.getTakenPicturesIds();
     }
-
 }

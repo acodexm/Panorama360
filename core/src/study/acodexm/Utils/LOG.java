@@ -3,13 +3,18 @@ package study.acodexm.Utils;
 
 import com.badlogic.gdx.Gdx;
 
+/**
+ * simple log utility class
+ */
 public class LOG {
+    private static boolean debug = true;
+
     public static void d(String tag, String message) {
-        Gdx.app.log(tag, message);
+        if (debug) Gdx.app.log(tag, message);
     }
 
     public static void e(String tag, String message, Throwable ex) {
-        Gdx.app.log(tag, message, ex);
+        if (debug) Gdx.app.log(tag, message, ex);
     }
 
 }
