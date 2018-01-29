@@ -110,10 +110,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        todo make fullscreen work with NavigationView
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         mCameraControl = new CameraSurface(this, mSettingsControl);
         //getting camera surface view
         mSurfaceView = mCameraControl.getSurface();

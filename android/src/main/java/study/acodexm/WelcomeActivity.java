@@ -38,12 +38,15 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //if this activity is opened from MainActivity than it means user want to exit application
         if (getIntent().getBooleanExtra("EXIT", false)) {
             finish();
             return;
         }
         setContentView(R.layout.welcome_activity);
         ButterKnife.bind(this);
+
+        //if permissions are granted go straight to MainActivity
         if (checkAndRequestPermissions()) {
             openMainActivity();
         }
@@ -53,6 +56,7 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
     protected void onResume() {
         super.onResume();
         if (checkAndRequestPermissions()) {
+            //show button (to start MainActivity) if permissions are granted
             rightBtn.setVisibility(View.VISIBLE);
         }
     }
@@ -137,6 +141,12 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
 
     }
 
+    /**
+     * method builds dialog
+     *
+     * @param message
+     * @param okListener
+     */
     private void showDialogOK(String message, DialogInterface.OnClickListener okListener) {
         new AlertDialog.Builder(this)
                 .setMessage(message)

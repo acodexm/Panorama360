@@ -53,12 +53,12 @@ public class GalleryActivity extends Activity {
         viewFlipper.setOnTouchListener(new SwipeListener(new Runnable() {
             @Override
             public void run() {
-                nextImage();
+                previousImage();
             }
         }, new Runnable() {
             @Override
             public void run() {
-                previousImage();
+                nextImage();
             }
         }));
 
@@ -81,14 +81,14 @@ public class GalleryActivity extends Activity {
 
     public void setSlideToRightAnimation(ViewFlipper flipper,
                                          Activity context) {
-        flipper.setInAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_in_left));
-        flipper.setOutAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_out_right));
+        flipper.setInAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_in_right));
+        flipper.setOutAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_out_left));
     }
 
     public void setSlideToLeftAnimation(ViewFlipper flipper,
                                         Activity context) {
-        flipper.setInAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_in_right));
-        flipper.setOutAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_out_left));
+        flipper.setInAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_in_left));
+        flipper.setOutAnimation(AnimationUtils.loadAnimation(context, R.anim.slide_out_right));
     }
 
     @OnClick(R.id.delete_picture)
