@@ -8,8 +8,8 @@ import android.view.View;
 public class SwipeListener implements View.OnTouchListener {
     private static final String TAG = SwipeListener.class.getSimpleName();
     private static final int SWIPE_LENGTH = 30;
-    float startX;
-    float startY;
+    private float startX;
+    private float startY;
     private boolean isTouched = false;
     private Runnable onSwipeLeft;
     private Runnable onSwipeRight;

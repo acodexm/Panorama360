@@ -4,7 +4,7 @@ import study.acodexm.RotationVector;
 
 public class AndroidRotationVector implements RotationVector {
 
-    float[] values = new float[16];
+    private float[] values = new float[16];
 
     /**
      * constructor that creates vector that represents 4x4 matrix with ones on diagonal

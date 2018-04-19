@@ -158,7 +158,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             }
         }
 
-//        fpsLogger.log();
+        fpsLogger.log();
         // every 10 frames update camera vector to later detect movement
         if (frames == 10) {
             cameraOld = new Vector3(camera.direction);

@@ -184,8 +184,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         } else {
             onBackBtnPressed = true;
             showToast(R.string.msg_exit);
-            Timer t = new Timer();
-            t.schedule(new TimerTask() {
+            new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
                     onBackBtnPressed = false;
@@ -226,61 +225,53 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
      */
     void processPicture(final PictureMode pictureMode) {
         showProcessingDialog();
-        final Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                isNotSaving = false;
-                final List<Mat> listImage;
-                try {
-                    listImage = ImageChooser.loadPictures(pictureMode,
-                            mCameraControl.getIdsTable());
-                } catch (Exception e) {
-                    Log.e(TAG, "run: loadPictures failed", e);
-                    return;
-                }
-                try {
-                    int images = listImage.size();
-                    if (images > 0) {
-                        Log.d(TAG, "Pictures taken:" + images);
-                        long[] tempObjAddress = new long[images];
-                        for (int i = 0; i < images; i++) {
-                            tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
-                        }
 
-                        Mat result = new Mat();
-                        // Call the OpenCV C++ Code to perform stitching process
-                        try {
-                            NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
-                            //save to external storage
-                            boolean isSaved = false;
-                            if (!result.empty())
-                                isSaved = ImageRW.saveResultImageExternal(result);
-                            showToastRunnable(getString(R.string.msg_is_saved) + isSaved);
-                        } catch (Exception e) {
-                            Log.e(TAG, "native processPanorama not working ", e);
-                        }
-
-                        for (Mat mat : listImage) mat.release();
-                        listImage.clear();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                hideProcessingDialog();
-                isNotSaving = true;
+        final Runnable r = () -> {
+            isNotSaving = false;
+            final List<Mat> listImage;
+            try {
+                listImage = ImageChooser.loadPictures(pictureMode, mCameraControl.getIdsTable());
+            } catch (Exception e) {
+                Log.e(TAG, "run: loadPictures failed", e);
+                return;
             }
+            try {
+                int images = listImage.size();
+                if (images > 0) {
+                    Log.d(TAG, "Pictures taken:" + images);
+                    long[] tempObjAddress = new long[images];
+                    for (int i = 0; i < images; i++) {
+                        tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
+                    }
+
+                    Mat result = new Mat();
+                    // Call the OpenCV C++ Code to perform stitching process
+                    try {
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
+                        //save to external storage
+                        boolean isSaved = false;
+                        if (!result.empty())
+                            isSaved = ImageRW.saveResultImageExternal(result);
+                        showToastRunnable(getString(R.string.msg_is_saved) + isSaved);
+                    } catch (Exception e) {
+                        Log.e(TAG, "native processPanorama not working ", e);
+                    }
+
+                    for (Mat mat : listImage) mat.release();
+                    listImage.clear();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            hideProcessingDialog();
+            isNotSaving = true;
         };
         new Thread(r).start();
 
     }
 
     public void showToastRunnable(final String message) {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-            }
-        };
+        Runnable r = () -> Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
         post(r);
     }
 
@@ -297,23 +288,17 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
      * additionally process circle is shown
      */
     public synchronized void showProcessingDialog() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                mCameraControl.stopPreview();
-                mProgressBar.setVisibility(View.VISIBLE);
-            }
+        Runnable r = () -> {
+            mCameraControl.stopPreview();
+            mProgressBar.setVisibility(View.VISIBLE);
         };
         post(r);
     }
 
     public synchronized void hideProcessingDialog() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                mCameraControl.startPreview();
-                mProgressBar.setVisibility(View.GONE);
-            }
+        Runnable r = () -> {
+            mCameraControl.startPreview();
+            mProgressBar.setVisibility(View.GONE);
         };
         post(r);
     }

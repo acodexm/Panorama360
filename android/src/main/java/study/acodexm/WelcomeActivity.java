@@ -119,16 +119,13 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
                         Log.d(TAG, "Some permissions are not granted ask again ");
                         if (ActivityCompat.shouldShowRequestPermissionRationale(this, CAMERA) ||
                                 ActivityCompat.shouldShowRequestPermissionRationale(this, STORAGE)) {
-                            showDialogOK(getString(R.string.dialog_rw_perms_required), new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    switch (which) {
-                                        case DialogInterface.BUTTON_POSITIVE:
-                                            checkAndRequestPermissions();
-                                            break;
-                                        case DialogInterface.BUTTON_NEGATIVE:
-                                            break;
-                                    }
+                            showDialogOK(getString(R.string.dialog_rw_perms_required), (dialog, which) -> {
+                                switch (which) {
+                                    case DialogInterface.BUTTON_POSITIVE:
+                                        checkAndRequestPermissions();
+                                        break;
+                                    case DialogInterface.BUTTON_NEGATIVE:
+                                        break;
                                 }
                             });
                         } else {

@@ -50,18 +50,7 @@ public class GalleryActivity extends Activity {
         loadImages();
         start();
         //attaching SwipeListener to view
-        viewFlipper.setOnTouchListener(new SwipeListener(new Runnable() {
-            @Override
-            public void run() {
-                previousImage();
-            }
-        }, new Runnable() {
-            @Override
-            public void run() {
-                nextImage();
-            }
-        }));
-
+        viewFlipper.setOnTouchListener(new SwipeListener(() -> previousImage(), () -> nextImage()));
     }
 
     /**

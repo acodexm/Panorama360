@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class ImageRW {
     private static final String TAG = ImageRW.class.getSimpleName();
@@ -59,7 +60,7 @@ public class ImageRW {
         File folder = new File(Environment.getExternalStorageDirectory()
                 + "/PanoramaApp");
         Date date = new Date();
-        SimpleDateFormat simple = new SimpleDateFormat("ddMMyyyyHHmmss");
+        SimpleDateFormat simple = new SimpleDateFormat("ddMMyyyyHHmmss", Locale.getDefault());
         final String fileName = folder.getAbsolutePath() + "/panorama_" +
                 simple.format(date) + ".png";
         Log.d(TAG, "saveResultImageExternal: filename: " + fileName);

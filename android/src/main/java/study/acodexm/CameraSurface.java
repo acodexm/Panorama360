@@ -170,24 +170,16 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     public void onPictureTaken(final byte[] bytes, Camera camera) {
         long time = System.currentTimeMillis();
 
-        Runnable saveImage = new Runnable() {
-            @Override
-            public void run() {
-                ImageRW.saveImageExternal(bytes, currentPictureId);
-            }
-        };
+        Runnable saveImage = () -> ImageRW.saveImageExternal(bytes, currentPictureId);
         mViewControl.post(saveImage);
 
-        Runnable processTexture = new Runnable() {
-            @Override
-            public void run() {
-                mViewControl.showProcessingDialog();
-                mPicture = resizeImage(bytes);
-                mSphereControl.setPicture(mPicture);
-                mViewControl.hideProcessingDialog();
-                mViewControl.updateRender();
-                safeToTakePicture = true;
-            }
+        Runnable processTexture = () -> {
+            mViewControl.showProcessingDialog();
+            mPicture = resizeImage(bytes);
+            mSphereControl.setPicture(mPicture);
+            mViewControl.hideProcessingDialog();
+            mViewControl.updateRender();
+            safeToTakePicture = true;
         };
         mViewControl.post(processTexture);
 
