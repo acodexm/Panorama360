@@ -83,7 +83,7 @@ dependencies {
     testImplementation ("org.robolectric:robolectric:3.6.1"){
         exclude group: 'com.google.guava', module:'guava'
     }
-    androidTestImplementation 'com.android.support:support-annotations:26.1.0'
+    androidTestImplementation 'com.android.support:support-annotations:27.1.1'
     //Mockito testing
 //        testImplementation 'org.mockito:mockito-core:2.10.0'
 //        androidTestImplementation 'org.mockito:mockito-android:2.10.0'

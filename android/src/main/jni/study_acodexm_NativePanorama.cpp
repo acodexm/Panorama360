@@ -195,7 +195,7 @@ Java_study_acodexm_NativePanorama_processPanorama
     }
     Mat &result = *(Mat *) outputAddress;
     Stitcher::Mode mode = Stitcher::PANORAMA;
-    Ptr<Stitcher> stitcher = Stitcher::create(mode, false);
+    Ptr<Stitcher> stitcher = Stitcher::create(mode, true);
     Stitcher::Status status = stitcher->stitch(imgVec, result);
     if (status != Stitcher::OK) {
         LOGE("Can't stitch images, error code = %d", int(status));
