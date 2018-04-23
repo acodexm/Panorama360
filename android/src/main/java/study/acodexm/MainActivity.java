@@ -44,6 +44,7 @@ import study.acodexm.Utils.LOG;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
+import study.acodexm.control.PicturePosition;
 import study.acodexm.control.ViewControl;
 import study.acodexm.gallery.GalleryActivity;
 import study.acodexm.settings.ActionMode;
@@ -51,7 +52,7 @@ import study.acodexm.settings.PictureMode;
 import study.acodexm.settings.PictureQuality;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.settings.UserPreferences;
-import study.acodexm.utils.ImageChooser;
+import study.acodexm.utils.ImagePicker;
 import study.acodexm.utils.ImageRW;
 
 public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl, NavigationView.OnNavigationItemSelectedListener {
@@ -230,7 +231,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             isNotSaving = false;
             final List<Mat> listImage;
             try {
-                listImage = ImageChooser.loadPictures(pictureMode, mCameraControl.getIdsTable());
+                listImage = ImagePicker.loadPictures(pictureMode, mCameraControl.getPictureList());
+//                listImage = ImageChooser.loadPictures(pictureMode, mCameraControl.getIdsTable());
             } catch (Exception e) {
                 Log.e(TAG, "run: loadPictures failed", e);
                 return;
@@ -375,9 +377,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         break;
                     case Manual:
                         mManualControl.startRendering();
-                        int position = mManualControl.canTakePicture();
-                        if (position != -1)
-                            mCameraControl.takePicture(position);
+//                        int position = mManualControl.canTakePicture();
+//                        if (position != -1)
+//                            mCameraControl.takePicture(position);
+                        PicturePosition position = new PicturePosition(mManualControl.canTakePicture2());
+                        if (position.isPositionPossible())
+                            mCameraControl.takePicture2(position);
                         else showToast(getString(R.string.msg_take_picture_not_allowed));
                         break;
                 }

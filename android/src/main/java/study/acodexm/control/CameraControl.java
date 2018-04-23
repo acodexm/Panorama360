@@ -21,4 +21,6 @@ public interface CameraControl {
 
     List<Integer> getIdsTable();
 
+    List<String> getPictureList();
+
 }

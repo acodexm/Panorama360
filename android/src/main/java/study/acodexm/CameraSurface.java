@@ -17,6 +17,7 @@ import java.util.List;
 
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
+import study.acodexm.control.PicturePosition;
 import study.acodexm.control.ViewControl;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.utils.ImageRW;
@@ -32,6 +33,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private SphereControl mSphereControl;
     private SettingsControl mSettingsControl;
     private int currentPictureId;
+    private String currentPicture;
     private int PHOTO_WIDTH;
     private int PHOTO_HEIGHT;
     private Camera.Size highestRes;
@@ -142,8 +144,18 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void takePicture(int id) {
         if (camera != null && safeToTakePicture) {
-            currentPictureId = id;
-            mSphereControl.setLastPosition(id);
+//            currentPictureId = id;
+//            mSphereControl.setLastPosition(id);
+//            safeToTakePicture = false;
+//            camera.autoFocus(this);
+        }
+    }
+
+    @Override
+    public void takePicture2(PicturePosition position) {
+        if (camera != null && safeToTakePicture) {
+            currentPicture = position.getPosition();
+            mSphereControl.setLastPosition2(position.getPosition());
             safeToTakePicture = false;
             camera.autoFocus(this);
         }
@@ -226,5 +238,10 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public List<Integer> getIdsTable() {
         return mSphereControl.getTakenPicturesIds();
+    }
+
+    @Override
+    public List<String> getPictureList() {
+        return null;
     }
 }

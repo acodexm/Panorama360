@@ -129,4 +129,20 @@ public class ImageRW {
         return bitmap;
     }
 
+    static Bitmap loadImageExternal(String currentPictureId) {
+        if (!isPathCreated())
+            return null;
+        final String fileName = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + "/PanoramaApp/temp/" + currentPictureId + ".png";
+        Bitmap bitmap = null;
+        try {
+            FileInputStream fos = new FileInputStream(fileName);
+            bitmap = BitmapFactory.decodeStream(fos);
+            fos.close();
+        } catch (IOException e) {
+            Log.e(TAG, "File loading failed", e);
+        }
+        return bitmap;
+    }
+
 }

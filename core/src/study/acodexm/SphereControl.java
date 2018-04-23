@@ -24,6 +24,6 @@ public interface SphereControl {
 
     List<Integer> getTakenPicturesIds();
 
-    List<Integer> getTakenPicturesIds();
+    List<String> getTakenPictures();
 
 }

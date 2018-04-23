@@ -1,6 +1,24 @@
 package study.acodexm.utils;
 
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.util.Log;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import study.acodexm.control.PicturePosition;
+import study.acodexm.settings.PictureMode;
+
+import static study.acodexm.AndroidCamera.LAT;
+import static study.acodexm.AndroidCamera.LON;
+
 public class ImagePicker {
+
+    private static final String TAG = ImagePicker.class.getSimpleName();
     public int maximum(int input[][]) {
         int temp[] = new int[input[0].length];
         MaximumHistogram mh = new MaximumHistogram();
@@ -33,6 +51,72 @@ public class ImagePicker {
         int maxRectangle = mrs.maximum(input);
         //System.out.println("Max rectangle is of size " + maxRectangle);
         assert maxRectangle == 8;
+    }
+
+    public static List<Mat> loadPictures(PictureMode pictureMode, List<String> pictureList) {
+        Log.d(TAG, "loadPictures: current positions" + pictureList);
+        List<PicturePosition> positions = new ArrayList<>();
+        for (String pic : pictureList) {
+            positions.add(new PicturePosition(pic));
+        }
+        List<Mat> pictures = new ArrayList<>();
+        switch (pictureMode) {
+            case auto:
+                for (String id : positions)
+                    pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
+                break;
+            case panorama:
+                List<Integer> longestIDS = idsForPanorama(positions);
+                if (longestIDS != null && longestIDS.size() > 0)
+                    for (int id : longestIDS) {
+                        pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
+                    }
+                else
+                    Log.e(TAG, "panorama loadPictures failed: ",
+                            new Throwable("empty list or null"));
+                break;
+            case widePicture:
+                List<Integer> optimalIDS = idsForWide(positions).get(0);
+                if (optimalIDS != null && optimalIDS.size() > 0)
+                    for (int id : optimalIDS) {
+                        pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
+                    }
+                else
+                    Log.e(TAG, "widePicture loadPictures failed: ",
+                            new Throwable("empty list or null"));
+                break;
+            case picture360:
+                //this will work only when whole sphere is filled with pictures
+                if (positions.size() == LAT * LON)
+                    for (int id : positions)
+                        pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
+                else
+                    Log.e(TAG, "Picture360 loadPictures failed: ",
+                            new Throwable("not enough pictures"));
+                break;
+        }
+
+        return pictures;
+    }
+
+    private static List<Integer> idsForPanorama(List<PicturePosition> positions) {
+        return null;
+    }
+
+    /**
+     * converts bitmap object to openCV Mat object
+     *
+     * @param bitmap
+     * @return
+     */
+    private static Mat bitmapToMat(Bitmap bitmap) {
+        Matrix matrix = new Matrix();
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
+                bitmap.getHeight(), matrix, false);
+        Mat mat = new Mat();
+        Utils.bitmapToMat(bitmap, mat);
+        bitmap.recycle();
+        return mat;
     }
 }
 

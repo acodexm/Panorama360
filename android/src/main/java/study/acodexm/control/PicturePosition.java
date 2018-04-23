@@ -28,7 +28,7 @@ public class PicturePosition {
         }
     }
 
-    boolean isPositionPossible() {
+    public boolean isPositionPossible() {
         return x > -1 && y > -1;
     }
 
