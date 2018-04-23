@@ -142,8 +142,6 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void takePicture(int id) {
         if (camera != null && safeToTakePicture) {
-            if (ids == null)
-                ids = mSphereControl.getIdTable();
             currentPictureId = id;
             mSphereControl.setLastPosition(id);
             safeToTakePicture = false;

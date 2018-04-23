@@ -29,7 +29,7 @@ public class ImageChooser {
      * method returns list of pictures that have been chosen depending on picture mode
      *
      * @param pictureMode
-     * @param ids         are stored indexes of taken pictures depending on position on sphere
+     * @param ids are stored indexes of taken pictures depending on position on sphere
      * @return
      */
     public static List<Mat> loadPictures(PictureMode pictureMode, List<Integer> ids) {

@@ -9,6 +9,8 @@ import study.acodexm.SphereControl;
 public interface CameraControl {
     void takePicture(int id);
 
+    void takePicture2(PicturePosition position);
+
     void startPreview();
 
     void stopPreview();

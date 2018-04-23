@@ -23,7 +23,7 @@ android {
     }
     defaultConfig {
         applicationId 'study.acodexm'
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -49,7 +49,7 @@ android {
 }
 configurations { natives }
 dependencies {
-    implementation project(":core")
+    implementation project(':core')
     implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
     natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
     natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
@@ -68,27 +68,34 @@ dependencies {
     natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
     natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
     natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:design:26.1.0'
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
     testImplementation 'junit:junit:4.12'
+
     //RxAndroid
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.7'
+
     //ButterKnife
     implementation 'com.jakewharton:butterknife:8.8.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
+
     //Robolectric
-    testImplementation ("org.robolectric:robolectric:3.6.1"){
-        exclude group: 'com.google.guava', module:'guava'
+    testImplementation('org.robolectric:robolectric:3.6.1') {
+        exclude group: 'com.google.guava', module: 'guava'
     }
     androidTestImplementation 'com.android.support:support-annotations:27.1.1'
+
     //Mockito testing
-//        testImplementation 'org.mockito:mockito-core:2.10.0'
-//        androidTestImplementation 'org.mockito:mockito-android:2.10.0'
+
+    //        testImplementation 'org.mockito:mockito-core:2.10.0'
+
+    //        androidTestImplementation 'org.mockito:mockito-android:2.10.0'
+
     //OpenCV
-    implementation project(":opencv-java")
+    implementation project(':opencv-java')
 }
 
 // called every time gradle gets executed, takes the native dependencies of

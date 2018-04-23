@@ -10,17 +10,27 @@ public class AndroidSphereControl implements SphereControl {
     private List<Integer> ids;
     private CameraControl mCameraControl;
     private int position;
+    private PicturePosition mPosition;
     private List<Integer> takenPicturesIds;
+    private List<PicturePosition> takenPictures;
 
     public AndroidSphereControl(CameraControl cameraControl) {
         mCameraControl = cameraControl;
         takenPicturesIds = new ArrayList<>();
+        takenPictures = new ArrayList<>();
     }
 
     @Override
     public void autoTakePicture(int id) {
         mCameraControl.takePicture(id);
         this.takenPicturesIds.add(id);
+    }
+
+    @Override
+    public void autoTakePicture2(String position) {
+        PicturePosition picturePosition = new PicturePosition(position);
+        mCameraControl.takePicture2(picturePosition);
+        this.takenPictures.add(picturePosition);
     }
 
     @Override
@@ -41,6 +51,11 @@ public class AndroidSphereControl implements SphereControl {
     @Override
     public void setLastPosition(int position) {
         this.position = position;
+
+    }
+
+    @Override
+    public void setSphereDimensions(int x, int y) {
 
     }
 

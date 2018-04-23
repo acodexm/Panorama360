@@ -6,17 +6,23 @@ import java.util.List;
 public interface SphereControl {
     void autoTakePicture(int id);
 
+    void autoTakePicture2(String position);
+
     byte[] getPicture();
 
     void setPicture(byte[] picture);
 
     int getLastPosition();
 
+    String getLastPosition2();
+
     void setLastPosition(int position);
 
-    List<Integer> getIdTable();
+    void setLastPosition2(String position);
 
-    void setIdTable(List<Integer> ids);
+    void setSphereDimensions(int x, int y);
+
+    List<Integer> getTakenPicturesIds();
 
     List<Integer> getTakenPicturesIds();
 
