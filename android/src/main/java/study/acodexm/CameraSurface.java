@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -17,7 +18,6 @@ import java.util.List;
 
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
-import study.acodexm.control.PicturePosition;
 import study.acodexm.control.ViewControl;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.utils.ImageRW;
@@ -25,20 +25,29 @@ import study.acodexm.utils.ImageRW;
 @SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
-    private List<Integer> ids;
     private Camera camera;
     private byte[] mPicture;
     private boolean safeToTakePicture = false;
     private ViewControl mViewControl;
     private SphereControl mSphereControl;
     private SettingsControl mSettingsControl;
-    private int currentPictureId;
-    private String currentPicture;
     private int PHOTO_WIDTH;
     private int PHOTO_HEIGHT;
     private Camera.Size highestRes;
     private Camera.Size lowRes;
     private Camera.Size lowestRes;
+
+    public CameraSurface(Context context) {
+        super(context);
+    }
+
+    public CameraSurface(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public CameraSurface(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+    }
 
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
         super(activity.getContext());
@@ -138,24 +147,10 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
     /**
      * this is a trigger method for taking picture
-     *
-     * @param id
      */
     @Override
-    public void takePicture(int id) {
+    public void takePicture() {
         if (camera != null && safeToTakePicture) {
-//            currentPictureId = id;
-//            mSphereControl.setLastPosition(id);
-//            safeToTakePicture = false;
-//            camera.autoFocus(this);
-        }
-    }
-
-    @Override
-    public void takePicture2(PicturePosition position) {
-        if (camera != null && safeToTakePicture) {
-            currentPicture = position.getPosition();
-            mSphereControl.setLastPosition2(position.getPosition());
             safeToTakePicture = false;
             camera.autoFocus(this);
         }
@@ -180,7 +175,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     public void onPictureTaken(final byte[] bytes, Camera camera) {
         long time = System.currentTimeMillis();
 
-        Runnable saveImage = () -> ImageRW.saveImageExternal(bytes, currentPictureId);
+        Runnable saveImage = () -> ImageRW.saveImageExternal(bytes, PicturePosition.getInstance().calculatePosition());
         mViewControl.post(saveImage);
 
         Runnable processTexture = () -> {
@@ -235,13 +230,4 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         return mSphereControl;
     }
 
-    @Override
-    public List<Integer> getIdsTable() {
-        return mSphereControl.getTakenPicturesIds();
-    }
-
-    @Override
-    public List<String> getPictureList() {
-        return null;
-    }
 }

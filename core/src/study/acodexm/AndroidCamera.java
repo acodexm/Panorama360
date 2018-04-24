@@ -56,13 +56,9 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private Map<Integer, Vector3> centersOfGrid;
     private ActionMode mActionMode = ActionMode.FullAuto;
     private List<Integer> ids;
-    private List<Integer> takenPictures;
-    private List<PicturePosition> takenPictures2;
     private Vector3 cameraOld;
     private int frames;
-
-    private int lastPosition = -1;
-    private PicturePosition mPicturePosition = new PicturePosition(-1, -1);
+    private PicturePosition mPosition;
     private boolean canRender = false;
 
     public AndroidCamera(RotationVector rotationVector, SphereControl sphereControl, SettingsControl settingsControl) {
@@ -82,8 +78,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         //initialize variables
         fpsLogger = new FPSLogger();
         mat4 = new Matrix4();
-        takenPictures = new ArrayList<Integer>();
-        takenPictures2 = new ArrayList<PicturePosition>();
+        mPosition = PicturePosition.getInstance();
         fpsLogger = new FPSLogger();
         isUpdated = false;
         modelBatch = new ModelBatch();
@@ -123,14 +118,10 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             LOG.d(TAG, "update sphere textures");
             if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
                 byte[] picture = mSphereControl.getPicture();
-//                lastPosition = mSphereControl.getLastPosition();
-//                if (lastPosition != -1)
-//                    updateSingleTextureAndroid(lastPosition, picture);
-                mPicturePosition.setPosition(mSphereControl.getLastPosition2());
-                if (mPicturePosition.isPositionPossible())
-                    updateSingleTextureAndroid2(calculatePosition(mPicturePosition), picture);
+                if (mPosition.isPositionPossible())
+                    updateSingleTextureAndroid(mPosition.calculatePosition(), picture);
             } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-                updateSingleTextureDesktop2(calculatePosition(mPicturePosition));
+                updateSingleTextureDesktop(mPosition.calculatePosition());
             }
             isUpdated = true;
         }
@@ -161,18 +152,13 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 //                }
 //            }
 //        }
-        PicturePosition position = whereIsCameraLooking2(centersOfGrid);
-        if (position.x != -1 && position.y != -1) {
-            if (!takenPictures2.contains(position)) {
-                if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
-                    takenPictures2.add(position);
-                    mSphereControl.autoTakePicture2(position.getPosition());
-                } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-                    takenPictures2.add(position);
-                    mPicturePosition = position;
-                    isUpdated = false;
-                    LOG.d(TAG, "position" + position);
-                }
+        whereIsCameraLooking(centersOfGrid);
+        if (mPosition.isPositionPossible()) {
+            if (canRender && Gdx.app.getType() == Application.ApplicationType.Android && mActionMode == ActionMode.FullAuto) {
+                mSphereControl.autoTakePicture();
+            } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                isUpdated = false;
+                LOG.d(TAG, "position: " + mPosition);
             }
         }
         fpsLogger.log();
@@ -266,10 +252,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         for (int i = LAT; i <= amount; i++) {
             ids.add(i);
         }
-        if (Gdx.app.getType() == Application.ApplicationType.Android && mSphereControl != null) {
-            mSphereControl.setSphereDimensions(LON, LAT);
-        }
-        centersOfGrid = calculateCenterList2(vector3s);
+        centersOfGrid = calculateCenterList(vector3s);
     }
 
     private void renderPhotosAndroid() {
@@ -282,7 +265,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private void renderPhotosDesktop() {
         if (photoSphere != null)
             photoSphere.dispose();
-//        photoSphere = setPhotoOnSphereDesktop2(vector3s, mModelBuilder);
         photoSphere = setPhotoOnSphereDesktop(vector3s, mModelBuilder, ids);
         instance = new ModelInstance(photoSphere);
     }
@@ -383,55 +365,10 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             }
     }
 
-    private void updateSingleTextureAndroid2(int id, byte[] bytes) {
-        Texture texture;
-        try {
-            Pixmap pixmap = new Pixmap(bytes, 0, bytes.length);
-            texture = new Texture(pixmap);
-        } catch (Exception e) {
-            LOG.e(TAG, "texture load failed, loading empty ", e);
-            texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-        }
-        if (id != -1)
-            for (Attribute att : instance.materials.get(id - LAT)) {
-                if (att.type == TextureAttribute.Diffuse) {
-                    //dispose of old texture MUST be done to avoid memory leak!!!!
-                    ((TextureAttribute) att).textureDescription.texture.dispose();
-                    ((TextureAttribute) att).textureDescription.set(texture,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureWrap.ClampToEdge,
-                            Texture.TextureWrap.ClampToEdge);
-                }
-            }
-    }
-
     /**
      * same functionality as updateSingleTextureAndroid method but for desktop
      */
     private void updateSingleTextureDesktop(int id) {
-        Texture texture;
-        try {
-            LOG.d(TAG, "loading texture " + id + ".png");
-            texture = new Texture(Gdx.files.internal("data/numbers/" + id + ".png"));
-        } catch (Exception e) {
-            LOG.e(TAG, "texture load failed, loading empty ", e);
-            texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-        }
-        if (id != -1)
-            for (Attribute att : instance.materials.get(id - LAT)) {
-                if (att.type == TextureAttribute.Diffuse) {
-                    ((TextureAttribute) att).textureDescription.texture.dispose();
-                    ((TextureAttribute) att).textureDescription.set(texture,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureWrap.ClampToEdge,
-                            Texture.TextureWrap.ClampToEdge);
-                }
-            }
-    }
-
-    private void updateSingleTextureDesktop2(int id) {
         if (id != -1 && instance.materials.size > id - LAT && id > LAT) {
             Texture texture;
 
@@ -464,39 +401,15 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         return pos < 0 ? -1 : pos;
     }
 
-    private int calculatePosition(PicturePosition position) {
-        //x=1 y=2 pos=13
-        //x=2 y=3 pos=25
-        int x = position.x;
-        int y = position.y;
-        int pos = x * LAT + y + x;
-        return pos < 0 ? -1 : pos;
-    }
 
     /**
      * this method calculates a 3D position of center of each cell in sphere grid depending on vertices
      * from temp sphere model
      *
      * @param fourVertices
-     * @param ids
      * @return map of centers
      */
-    private Map<Integer, Vector3> calculateCenterList(List<Vector3> fourVertices, List<Integer> ids) {
-        Map<Integer, Vector3> centersOfGrid = new HashMap<Integer, Vector3>();
-        for (int id : ids) {
-            Vector3 centerOfTex = new Vector3(
-                    ((fourVertices.get(id + LAT + 1).x + fourVertices.get(id + LAT + 2).x) / 2 +
-                            (fourVertices.get(id + 1).x + fourVertices.get(id).x) / 2),
-                    ((fourVertices.get(id + LAT + 1).y + fourVertices.get(id + LAT + 2).y) / 2 +
-                            (fourVertices.get(id + 1).y + fourVertices.get(id).y) / 2),
-                    ((fourVertices.get(id + LAT + 1).z + fourVertices.get(id + LAT + 2).z) / 2 +
-                            (fourVertices.get(id + 1).z + fourVertices.get(id).z) / 2));
-            centersOfGrid.put(id, centerOfTex);
-        }
-        return centersOfGrid;
-    }
-
-    private Map<Integer, Vector3> calculateCenterList2(List<Vector3> fourVertices) {
+    private Map<Integer, Vector3> calculateCenterList(List<Vector3> fourVertices) {
         Map<Integer, Vector3> centersOfGrid = new HashMap<Integer, Vector3>();
         for (int i = 0; i < LON; i++) {
             for (int j = 0; j < LAT; j++) {
@@ -521,65 +434,23 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
      * camera is looking is collinear with vector from (0,0,0) to center of cell on sphere grid
      *
      * @param centersOfGrid
-     * @param ids
      * @return
      */
-    private int whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid, List<Integer> ids) {
-        float offset = 0.3f;
-        /*
-         * we have a camera direction vector which changes with camera move,
-         * now we have to calculate the center point of all rectangles where we want to take photo,
-         * if the center point and camera direction vectors are collinear than we know which rectangle
-         * is in center so we can take photo in that position and name it as the position id
-         */
-
-
-        /*
-         * is collinear when c{x,y,z}==0
-         { c_{x}=a_{y}b_{z}-a_{z}b_{y}}
-         { c_{y}=a_{z}b_{x}-a_{x}b_{z}}
-         { c_{z}=a_{x}b_{y}-a_{y}b_{x}}
-         */
-        Vector3 direction = camera.direction;
-        Vector3 isCollinear;
-        for (int i : ids) {
-            //check if the point is in front of us and not on the opposite side
-            if (direction.x * centersOfGrid.get(i).x >= 0
-                    && direction.y * centersOfGrid.get(i).y >= 0
-                    && direction.z * centersOfGrid.get(i).z >= 0) {
-                isCollinear = new Vector3(
-                        direction.y * centersOfGrid.get(i).z - direction.z * centersOfGrid.get(i).y,
-                        direction.z * centersOfGrid.get(i).x - direction.x * centersOfGrid.get(i).z,
-                        direction.x * centersOfGrid.get(i).y - direction.y * centersOfGrid.get(i).x
-                );
-                if ((isCollinear.x < offset && isCollinear.x > -offset)
-                        && (isCollinear.y < offset && isCollinear.y > -offset)
-                        && (isCollinear.z < offset && isCollinear.z > -offset)) {
-                    if (i == LAT || i == 2 * LAT + 1 || i == 3 * LAT + 2 || i == 4 * LAT + 3 || i == 5 * LAT + 4 || i == 6 * LAT + 5)
-                        return -1;
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private PicturePosition whereIsCameraLooking2(Map<Integer, Vector3> centersOfGrid) {
+    private void whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid) {
         float offset = 0.5f;
+
         /*
          * we have a camera direction vector which changes with camera move,
          * now we have to calculate the center point of all rectangles where we want to take photo,
          * if the center point and camera direction vectors are collinear than we know which rectangle
          * is in center so we can take photo in that position and name it as the position id
-         */
-
-
-        /*
+         *
          * is collinear when c{x,y,z}==0
          { c_{x}=a_{y}b_{z}-a_{z}b_{y}}
          { c_{y}=a_{z}b_{x}-a_{x}b_{z}}
          { c_{z}=a_{x}b_{y}-a_{y}b_{x}}
          */
+
         Vector3 direction = camera.direction;
         Vector3 isCollinear;
         for (int i = 0; i < LON; i++) {
@@ -598,12 +469,12 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                         if ((isCollinear.x < offset && isCollinear.x > -offset)
                                 && (isCollinear.y < offset && isCollinear.y > -offset)
                                 && (isCollinear.z < offset && isCollinear.z > -offset)) {
-                            return new PicturePosition(i, j);
+                            mPosition.setLastPosition(i, j);
+                            return;
                         }
                     }
             }
         }
-        return new PicturePosition(-1, -1);
     }
 
     /**
@@ -631,16 +502,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     @Override
     public void resume() {
-    }
-
-    @Override
-    public int canTakePicture() {
-        return whereIsCameraLooking(centersOfGrid, ids);
-    }
-
-    @Override
-    public String canTakePicture2() {
-        return whereIsCameraLooking2(centersOfGrid).getPosition();
     }
 
     @Override

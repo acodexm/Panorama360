@@ -10,7 +10,7 @@ import org.opencv.core.Mat;
 import java.util.ArrayList;
 import java.util.List;
 
-import study.acodexm.control.PicturePosition;
+import study.acodexm.PicturePosition;
 import study.acodexm.settings.PictureMode;
 
 import static study.acodexm.AndroidCamera.LAT;
@@ -53,16 +53,11 @@ public class ImagePicker {
         assert maxRectangle == 8;
     }
 
-    public static List<Mat> loadPictures(PictureMode pictureMode, List<String> pictureList) {
-        Log.d(TAG, "loadPictures: current positions" + pictureList);
-        List<PicturePosition> positions = new ArrayList<>();
-        for (String pic : pictureList) {
-            positions.add(new PicturePosition(pic));
-        }
+    public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance) {
         List<Mat> pictures = new ArrayList<>();
         switch (pictureMode) {
             case auto:
-                for (String id : positions)
+                for (int id : instance.getTakenPictures())
                     pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
             case panorama:
@@ -87,8 +82,8 @@ public class ImagePicker {
                 break;
             case picture360:
                 //this will work only when whole sphere is filled with pictures
-                if (positions.size() == LAT * LON)
-                    for (int id : positions)
+                if (instance.getTakenPictures().size() == LAT * LON)
+                    for (int id : instance.getTakenPictures())
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 else
                     Log.e(TAG, "Picture360 loadPictures failed: ",

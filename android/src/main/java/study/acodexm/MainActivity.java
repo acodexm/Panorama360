@@ -44,7 +44,6 @@ import study.acodexm.Utils.LOG;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
-import study.acodexm.control.PicturePosition;
 import study.acodexm.control.ViewControl;
 import study.acodexm.gallery.GalleryActivity;
 import study.acodexm.settings.ActionMode;
@@ -107,6 +106,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private boolean onBackBtnPressed = false;
     private int DOUBLE_BACK_PRESSED_DELAY = 2500;
     private boolean isNotSaving = true;
+    private PicturePosition mPicturePosition = PicturePosition.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -231,7 +231,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             isNotSaving = false;
             final List<Mat> listImage;
             try {
-                listImage = ImagePicker.loadPictures(pictureMode, mCameraControl.getPictureList());
+                listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
 //                listImage = ImageChooser.loadPictures(pictureMode, mCameraControl.getIdsTable());
             } catch (Exception e) {
                 Log.e(TAG, "run: loadPictures failed", e);
@@ -377,12 +377,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         break;
                     case Manual:
                         mManualControl.startRendering();
-//                        int position = mManualControl.canTakePicture();
-//                        if (position != -1)
-//                            mCameraControl.takePicture(position);
-                        PicturePosition position = new PicturePosition(mManualControl.canTakePicture2());
-                        if (position.isPositionPossible())
-                            mCameraControl.takePicture2(position);
+                        if (mPicturePosition.isPositionPossible())
+                            mCameraControl.takePicture();
                         else showToast(getString(R.string.msg_take_picture_not_allowed));
                         break;
                 }
