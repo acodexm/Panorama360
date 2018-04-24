@@ -394,14 +394,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     }
 
 
-    private int calculatePosition(int x, int y) {
-        //x=1 y=2 pos=13
-        //x=2 y=3 pos=25
-        int pos = x * LAT + y + x;
-        return pos < 0 ? -1 : pos;
-    }
-
-
     /**
      * this method calculates a 3D position of center of each cell in sphere grid depending on vertices
      * from temp sphere model
@@ -413,7 +405,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         Map<Integer, Vector3> centersOfGrid = new HashMap<Integer, Vector3>();
         for (int i = 0; i < LON; i++) {
             for (int j = 0; j < LAT; j++) {
-                int id = calculatePosition(i, j);
+                int id = mPosition.calculatePosition(i, j);
                 LOG.d(TAG, "id: " + id);
                 Vector3 centerOfTex = new Vector3(
                         ((fourVertices.get(id + LAT + 1).x + fourVertices.get(id + LAT + 2).x) / 2 +
@@ -456,7 +448,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         for (int i = 0; i < LON; i++) {
             for (int j = 0; j < LAT; j++) {
                 //check if the point is in front of us and not on the opposite side
-                int pos = calculatePosition(i, j);
+                int pos = mPosition.calculatePosition(i, j);
                 if (pos != -1)
                     if (direction.x * centersOfGrid.get(pos).x >= 0
                             && direction.y * centersOfGrid.get(pos).y >= 0
@@ -469,7 +461,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                         if ((isCollinear.x < offset && isCollinear.x > -offset)
                                 && (isCollinear.y < offset && isCollinear.y > -offset)
                                 && (isCollinear.z < offset && isCollinear.z > -offset)) {
-                            mPosition.setLastPosition(i, j);
+                            mPosition.setCurrentPosition(i, j);
                             return;
                         }
                     }
@@ -506,7 +498,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     @Override
     public boolean isCameraSteady() {
-        return isCameraSteady(cameraOld, camera.direction);
+//        return isCameraSteady(cameraOld, camera.direction);
+        return true;
     }
 
     @Override

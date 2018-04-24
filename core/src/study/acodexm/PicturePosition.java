@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import study.acodexm.Utils.LOG;
+
 import static study.acodexm.AndroidCamera.LAT;
 import static study.acodexm.AndroidCamera.LON;
 
 public class PicturePosition {
+    private static final String TAG = PicturePosition.class.getSimpleName();
     private static PicturePosition thisPosition;
     private int lastX;
     private int lastY;
@@ -56,7 +59,7 @@ public class PicturePosition {
         return pos < 0 ? -1 : pos;
     }
 
-    private int calculatePosition(int x, int y) {
+    public int calculatePosition(int x, int y) {
         int pos = x * LAT + y + x;
         return pos < 0 ? -1 : pos;
     }
@@ -67,6 +70,12 @@ public class PicturePosition {
             this.lastY = lastY;
             this.grid[lastX][lastY] = 1;
         }
+    }
+
+    //todo manage to make it work lol xDDDD
+    public void setCurrentPosition(int lastX, int lastY) {
+        this.lastX = lastX;
+        this.lastY = lastY;
     }
 
     public void setLastPosition(String position) {
@@ -80,6 +89,7 @@ public class PicturePosition {
     }
 
     boolean isPositionPossible() {
+        LOG.d(TAG, toString());
         return grid[lastX][lastY] == 0;
     }
 
