@@ -377,7 +377,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         break;
                     case Manual:
                         mManualControl.startRendering();
-                        if (mPicturePosition.isPositionPossible())
+                        if (mPicturePosition.isCurrentPositionPossible())
                             mCameraControl.takePicture();
                         else showToast(getString(R.string.msg_take_picture_not_allowed));
                         break;

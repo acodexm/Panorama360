@@ -21,31 +21,62 @@ public class ImagePicker {
     private static final String TAG = ImagePicker.class.getSimpleName();
 
     private static List<Integer> maxArea(PicturePosition position) {
-        int input[][] = position.getGrid();
-        int temp[] = new int[input[0].length];
+        int[][] grid = position.getGrid();
+        int[] temp = new int[grid[0].length];
         MaximumHistogram mh = new MaximumHistogram();
         int maxArea = 0;
         int area;
         List<Integer> pictures = new ArrayList<>();
         List<Integer> tempPictures = new ArrayList<>();
-        for (int i = 0; i < input.length; i++) {
-            for (int j = 0; j < input[0].length; j++) {
-                if (input[i][j] == 0) {
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                if (grid[i][j] == 0) {
                     temp[j] = 0;
                     int rm = tempPictures.indexOf(position.calculatePosition(i, j));
                     if (rm != -1)
                         tempPictures.remove(rm);
                 } else if (i == Math.round(LON / 2)) {
-                    temp[j] += 2 * input[i][j];
-                    tempPictures.add(2 * position.calculatePosition(i, j));
+                    temp[j] += 2 * grid[i][j];
+                    tempPictures.add(position.calculatePosition(i, j));
                 } else {
-                    temp[j] += input[i][j];
+                    temp[j] += grid[i][j];
                     tempPictures.add(position.calculatePosition(i, j));
                 }
             }
             area = mh.maxHistogram(temp);
             if (area > maxArea) {
                 maxArea = area;
+                pictures = new ArrayList<>(tempPictures);
+            }
+        }
+        return pictures;
+    }
+
+    private static List<Integer> idsForPanorama(PicturePosition position) {
+        int[][] grid = position.getGrid();
+        int[] temp2 = new int[grid[0].length];
+        List<Integer> pictures = new ArrayList<>();
+        List<Integer> tempPictures = new ArrayList<>();
+        int max = 0;
+        for (int i = 0; i < grid.length; i++) {
+            int temp = 0;
+            for (int j = 0; j < grid[0].length; j++) {
+                if (grid[i][j] == 0) {
+                    temp2[j] = 0;
+                    int rm = tempPictures.indexOf(position.calculatePosition(i, j));
+                    if (rm != -1)
+                        tempPictures.remove(rm);
+                } else if (i == Math.round(LON / 2)) {
+                    temp2[j] += 2 * grid[i][j];
+                    tempPictures.add(position.calculatePosition(i, j));
+                } else {
+                    temp2[j] += grid[i][j];
+                    tempPictures.add(position.calculatePosition(i, j));
+                }
+            }
+            for (int n : temp2) temp += n;
+            if (max < temp) {
+                max = temp;
                 pictures = new ArrayList<>(tempPictures);
             }
         }
@@ -60,7 +91,7 @@ public class ImagePicker {
                     pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
             case panorama:
-                List<Integer> longestIDS = idsForPanorama(instance.getTakenPictures());
+                List<Integer> longestIDS = idsForPanorama(instance);
                 if (longestIDS != null && longestIDS.size() > 0)
                     for (int id : longestIDS) {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
@@ -88,10 +119,6 @@ public class ImagePicker {
         }
 
         return pictures;
-    }
-
-    private static List<Integer> idsForPanorama(List<Integer> positions) {
-        return null;
     }
 
     /**

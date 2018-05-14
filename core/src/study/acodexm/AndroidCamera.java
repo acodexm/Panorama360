@@ -95,7 +95,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     @Override
     public void dispose() {
         LOG.d(TAG, "dispose method begin");
-        if (sphereTemplate != null) sphereTemplate.dispose();
         if (photoSphere != null) photoSphere.dispose();
         if (modelBatch != null) modelBatch.dispose();
     }
@@ -117,11 +116,15 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         if (!isUpdated) {
             LOG.d(TAG, "update sphere textures");
             if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
-                byte[] picture = mSphereControl.getPicture();
-                if (mPosition.isPositionPossible())
-                    updateSingleTextureAndroid(mPosition.calculatePosition(), picture);
+                if (mPosition.isCurrentPositionPossible()) {
+                    updateSingleTextureAndroid(mPosition.calculateCurrentPosition(), mSphereControl.getPicture());
+                    mPosition.saveCurrentPosition();
+                }
             } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-                updateSingleTextureDesktop(mPosition.calculatePosition());
+                if (mPosition.isCurrentPositionPossible()) {
+                    updateSingleTextureDesktop(mPosition.calculateCurrentPosition());
+                    mPosition.saveCurrentPosition();
+                }
             }
             isUpdated = true;
         }
@@ -153,7 +156,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 //            }
 //        }
         whereIsCameraLooking(centersOfGrid);
-        if (mPosition.isPositionPossible()) {
+        if (mPosition.isCurrentPositionPossible()) {
             if (canRender && Gdx.app.getType() == Application.ApplicationType.Android && mActionMode == ActionMode.FullAuto) {
                 mSphereControl.autoTakePicture();
             } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
@@ -213,13 +216,15 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         renderable.meshPart.mesh.getVertices(vertices);
         int vSize = renderable.meshPart.mesh.getVertexSize() / 4;
         vector3s = new ArrayList<Vector3>();
+        Matrix4 wt = renderable.worldTransform;
         for (int i = 0; i < vertices.length; i += vSize) {
             vector3s.add(meshToWorld(
                     vertices[i],
                     vertices[i + 1],
                     vertices[i + 2],
-                    renderable.worldTransform));
+                    wt));
         }
+        sphereTemplate.dispose();
     }
 
     /**
@@ -275,7 +280,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
      * empty texture is loaded for every cell/rectangle
      * every model part has 70% of opacity
      *
-     * @param fourVertices list of vertices from temp phere model
+     * @param fourVertices list of vertices from temp sphere model
      * @param modelBuilder
      * @param ids          indexes of each cell
      * @return new Spherical model with custom textures on its grid
@@ -429,7 +434,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
      * @return
      */
     private void whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid) {
-        float offset = 0.5f;
+        float offset = 0.3f;
 
         /*
          * we have a camera direction vector which changes with camera move,
@@ -462,6 +467,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                                 && (isCollinear.y < offset && isCollinear.y > -offset)
                                 && (isCollinear.z < offset && isCollinear.z > -offset)) {
                             mPosition.setCurrentPosition(i, j);
+                            LOG.d(TAG, "pos" + pos);
                             return;
                         }
                     }
