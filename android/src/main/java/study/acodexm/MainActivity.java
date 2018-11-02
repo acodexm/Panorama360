@@ -232,7 +232,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             final List<Mat> listImage;
             try {
                 listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
-//                listImage = ImageChooser.loadPictures(pictureMode, mCameraControl.getIdsTable());
             } catch (Exception e) {
                 Log.e(TAG, "run: loadPictures failed", e);
                 return;

@@ -9,18 +9,18 @@ import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
-
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.utils.ImageRW;
+
+import java.io.ByteArrayOutputStream;
+import java.util.List;
 
 @SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
@@ -36,6 +36,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private Camera.Size highestRes;
     private Camera.Size lowRes;
     private Camera.Size lowestRes;
+    private Context context;
 
     public CameraSurface(Context context) {
         super(context);
@@ -51,6 +52,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
         super(activity.getContext());
+        context=activity.getContext();
         mViewControl = activity;
         mSettingsControl = settingsControl;
         getHolder().addCallback(this);
@@ -64,6 +66,13 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             PHOTO_HEIGHT = metrics.heightPixels / 4;
             PHOTO_WIDTH = metrics.widthPixels / 4;
         }
+    }
+
+    public static int getDeviceCurrentOrientation(Context context) {
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int rotation = windowManager.getDefaultDisplay().getRotation();
+        Log.d("Utils", "Current orientation = " + rotation);
+        return rotation;
     }
 
     @Override
@@ -106,15 +115,47 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
                     break;
             }
             camera.setParameters(myParameters);
-            camera.setDisplayOrientation(0);
+            setCameraDisplayOrientation(context, camera);
             camera.startPreview();
         }
         safeToTakePicture = true;
     }
 
+    public void setCameraDisplayOrientation(Context context, Camera mCamera) {
+        android.hardware.Camera.CameraInfo info =
+                new android.hardware.Camera.CameraInfo();
+        android.hardware.Camera.getCameraInfo(0, info); // Use the first rear-facing camera
+        int rotation = getDeviceCurrentOrientation(context);
+
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                degrees = 0;
+                break;
+            case Surface.ROTATION_90:
+                degrees = 90;
+                break;
+            case Surface.ROTATION_180:
+                degrees = 180;
+                break;
+            case Surface.ROTATION_270:
+                degrees = 270;
+                break;
+        }
+
+        int result;
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+        mCamera.setDisplayOrientation(result);
+    }
+
+
     /**
      * this method finds the best resolution for preview for current device
-     *
      */
     private Camera.Size getBestPreviewSize(Camera.Parameters parameters) {
         Camera.Size bestSize;
@@ -138,6 +179,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         lowRes = pictureSizes.get(pictureSizes.size() / 2);
         lowestRes = pictureSizes.get(pictureSizes.size() - 1);
     }
+
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         camera.stopPreview();
@@ -152,7 +194,11 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     public void takePicture() {
         if (camera != null && safeToTakePicture) {
             safeToTakePicture = false;
-            camera.autoFocus(this);
+            try {
+                camera.autoFocus(this);
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
         }
     }
 

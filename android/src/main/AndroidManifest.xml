@@ -18,7 +18,6 @@
         android:theme="@style/AppTheme">
         <activity
             android:name="study.acodexm.MainActivity"
-            android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -27,7 +26,7 @@
         </activity>
         <activity
             android:name="study.acodexm.gallery.GalleryActivity"
-            android:screenOrientation="landscape">
+        >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

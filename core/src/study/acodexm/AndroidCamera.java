@@ -164,8 +164,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                 LOG.d(TAG, "position: " + mPosition);
             }
         }
-        fpsLogger.log();
-        // every 10 frames update camera vector to later detect movement
+//        fpsLogger.log();
+//         every 10 frames update camera vector to later detect movement
         if (frames == 10) {
             cameraOld = new Vector3(camera.direction);
             frames = 0;
@@ -467,7 +467,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                                 && (isCollinear.y < offset && isCollinear.y > -offset)
                                 && (isCollinear.z < offset && isCollinear.z > -offset)) {
                             mPosition.setCurrentPosition(i, j);
-                            LOG.d(TAG, "pos" + pos);
+//                            LOG.d(TAG, "pos" + pos);
                             return;
                         }
                     }
