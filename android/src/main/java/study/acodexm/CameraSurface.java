@@ -52,7 +52,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
         super(activity.getContext());
-        context=activity.getContext();
+        context = activity.getContext();
         mViewControl = activity;
         mSettingsControl = settingsControl;
         getHolder().addCallback(this);
@@ -95,33 +95,37 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         Camera.Parameters myParameters = camera.getParameters();
         Camera.Size myBestSize = getBestPreviewSize(myParameters);
         getBestPictureSize(myParameters);
+        int orientation = setCameraDisplayOrientation(context);
         if (myBestSize != null) {
             myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
             switch (mSettingsControl.getPictureQuality()) {
                 case LOW:
                     myParameters.set("jpeg-quality", 70);
+                    myParameters.setRotation(orientation);
                     myParameters.setPictureFormat(PixelFormat.JPEG);
                     myParameters.setPictureSize(lowRes.width, lowRes.height);
                     break;
                 case VERY_LOW:
                     myParameters.set("jpeg-quality", 70);
+                    myParameters.setRotation(orientation);
                     myParameters.setPictureFormat(PixelFormat.JPEG);
                     myParameters.setPictureSize(lowestRes.width, lowestRes.height);
                     break;
                 case HIGH:
                     myParameters.set("jpeg-quality", 70);
+                    myParameters.setRotation(orientation);
                     myParameters.setPictureFormat(PixelFormat.JPEG);
                     myParameters.setPictureSize(highestRes.width, highestRes.height);
                     break;
             }
             camera.setParameters(myParameters);
-            setCameraDisplayOrientation(context, camera);
+            camera.setDisplayOrientation(orientation);
             camera.startPreview();
         }
         safeToTakePicture = true;
     }
 
-    public void setCameraDisplayOrientation(Context context, Camera mCamera) {
+    public int setCameraDisplayOrientation(Context context) {
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
         android.hardware.Camera.getCameraInfo(0, info); // Use the first rear-facing camera
@@ -150,7 +154,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         } else {  // back-facing
             result = (info.orientation - degrees + 360) % 360;
         }
-        mCamera.setDisplayOrientation(result);
+        return result;
     }
 
 
