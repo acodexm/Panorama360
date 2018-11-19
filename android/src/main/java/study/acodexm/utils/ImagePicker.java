@@ -3,15 +3,15 @@ package study.acodexm.utils;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.util.Log;
-
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import study.acodexm.PicturePosition;
+import study.acodexm.settings.PictureMode;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import study.acodexm.PicturePosition;
-import study.acodexm.settings.PictureMode;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static study.acodexm.AndroidCamera.LAT;
 import static study.acodexm.AndroidCamera.LON;
@@ -29,20 +29,7 @@ public class ImagePicker {
         List<Integer> pictures = new ArrayList<>();
         List<Integer> tempPictures = new ArrayList<>();
         for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                if (grid[i][j] == 0) {
-                    temp[j] = 0;
-                    int rm = tempPictures.indexOf(position.calculatePosition(i, j));
-                    if (rm != -1)
-                        tempPictures.remove(rm);
-                } else if (i == Math.round(LON / 2)) {
-                    temp[j] += 2 * grid[i][j];
-                    tempPictures.add(position.calculatePosition(i, j));
-                } else {
-                    temp[j] += grid[i][j];
-                    tempPictures.add(position.calculatePosition(i, j));
-                }
-            }
+            gridExtractor(position, grid, temp, tempPictures, i);
             area = mh.maxHistogram(temp);
             if (area > maxArea) {
                 maxArea = area;
@@ -60,20 +47,7 @@ public class ImagePicker {
         int max = 0;
         for (int i = 0; i < grid.length; i++) {
             int temp = 0;
-            for (int j = 0; j < grid[0].length; j++) {
-                if (grid[i][j] == 0) {
-                    temp2[j] = 0;
-                    int rm = tempPictures.indexOf(position.calculatePosition(i, j));
-                    if (rm != -1)
-                        tempPictures.remove(rm);
-                } else if (i == Math.round(LON / 2)) {
-                    temp2[j] += 2 * grid[i][j];
-                    tempPictures.add(position.calculatePosition(i, j));
-                } else {
-                    temp2[j] += grid[i][j];
-                    tempPictures.add(position.calculatePosition(i, j));
-                }
-            }
+            gridExtractor(position, grid, temp2, tempPictures, i);
             for (int n : temp2) temp += n;
             if (max < temp) {
                 max = temp;
@@ -81,6 +55,45 @@ public class ImagePicker {
             }
         }
         return pictures;
+    }
+
+    private static void gridExtractor(PicturePosition position, int[][] grid, int[] temp2, List<Integer> tempPictures, int i) {
+        for (int j = 0; j < grid[0].length; j++) {
+            if (grid[i][j] == 0) {
+                temp2[j] = 0;
+                int rm = tempPictures.indexOf(position.calculatePosition(i, j));
+                if (rm != -1)
+                    tempPictures.remove(rm);
+            } else if (i == Math.round(LON / 2)) {
+                temp2[j] += 2 * grid[i][j];
+                tempPictures.add(position.calculatePosition(i, j));
+            } else {
+                temp2[j] += grid[i][j];
+                tempPictures.add(position.calculatePosition(i, j));
+            }
+        }
+    }
+
+
+    public static ArrayList<Integer> loadPanoParts(PicturePosition position, ArrayList<Integer> usedPositions) {
+        ArrayList<Integer> result = new ArrayList<>();
+        int[][] grid = position.getGrid();
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                if (usedPositions.size() < 3 && grid[i][j] == 1 && !usedPositions.contains(position.calculatePosition(i, j))) {
+                    result.add(position.calculatePosition(i, j));
+                }
+            }
+        }
+        return result;
+    }
+
+    public static List<Mat> loadPictureParts(ArrayList<Integer> ids) {
+        return ids.stream().map(id -> bitmapToMat(ImageRW.loadImageExternal(id))).collect(Collectors.toList());
+    }
+
+    public static List<Mat> loadAllPictureParts() {
+        return ImageRW.loadImagePartsExternal().stream().map(ImagePicker::bitmapToMat).collect(Collectors.toList());
     }
 
     public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance) {

@@ -26,6 +26,7 @@ import java.util.List;
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
     private Camera camera;
+
     private byte[] mPicture;
     private boolean safeToTakePicture = false;
     private ViewControl mViewControl;
@@ -68,13 +69,6 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
-    public static int getDeviceCurrentOrientation(Context context) {
-        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        int rotation = windowManager.getDefaultDisplay().getRotation();
-        Log.d("Utils", "Current orientation = " + rotation);
-        return rotation;
-    }
-
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         camera = Camera.open(0);
@@ -89,8 +83,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
      * here are the camera settings such as preview size or picture resolution and quality
      */
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                               int height) {
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         Log.d(TAG, "surfaceChanged called");
         Camera.Parameters myParameters = camera.getParameters();
         Camera.Size myBestSize = getBestPreviewSize(myParameters);
@@ -125,7 +118,14 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         safeToTakePicture = true;
     }
 
-    public int setCameraDisplayOrientation(Context context) {
+    private static int getDeviceCurrentOrientation(Context context) {
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int rotation = windowManager.getDefaultDisplay().getRotation();
+        Log.d("Utils", "Current orientation = " + rotation);
+        return rotation;
+    }
+
+    private int setCameraDisplayOrientation(Context context) {
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
         android.hardware.Camera.getCameraInfo(0, info); // Use the first rear-facing camera

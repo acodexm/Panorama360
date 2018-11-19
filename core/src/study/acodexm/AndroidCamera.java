@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import study.acodexm.Utils.LOG;
 import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.SettingsControl;
@@ -45,7 +47,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private Model sphereTemplate;
     private Model photoSphere;
     private Renderable renderable;
-    private ModelBuilder mModelBuilder;
+        private ModelBuilder mModelBuilder;
     private List<Vector3> vector3s;
     private boolean isUpdated;
     private FPSLogger fpsLogger;
@@ -492,6 +494,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     @Override
     public void resize(int width, int height) {
+
     }
 
     @Override

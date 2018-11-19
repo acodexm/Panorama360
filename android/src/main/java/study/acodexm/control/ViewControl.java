@@ -12,5 +12,4 @@ public interface ViewControl {
 
     void updateRender();
 
-
 }

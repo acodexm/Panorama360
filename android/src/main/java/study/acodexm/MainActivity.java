@@ -1,6 +1,7 @@
 package study.acodexm;
 
 
+import acodexm.panorama.R;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
@@ -10,6 +11,8 @@ import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
@@ -20,42 +23,37 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.Switch;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import com.badlogic.gdx.backends.android.AndroidApplication;
-import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-
-import org.opencv.core.Mat;
-
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import acodexm.panorama.R;
+import android.widget.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import org.opencv.core.Mat;
 import study.acodexm.Utils.LOG;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
 import study.acodexm.gallery.GalleryActivity;
-import study.acodexm.settings.ActionMode;
-import study.acodexm.settings.PictureMode;
-import study.acodexm.settings.PictureQuality;
-import study.acodexm.settings.SettingsControl;
-import study.acodexm.settings.UserPreferences;
+import study.acodexm.settings.*;
 import study.acodexm.utils.ImagePicker;
 import study.acodexm.utils.ImageRW;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String PART = "PART_";
+    private static final int START_PROCESSING = 100;
+    private static final int STOP_PROCESSING = 101;
+    private static final int COUNT_IMAGES = 102;
+    private static final int PROCESS_PART_IMAGES = 103;
+    private static final int SAVED_PART_IMAGE = 104;
+    private static final int PROCESS_ALL_PARTS = 105;
 
     static {
         System.loadLibrary("opencv_java3");
@@ -90,6 +88,16 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     TextView mSaveDir;
     @BindView(R.id.steady_shot)
     ProgressBar mProgressBar;
+
+    // multithreading
+    Thread imageHandler;
+//    Thread imageStitcher;
+//    Thread partStitcher;
+    Handler threadHandler;
+    private ArrayList<Integer> usedPositions = new ArrayList<>();
+    private int imageCount = 0;
+    private boolean mRunning = false;
+
     private SurfaceView mSurfaceView;
     private GLSurfaceView glView;
     private SensorManager mSensorManager;
@@ -130,8 +138,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         cfg.g = 8;
         cfg.b = 8;
         cfg.a = 8;
-        AndroidCamera androidCamera = new AndroidCamera(rotationVector, mCameraControl.getSphereControl(),
-                mSettingsControl);
+        AndroidCamera androidCamera = new AndroidCamera(rotationVector, mCameraControl.getSphereControl(), mSettingsControl);
         mManualControl = androidCamera;
         //initializing LibGDX spherical view
         initializeForView(androidCamera, cfg);
@@ -155,6 +162,26 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mPreferences = new UserPreferences(this);
         //delete files from temporary picture folder
         ImageRW.deleteTempFiles();
+        ImageRW.deletePartFiles();
+
+
+        imageHandler = new Thread(() -> {
+            Log.d(TAG, "image handler call");
+            while (mRunning) {
+                ArrayList<Integer> newImagePart = ImagePicker.loadPanoParts(mPicturePosition, usedPositions);
+                if (newImagePart.size() == 3) {
+                    Message message = new Message();
+                    message.what = PROCESS_PART_IMAGES;
+                    usedPositions.addAll(newImagePart);
+                    Bundle data = new Bundle();
+                    int id = imageCount++;
+                    message.arg1 = id;
+                    data.putIntegerArrayList(PART + id, newImagePart);
+                    message.setData(data);
+                    threadHandler.sendMessage(message);
+                }
+            }
+        });
     }
 
     @Override
@@ -164,6 +191,43 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mShutterState = ShutterState.ready;
         loadPreferences();
         setCaptureBtnImage();
+        threadHandler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                Log.d(TAG, "handleMessage"+msg.what);
+                switch (msg.what) {
+                    case START_PROCESSING: {
+                        isNotSaving = true;
+                        mRunning = true;
+                        imageHandler.start();
+                        break;
+                    }
+                    case STOP_PROCESSING: {
+                        isNotSaving = true;
+                        mRunning = false;
+//                        imageHandler.stop();
+                        break;
+                    }
+                    case PROCESS_PART_IMAGES: {
+                        new Thread(processPartPicture(msg.getData()
+                                .getIntegerArrayList(PART + msg.arg1))).start();
+                        break;
+                    }
+                    case SAVED_PART_IMAGE: {
+                        showToastRunnable(getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
+                        break;
+                    }
+                    case PROCESS_ALL_PARTS: {
+                        isNotSaving = false;
+                        new Thread(processPanoramaFromParts()).start();
+                        break;
+                    }
+                }
+            }
+        };
+
+        threadHandler.sendEmptyMessage(START_PROCESSING);
     }
 
     @Override
@@ -203,6 +267,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     public void updateRender() {
         mManualControl.updateRender();
     }
+
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
@@ -269,6 +334,91 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         };
         new Thread(r).start();
 
+    }
+
+    Runnable processPartPicture(final ArrayList<Integer> ids) {
+        Log.d(TAG, "processPartPicture");
+        return () -> {
+            final List<Mat> listImage;
+            try {
+                listImage = ImagePicker.loadPictureParts(ids);
+            } catch (Exception e) {
+                Log.e(TAG, "run: loadPictureParts failed", e);
+                return;
+            }
+            try {
+                int images = listImage.size();
+                if (images > 0) {
+                    Log.d(TAG, "Pictures taken:" + images);
+                    long[] tempObjAddress = new long[images];
+                    for (int i = 0; i < images; i++) {
+                        tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
+                    }
+                    Mat result = new Mat();
+                    // Call the OpenCV C++ Code to perform stitching process
+                    try {
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
+                        //save to external storage
+                        boolean isSaved = false;
+                        if (!result.empty())
+                            isSaved = ImageRW.savePartResultImageExternal(result);
+                        Message message = new Message();
+                        message.what = SAVED_PART_IMAGE;
+                        message.arg1 = isSaved ? 1 : 0;
+                        threadHandler.sendMessage(message);
+                    } catch (Exception e) {
+                        Log.e(TAG, "native processPanorama not working ", e);
+                    }
+                    for (Mat mat : listImage) mat.release();
+                    listImage.clear();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+    }
+
+    Runnable processPanoramaFromParts() {
+        Log.d(TAG, "processPanoramaFromParts");
+
+        return () -> {
+            final List<Mat> listImage;
+            try {
+                listImage = ImagePicker.loadAllPictureParts();
+            } catch (Exception e) {
+                Log.e(TAG, "run: loadAllPictureParts failed", e);
+                return;
+            }
+            try {
+                int images = listImage.size();
+                if (images > 0) {
+                    Log.d(TAG, "Parts taken:" + images);
+                    long[] tempObjAddress = new long[images];
+                    for (int i = 0; i < images; i++) {
+                        tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
+                    }
+                    Mat result = new Mat();
+                    // Call the OpenCV C++ Code to perform stitching process
+                    try {
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
+                        //save to external storage
+                        boolean isSaved = false;
+                        if (!result.empty())
+                            isSaved = ImageRW.saveResultImageExternal(result);
+                        Message message = new Message();
+                        message.what = STOP_PROCESSING;
+                        message.arg1 = isSaved ? 1 : 0;
+                        threadHandler.sendMessage(message);
+                    } catch (Exception e) {
+                        Log.e(TAG, "native processPanorama not working ", e);
+                    }
+                    for (Mat mat : listImage) mat.release();
+                    listImage.clear();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
     }
 
     public void showToastRunnable(final String message) {
@@ -426,20 +576,22 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     void saveOnClickListener() {
         if (isNotSaving) {
             showToast(getString(R.string.msg_save));
-            switch (mSettingsControl.getPictureMode()) {
-                case auto:
-                    processPicture(PictureMode.auto);
-                    break;
-                case panorama:
-                    processPicture(PictureMode.panorama);
-                    break;
-                case widePicture:
-                    processPicture(PictureMode.widePicture);
-                    break;
-                case picture360:
-                    processPicture(PictureMode.picture360);
-                    break;
-            }
+            threadHandler.sendEmptyMessage(PROCESS_ALL_PARTS);
+
+//            switch (mSettingsControl.getPictureMode()) {
+//                case auto:
+//                    processPicture(PictureMode.auto);
+//                    break;
+//                case panorama:
+//                    processPicture(PictureMode.panorama);
+//                    break;
+//                case widePicture:
+//                    processPicture(PictureMode.widePicture);
+//                    break;
+//                case picture360:
+//                    processPicture(PictureMode.picture360);
+//                    break;
+//            }
         } else showToast(R.string.msg_wait);
     }
 
