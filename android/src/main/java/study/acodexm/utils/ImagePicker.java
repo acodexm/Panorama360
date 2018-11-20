@@ -80,7 +80,7 @@ public class ImagePicker {
         int[][] grid = position.getGrid();
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
-                if (usedPositions.size() < 3 && grid[i][j] == 1 && !usedPositions.contains(position.calculatePosition(i, j))) {
+                if (grid[i][j] == 1 && !usedPositions.contains(position.calculatePosition(i, j))) {
                     result.add(position.calculatePosition(i, j));
                 }
             }
@@ -103,6 +103,8 @@ public class ImagePicker {
                 for (int id : instance.getTakenPictures())
                     pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
+            case multithreaded:
+                return loadAllPictureParts();
             case panorama:
                 List<Integer> longestIDS = idsForPanorama(instance);
                 if (longestIDS != null && longestIDS.size() > 0)

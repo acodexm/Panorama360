@@ -74,6 +74,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     Switch mSwitchPanorama;
     @BindView(R.id.picture_auto)
     Switch mSwitchAutoPicture;
+    @BindView(R.id.picture_multithreaded)
+    Switch mSwitchMultithreaded;
     @BindView(R.id.picture_wide)
     Switch mSwitchWide;
     @BindView(R.id.picture_360)
@@ -91,7 +93,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     // multithreading
     Thread imageHandler;
-//    Thread imageStitcher;
+    //    Thread imageStitcher;
 //    Thread partStitcher;
     Handler threadHandler;
     private ArrayList<Integer> usedPositions = new ArrayList<>();
@@ -168,6 +170,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         imageHandler = new Thread(() -> {
             Log.d(TAG, "image handler call");
             while (mRunning) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
                 ArrayList<Integer> newImagePart = ImagePicker.loadPanoParts(mPicturePosition, usedPositions);
                 if (newImagePart.size() == 3) {
                     Message message = new Message();
@@ -191,43 +198,38 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mShutterState = ShutterState.ready;
         loadPreferences();
         setCaptureBtnImage();
-        threadHandler = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                Log.d(TAG, "handleMessage"+msg.what);
-                switch (msg.what) {
-                    case START_PROCESSING: {
-                        isNotSaving = true;
-                        mRunning = true;
-                        imageHandler.start();
-                        break;
-                    }
-                    case STOP_PROCESSING: {
-                        isNotSaving = true;
-                        mRunning = false;
+        threadHandler = new Handler(msg -> {
+            Log.d(TAG, "handleMessage" + msg.what);
+            switch (msg.what) {
+                case START_PROCESSING: {
+                    Log.d(TAG,"START_PROCESSING");
+                    isNotSaving = true;
+                    mRunning = true;
+                    imageHandler.start();
+                    break;
+                }
+                case STOP_PROCESSING: {
+                    Log.d(TAG,"STOP_PROCESSING");
+                    isNotSaving = true;
+                    mRunning = false;
 //                        imageHandler.stop();
-                        break;
-                    }
-                    case PROCESS_PART_IMAGES: {
-                        new Thread(processPartPicture(msg.getData()
-                                .getIntegerArrayList(PART + msg.arg1))).start();
-                        break;
-                    }
-                    case SAVED_PART_IMAGE: {
-                        showToastRunnable(getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
-                        break;
-                    }
-                    case PROCESS_ALL_PARTS: {
-                        isNotSaving = false;
-                        new Thread(processPanoramaFromParts()).start();
-                        break;
-                    }
+                    break;
+                }
+                case PROCESS_PART_IMAGES: {
+                    Log.d(TAG,"PROCESS_PART_IMAGES");
+                    new Thread(processPartPicture(msg.getData().getIntegerArrayList(PART + msg.arg1))).start();
+                    break;
+                }
+                case SAVED_PART_IMAGE: {
+                    Log.d(TAG,"SAVED_PART_IMAGE");
+                    showToastRunnable(getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
+                    break;
                 }
             }
-        };
-
-        threadHandler.sendEmptyMessage(START_PROCESSING);
+            return true;
+        });
+        if (mPreferences.getPictureMode() == PictureMode.multithreaded)
+            threadHandler.sendEmptyMessage(START_PROCESSING);
     }
 
     @Override
@@ -313,7 +315,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), true);
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
@@ -357,56 +359,13 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), false);
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
                             isSaved = ImageRW.savePartResultImageExternal(result);
                         Message message = new Message();
                         message.what = SAVED_PART_IMAGE;
-                        message.arg1 = isSaved ? 1 : 0;
-                        threadHandler.sendMessage(message);
-                    } catch (Exception e) {
-                        Log.e(TAG, "native processPanorama not working ", e);
-                    }
-                    for (Mat mat : listImage) mat.release();
-                    listImage.clear();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        };
-    }
-
-    Runnable processPanoramaFromParts() {
-        Log.d(TAG, "processPanoramaFromParts");
-
-        return () -> {
-            final List<Mat> listImage;
-            try {
-                listImage = ImagePicker.loadAllPictureParts();
-            } catch (Exception e) {
-                Log.e(TAG, "run: loadAllPictureParts failed", e);
-                return;
-            }
-            try {
-                int images = listImage.size();
-                if (images > 0) {
-                    Log.d(TAG, "Parts taken:" + images);
-                    long[] tempObjAddress = new long[images];
-                    for (int i = 0; i < images; i++) {
-                        tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
-                    }
-                    Mat result = new Mat();
-                    // Call the OpenCV C++ Code to perform stitching process
-                    try {
-                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), !isCompressed);
-                        //save to external storage
-                        boolean isSaved = false;
-                        if (!result.empty())
-                            isSaved = ImageRW.saveResultImageExternal(result);
-                        Message message = new Message();
-                        message.what = STOP_PROCESSING;
                         message.arg1 = isSaved ? 1 : 0;
                         threadHandler.sendMessage(message);
                     } catch (Exception e) {
@@ -466,6 +425,9 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         switch (mPreferences.getPictureMode()) {
             case auto:
                 mSwitchAutoPicture.setChecked(true);
+                break;
+            case multithreaded:
+                mSwitchMultithreaded.setChecked(true);
                 break;
             case panorama:
                 mSwitchPanorama.setChecked(true);
@@ -576,22 +538,23 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     void saveOnClickListener() {
         if (isNotSaving) {
             showToast(getString(R.string.msg_save));
-            threadHandler.sendEmptyMessage(PROCESS_ALL_PARTS);
-
-//            switch (mSettingsControl.getPictureMode()) {
-//                case auto:
-//                    processPicture(PictureMode.auto);
-//                    break;
-//                case panorama:
-//                    processPicture(PictureMode.panorama);
-//                    break;
-//                case widePicture:
-//                    processPicture(PictureMode.widePicture);
-//                    break;
-//                case picture360:
-//                    processPicture(PictureMode.picture360);
-//                    break;
-//            }
+            switch (mSettingsControl.getPictureMode()) {
+                case auto:
+                    processPicture(PictureMode.auto);
+                    break;
+                case multithreaded:
+                    processPicture(PictureMode.multithreaded);
+                    break;
+                case panorama:
+                    processPicture(PictureMode.panorama);
+                    break;
+                case widePicture:
+                    processPicture(PictureMode.widePicture);
+                    break;
+                case picture360:
+                    processPicture(PictureMode.picture360);
+                    break;
+            }
         } else showToast(R.string.msg_wait);
     }
 
@@ -633,9 +596,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @OnClick(R.id.picture_auto)
     void onSwitchAutoPanorama() {
         if (isNotSaving) {
+            threadHandler.sendEmptyMessage(STOP_PROCESSING);
             mPreferences.setPictureMode(PictureMode.auto);
             mSettingsControl.setPictureMode(PictureMode.auto);
             mSwitchPanorama.setChecked(false);
+            mSwitchMultithreaded.setChecked(false);
             mSwitchWide.setChecked(false);
             mSwitch360.setChecked(false);
             if (!mSwitchAutoPicture.isChecked())
@@ -643,13 +608,29 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         } else showToast(R.string.msg_wait);
     }
 
+    @OnClick(R.id.picture_multithreaded)
+    void onSwitchMultithreadedPanorama() {
+        if (isNotSaving) {
+            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+                mPreferences.setPictureMode(PictureMode.multithreaded);
+                mSettingsControl.setPictureMode(PictureMode.multithreaded);
+                mSwitchPanorama.setChecked(false);
+                mSwitchWide.setChecked(false);
+                mSwitchAutoPicture.setChecked(false);
+                mSwitch360.setChecked(false);
+                threadHandler.sendEmptyMessage(START_PROCESSING);
+            } else onSwitchAutoPanorama();
+        } else showToast(R.string.msg_wait);
+    }
+
     @OnClick(R.id.picture_panorama)
     void onSwitchPanorama() {
         if (isNotSaving)
-            if (mSwitchPanorama.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.panorama);
                 mSettingsControl.setPictureMode(PictureMode.panorama);
                 mSwitchAutoPicture.setChecked(false);
+                mSwitchMultithreaded.setChecked(false);
                 mSwitchWide.setChecked(false);
                 mSwitch360.setChecked(false);
             } else onSwitchAutoPanorama();
@@ -659,10 +640,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @OnClick(R.id.picture_wide)
     void onSwitchWide() {
         if (isNotSaving)
-            if (mSwitchPanorama.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.widePicture);
                 mSettingsControl.setPictureMode(PictureMode.widePicture);
                 mSwitchAutoPicture.setChecked(false);
+                mSwitchMultithreaded.setChecked(false);
                 mSwitchPanorama.setChecked(false);
                 mSwitch360.setChecked(false);
             } else onSwitchAutoPanorama();
@@ -672,9 +654,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @OnClick(R.id.picture_360)
     void onSwitch360() {
         if (isNotSaving)
-            if (mSwitchPanorama.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
+            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.picture360);
                 mSettingsControl.setPictureMode(PictureMode.picture360);
+                mSwitchMultithreaded.setChecked(false);
                 mSwitchAutoPicture.setChecked(false);
                 mSwitchWide.setChecked(false);
                 mSwitchPanorama.setChecked(false);

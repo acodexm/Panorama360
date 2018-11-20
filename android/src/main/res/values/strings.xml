@@ -5,6 +5,7 @@
     <string name="manual">Manual</string>
     <string name="type_of_picture">Type of picture:</string>
     <string name="panorama">Panorama</string>
+    <string name="multithreaded">Multithreaded</string>
     <string name="wide_picture">Wide picture</string>
     <string name="picture_360">Picture 360</string>
     <string name="save_destination">Save destination:</string>
