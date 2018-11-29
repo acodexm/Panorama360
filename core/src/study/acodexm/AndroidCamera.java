@@ -47,7 +47,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private Model sphereTemplate;
     private Model photoSphere;
     private Renderable renderable;
-        private ModelBuilder mModelBuilder;
+    private ModelBuilder mModelBuilder;
     private List<Vector3> vector3s;
     private boolean isUpdated;
     private FPSLogger fpsLogger;
@@ -85,11 +85,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         isUpdated = false;
         modelBatch = new ModelBatch();
         setIdList();
-        if (Gdx.app.getType() == Application.ApplicationType.Android) {
-            renderPhotosAndroid();
-        } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-            renderPhotosDesktop();
-        }
+        renderPhotos();
         cameraOld = new Vector3();
         frames = 0;
     }
@@ -262,17 +258,10 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         centersOfGrid = calculateCenterList(vector3s);
     }
 
-    private void renderPhotosAndroid() {
+    private void renderPhotos() {
         if (photoSphere != null)
             photoSphere.dispose();
-        photoSphere = setPhotoOnSphereAndroid(vector3s, mModelBuilder, ids);
-        instance = new ModelInstance(photoSphere);
-    }
-
-    private void renderPhotosDesktop() {
-        if (photoSphere != null)
-            photoSphere.dispose();
-        photoSphere = setPhotoOnSphereDesktop(vector3s, mModelBuilder, ids);
+        photoSphere = setPhotoOnSphere(vector3s, mModelBuilder, ids);
         instance = new ModelInstance(photoSphere);
     }
 
@@ -287,7 +276,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
      * @param ids          indexes of each cell
      * @return new Spherical model with custom textures on its grid
      */
-    private Model setPhotoOnSphereAndroid(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
+    private Model setPhotoOnSphere(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
         modelBuilder.begin();
         Texture texture = null;
@@ -313,36 +302,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     }
 
     /**
-     * same functionality as setPhotoOnSphereAndroid method but for desktop
-     */
-    private Model setPhotoOnSphereDesktop(List<Vector3> fourVertices, ModelBuilder modelBuilder, List<Integer> ids) {
-        int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
-        modelBuilder.begin();
-        Texture texture = null;
-        BlendingAttribute attribute = new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.7f);
-        ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
-        for (int id : ids) {
-            try {
-                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
-            } catch (Exception e) {
-                LOG.e(TAG, "texture loading failed", e);
-            }
-            modelBuilder.part("id" + id, GL20.GL_TRIANGLES, attr, new Material(
-                    TextureAttribute.createDiffuse(texture),
-                    colorAttribute,
-                    attribute))
-                    .rect(
-                            fourVertices.get(id + LAT + 1).x, fourVertices.get(id + LAT + 1).y, fourVertices.get(id + LAT + 1).z,//00
-                            fourVertices.get(id + LAT + 2).x, fourVertices.get(id + LAT + 2).y, fourVertices.get(id + LAT + 2).z,//01
-                            fourVertices.get(id + 1).x, fourVertices.get(id + 1).y, fourVertices.get(id + 1).z,//11
-                            fourVertices.get(id).x, fourVertices.get(id).y, fourVertices.get(id).z,//10
-                            -1, -1, -1);
-        }
-        return modelBuilder.end();
-    }
-
-
-    /**
      * this method updates spherical model with given pictures in raw data and for given position on
      * grid
      *
@@ -359,17 +318,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
         }
         if (id != -1)
-            for (Attribute att : instance.materials.get(id - LAT)) {
-                if (att.type == TextureAttribute.Diffuse) {
-                    //dispose of old texture MUST be done to avoid memory leak!!!!
-                    ((TextureAttribute) att).textureDescription.texture.dispose();
-                    ((TextureAttribute) att).textureDescription.set(texture,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureWrap.ClampToEdge,
-                            Texture.TextureWrap.ClampToEdge);
-                }
-            }
+            updateTextures(id, texture);
     }
 
     /**
@@ -387,15 +336,19 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                 texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
             }
 
-            for (Attribute att : instance.materials.get(id - LAT)) {
-                if (att.type == TextureAttribute.Diffuse) {
-                    ((TextureAttribute) att).textureDescription.texture.dispose();
-                    ((TextureAttribute) att).textureDescription.set(texture,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureFilter.Linear,
-                            Texture.TextureWrap.ClampToEdge,
-                            Texture.TextureWrap.ClampToEdge);
-                }
+            updateTextures(id, texture);
+        }
+    }
+
+    private void updateTextures(int id, Texture texture) {
+        for (Attribute att : instance.materials.get(id - LAT)) {
+            if (att.type == TextureAttribute.Diffuse) {
+                ((TextureAttribute) att).textureDescription.texture.dispose();
+                ((TextureAttribute) att).textureDescription.set(texture,
+                        Texture.TextureFilter.Linear,
+                        Texture.TextureFilter.Linear,
+                        Texture.TextureWrap.ClampToEdge,
+                        Texture.TextureWrap.ClampToEdge);
             }
         }
     }

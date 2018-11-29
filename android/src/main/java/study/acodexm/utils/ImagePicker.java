@@ -2,7 +2,7 @@ package study.acodexm.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import study.acodexm.PicturePosition;
@@ -112,7 +112,7 @@ public class ImagePicker {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    Log.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
                 break;
             case widePicture:
                 List<Integer> optimalIDS = maxArea(instance);
@@ -121,7 +121,7 @@ public class ImagePicker {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    Log.e(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.e(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
                 break;
             case picture360:
                 //this will work only when whole sphere is filled with pictures
@@ -129,7 +129,7 @@ public class ImagePicker {
                     for (int id : instance.getTakenPictures())
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 else
-                    Log.e(TAG, "Picture360 loadPictures failed: ", new Throwable("not enough pictures"));
+                    LOG.e(TAG, "Picture360 loadPictures failed: ", new Throwable("not enough pictures"));
                 break;
         }
 

@@ -8,7 +8,7 @@ import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -84,7 +84,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
      */
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        Log.d(TAG, "surfaceChanged called");
+        LOG.d(TAG, "surfaceChanged called");
         Camera.Parameters myParameters = camera.getParameters();
         Camera.Size myBestSize = getBestPreviewSize(myParameters);
         getBestPictureSize(myParameters);
@@ -121,7 +121,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     private static int getDeviceCurrentOrientation(Context context) {
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         int rotation = windowManager.getDefaultDisplay().getRotation();
-        Log.d("Utils", "Current orientation = " + rotation);
+        LOG.d("Utils", "Current orientation = " + rotation);
         return rotation;
     }
 
@@ -201,7 +201,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             try {
                 camera.autoFocus(this);
             } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
+                LOG.e(TAG, "Take picture failed",e);
             }
         }
     }
@@ -239,7 +239,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         mViewControl.post(processTexture);
 
         camera.startPreview();
-        Log.d(TAG, "onPictureTaken process time: " + (System.currentTimeMillis() - time));
+        LOG.d(TAG, "onPictureTaken process time: " + (System.currentTimeMillis() - time));
 
     }
 

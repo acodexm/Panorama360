@@ -18,7 +18,7 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
@@ -30,7 +30,6 @@ import butterknife.OnClick;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import org.opencv.core.Mat;
-import study.acodexm.Utils.LOG;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
@@ -93,8 +92,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     // multithreading
     Thread imageHandler;
-    //    Thread imageStitcher;
-//    Thread partStitcher;
     Handler threadHandler;
     private ArrayList<Integer> usedPositions = new ArrayList<>();
     private int imageCount = 0;
@@ -145,7 +142,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         //initializing LibGDX spherical view
         initializeForView(androidCamera, cfg);
         if (graphics.getView() instanceof GLSurfaceView) {
-            Log.d(TAG, "creating layout");
+            LOG.d(TAG, "creating layout");
             glView = (GLSurfaceView) graphics.getView();
             glView.setZOrderMediaOverlay(true);
             glView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
@@ -168,7 +165,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
 
         imageHandler = new Thread(() -> {
-            Log.d(TAG, "image handler call");
+            LOG.d(TAG, "image handler call");
             while (mRunning) {
                 try {
                     Thread.sleep(500);
@@ -199,29 +196,29 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         loadPreferences();
         setCaptureBtnImage();
         threadHandler = new Handler(msg -> {
-            Log.d(TAG, "handleMessage" + msg.what);
+            LOG.d(TAG, "handleMessage" + msg.what);
             switch (msg.what) {
                 case START_PROCESSING: {
-                    Log.d(TAG,"START_PROCESSING");
+                    LOG.d(TAG,"START_PROCESSING");
                     isNotSaving = true;
                     mRunning = true;
                     imageHandler.start();
                     break;
                 }
                 case STOP_PROCESSING: {
-                    Log.d(TAG,"STOP_PROCESSING");
+                    LOG.d(TAG,"STOP_PROCESSING");
                     isNotSaving = true;
                     mRunning = false;
 //                        imageHandler.stop();
                     break;
                 }
                 case PROCESS_PART_IMAGES: {
-                    Log.d(TAG,"PROCESS_PART_IMAGES");
+                    LOG.d(TAG,"PROCESS_PART_IMAGES");
                     new Thread(processPartPicture(msg.getData().getIntegerArrayList(PART + msg.arg1))).start();
                     break;
                 }
                 case SAVED_PART_IMAGE: {
-                    Log.d(TAG,"SAVED_PART_IMAGE");
+                    LOG.d(TAG,"SAVED_PART_IMAGE");
                     showToastRunnable(getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
                     break;
                 }
@@ -300,13 +297,13 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             try {
                 listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
             } catch (Exception e) {
-                Log.e(TAG, "run: loadPictures failed", e);
+                post(LOG.r(TAG, "run: loadPictures failed", e));
                 return;
             }
             try {
                 int images = listImage.size();
                 if (images > 0) {
-                    Log.d(TAG, "Pictures taken:" + images);
+                    post(LOG.r(TAG, "Pictures taken:" + images));
                     long[] tempObjAddress = new long[images];
                     for (int i = 0; i < images; i++) {
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
@@ -322,7 +319,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                             isSaved = ImageRW.saveResultImageExternal(result);
                         showToastRunnable(getString(R.string.msg_is_saved) + isSaved);
                     } catch (Exception e) {
-                        Log.e(TAG, "native processPanorama not working ", e);
+                        post(LOG.r(TAG, "native processPanorama not working ", e));
                     }
 
                     for (Mat mat : listImage) mat.release();
@@ -339,19 +336,19 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     Runnable processPartPicture(final ArrayList<Integer> ids) {
-        Log.d(TAG, "processPartPicture");
+        post(LOG.r(TAG, "processPartPicture"));
         return () -> {
             final List<Mat> listImage;
             try {
                 listImage = ImagePicker.loadPictureParts(ids);
             } catch (Exception e) {
-                Log.e(TAG, "run: loadPictureParts failed", e);
+                post(LOG.r(TAG, "run: loadPictureParts failed", e));
                 return;
             }
             try {
                 int images = listImage.size();
                 if (images > 0) {
-                    Log.d(TAG, "Pictures taken:" + images);
+                    post(LOG.r(TAG, "Pictures taken:" + images));
                     long[] tempObjAddress = new long[images];
                     for (int i = 0; i < images; i++) {
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
@@ -367,9 +364,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         Message message = new Message();
                         message.what = SAVED_PART_IMAGE;
                         message.arg1 = isSaved ? 1 : 0;
+                        showToastRunnable(getString(R.string.part_msg_is_saved) + isSaved);
                         threadHandler.sendMessage(message);
                     } catch (Exception e) {
-                        Log.e(TAG, "native processPanorama not working ", e);
+                        post(LOG.r(TAG, "native processPanorama not working ", e));
                     }
                     for (Mat mat : listImage) mat.release();
                     listImage.clear();
@@ -381,8 +379,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     public void showToastRunnable(final String message) {
-        Runnable r = () -> Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-        post(r);
+        post(() -> Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show());
     }
 
     private void showToast(String message) {
@@ -398,19 +395,17 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
      * additionally process circle is shown
      */
     public synchronized void showProcessingDialog() {
-        Runnable r = () -> {
+        post(() -> {
             mCameraControl.stopPreview();
             mProgressBar.setVisibility(View.VISIBLE);
-        };
-        post(r);
+        });
     }
 
     public synchronized void hideProcessingDialog() {
-        Runnable r = () -> {
+        post(() -> {
             mCameraControl.startPreview();
             mProgressBar.setVisibility(View.GONE);
-        };
-        post(r);
+        });
     }
 
     private void loadPreferences() {

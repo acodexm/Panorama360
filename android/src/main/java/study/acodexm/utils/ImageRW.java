@@ -4,7 +4,7 @@ package study.acodexm.utils;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
@@ -48,14 +48,14 @@ public class ImageRW {
                 fos.write(bytes);
                 fos.close();
             } catch (IOException e) {
-                Log.e(TAG, "File saving failed", e);
+                LOG.e(TAG, "File saving failed", e);
             }
         } else {
-            Log.d(TAG, "File saving failed");
+            LOG.d(TAG, "File saving failed");
         }
     }
 
-    private static boolean isPathCreated(String path) {
+    public static boolean isPathCreated(String path) {
         File folder = new File(Environment.getExternalStorageDirectory() + path);
         boolean success = true;
         if (!folder.exists()) {
@@ -72,39 +72,39 @@ public class ImageRW {
      * @return true if success
      */
     public static boolean saveResultImageExternal(Mat result) {
-        Log.d(TAG, "saveResultImageExternal: begin saving");
+        LOG.d(TAG, "saveResultImageExternal: begin saving");
         File folder = new File(Environment.getExternalStorageDirectory() + MAIN_DIR);
         Date date = new Date();
         SimpleDateFormat simple = new SimpleDateFormat(PATTERN, Locale.getDefault());
         final String fileName = folder.getAbsolutePath() + MAIN_PREFIX + simple.format(date) + PNG;
-        Log.d(TAG, "saveResultImageExternal: filename: " + fileName);
+        LOG.d(TAG, "saveResultImageExternal: filename: " + fileName);
         if (isPathCreated(MAIN_DIR)) {
             try {
                 return Imgcodecs.imwrite(fileName, result);
             } catch (Exception e) {
-                Log.e(TAG, "File saving failed", e);
+                LOG.e(TAG, "File saving failed", e);
             }
         } else {
-            Log.d(TAG, "File saving failed");
+            LOG.d(TAG, "File saving failed");
         }
         return false;
     }
 
     public static boolean savePartResultImageExternal(Mat result) {
-        Log.d(TAG, "savePartResultImageExternal: begin saving");
+        LOG.d(TAG, "savePartResultImageExternal: begin saving");
         File folder = new File(Environment.getExternalStorageDirectory() + PART_DIR);
         Date date = new Date();
         SimpleDateFormat simple = new SimpleDateFormat(PATTERN, Locale.getDefault());
         final String fileName = folder.getAbsolutePath() + PART_PREFIX + simple.format(date) + PNG;
-        Log.d(TAG, "saveResultImageExternal: filename: " + fileName);
+        LOG.d(TAG, "saveResultImageExternal: filename: " + fileName);
         if (isPathCreated(PART_DIR)) {
             try {
                 return Imgcodecs.imwrite(fileName, result);
             } catch (Exception e) {
-                Log.e(TAG, "Part File saving failed", e);
+                LOG.e(TAG, "Part File saving failed", e);
             }
         } else {
-            Log.d(TAG, "Part File saving failed");
+            LOG.d(TAG, "Part File saving failed");
         }
         return false;
     }
@@ -128,9 +128,9 @@ public class ImageRW {
             if (children != null && children.length > 0)
                 for (String aChildren : children) {
                     if (new File(dir, aChildren).delete()) {
-                        Log.d(TAG, "file " + aChildren.trim() + " deleted");
+                        LOG.d(TAG, "file " + aChildren.trim() + " deleted");
                     } else {
-                        Log.d(TAG, "deleteTempFiles: failed");
+                        LOG.d(TAG, "deleteTempFiles: failed");
                     }
                 }
         }
@@ -153,7 +153,7 @@ public class ImageRW {
             bitmap = BitmapFactory.decodeStream(fos);
             fos.close();
         } catch (IOException e) {
-            Log.e(TAG, "File loading failed", e);
+            LOG.e(TAG, "File loading failed", e);
         }
         return bitmap;
     }
@@ -161,10 +161,10 @@ public class ImageRW {
     public static List<Bitmap> loadImagePartsExternal() {
         isPathCreated(PART_DIR);
         List<Bitmap> result = new ArrayList<>();
-        Log.d(TAG, "load images from imagesFolder:" + PART_DIR);
+        LOG.d(TAG, "load images from imagesFolder:" + PART_DIR);
         File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + PART_DIR);
-        Log.d(TAG, "loadImages file exist: " + file.exists());
-        Log.d(TAG, "loadImages file id folder: " + file.isDirectory());
+        LOG.d(TAG, "loadImages file exist: " + file.exists());
+        LOG.d(TAG, "loadImages file id folder: " + file.isDirectory());
         if (file.exists() && file.isDirectory()) {
             File[] listFiles = file.listFiles();
             for (File fileCurrent : listFiles) {
@@ -174,12 +174,12 @@ public class ImageRW {
                         result.add(BitmapFactory.decodeStream(fos));
                         fos.close();
                     } catch (IOException e) {
-                        Log.e(TAG, "PART File loading failed", e);
+                        LOG.e(TAG, "PART File loading failed", e);
                     }
                 }
             }
         }
-        Log.d(TAG, "loadImagePartsExternal parts count :" + result.size());
+        LOG.d(TAG, "loadImagePartsExternal parts count :" + result.size());
         return result;
     }
 }
