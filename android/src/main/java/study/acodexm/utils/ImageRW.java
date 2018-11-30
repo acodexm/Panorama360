@@ -4,7 +4,6 @@ package study.acodexm.utils;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
-import study.acodexm.utils.LOG;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
@@ -23,6 +22,7 @@ public class ImageRW {
     private static final String MAIN_DIR = "/PanoramaApp";
     private static final String TEMP_DIR = "/PanoramaApp/temp";
     private static final String PART_DIR = "/PanoramaApp/part";
+    private static final String HIST_DIR = "/PanoramaApp/archived";
     private static final String MAIN_PREFIX = "/panorama_";
     private static final String PART_PREFIX = "/part_panorama_";
     private static final String PNG = ".png";
@@ -110,7 +110,7 @@ public class ImageRW {
     }
 
     /**
-     * method deletes all pictures from temporary files if any exists
+     * methods deletes all pictures from temporary files if any exists
      */
     public static void deleteTempFiles() {
         deleteFolderFiles(TEMP_DIR);
@@ -122,6 +122,8 @@ public class ImageRW {
 
     private static void deleteFolderFiles(String folder) {
         isPathCreated(folder);
+        if (archive(folder))
+            LOG.d(TAG, "archived " + folder);
         File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + folder);
         if (dir.isDirectory()) {
             String[] children = dir.list();
@@ -134,6 +136,16 @@ public class ImageRW {
                     }
                 }
         }
+    }
+
+    private static boolean archive(String folder) {
+        SimpleDateFormat simple = new SimpleDateFormat(PATTERN, Locale.getDefault());
+        Date date = new Date();
+        File from = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + folder);
+        File to = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + HIST_DIR + folder + simple.format(date));
+        if (isPathCreated(HIST_DIR + folder + simple.format(date)))
+            return from.renameTo(to);
+        return false;
     }
 
     /**

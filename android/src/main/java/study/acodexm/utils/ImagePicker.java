@@ -144,8 +144,7 @@ public class ImagePicker {
      */
     private static Mat bitmapToMat(Bitmap bitmap) {
         Matrix matrix = new Matrix();
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-                bitmap.getHeight(), matrix, false);
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
         Mat mat = new Mat();
         Utils.bitmapToMat(bitmap, mat);
         bitmap.recycle();

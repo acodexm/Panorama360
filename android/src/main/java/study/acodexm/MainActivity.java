@@ -199,26 +199,26 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             LOG.d(TAG, "handleMessage" + msg.what);
             switch (msg.what) {
                 case START_PROCESSING: {
-                    LOG.d(TAG,"START_PROCESSING");
+                    LOG.d(TAG, "START_PROCESSING");
                     isNotSaving = true;
                     mRunning = true;
                     imageHandler.start();
                     break;
                 }
                 case STOP_PROCESSING: {
-                    LOG.d(TAG,"STOP_PROCESSING");
+                    LOG.d(TAG, "STOP_PROCESSING");
                     isNotSaving = true;
                     mRunning = false;
 //                        imageHandler.stop();
                     break;
                 }
                 case PROCESS_PART_IMAGES: {
-                    LOG.d(TAG,"PROCESS_PART_IMAGES");
+                    LOG.d(TAG, "PROCESS_PART_IMAGES");
                     new Thread(processPartPicture(msg.getData().getIntegerArrayList(PART + msg.arg1))).start();
                     break;
                 }
                 case SAVED_PART_IMAGE: {
-                    LOG.d(TAG,"SAVED_PART_IMAGE");
+                    LOG.d(TAG, "SAVED_PART_IMAGE");
                     showToastRunnable(getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
                     break;
                 }
@@ -289,8 +289,9 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
      * @param pictureMode
      */
     void processPicture(final PictureMode pictureMode) {
+        long time = System.currentTimeMillis();
+        post(LOG.r(TAG, "processPicture BEGIN", time + "ms"));
         showProcessingDialog();
-
         final Runnable r = () -> {
             isNotSaving = false;
             final List<Mat> listImage;
@@ -300,23 +301,27 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 post(LOG.r(TAG, "run: loadPictures failed", e));
                 return;
             }
+            post(LOG.r("processPicture", "loadPictureParts", (System.currentTimeMillis() - time) + "ms"));
             try {
                 int images = listImage.size();
                 if (images > 0) {
-                    post(LOG.r(TAG, "Pictures taken:" + images));
                     long[] tempObjAddress = new long[images];
                     for (int i = 0; i < images; i++) {
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
                     }
+                    post(LOG.r("processPicture", "tempObjAddress", (System.currentTimeMillis() - time) + "ms"));
 
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), true);
+                        post(LOG.r("processPicture", "processPanorama", (System.currentTimeMillis() - time) + "ms"));
+
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
                             isSaved = ImageRW.saveResultImageExternal(result);
+                        post(LOG.r("processPicture", "saveResultImageExternal", (System.currentTimeMillis() - time) + "ms"));
                         showToastRunnable(getString(R.string.msg_is_saved) + isSaved);
                     } catch (Exception e) {
                         post(LOG.r(TAG, "native processPanorama not working ", e));
@@ -324,19 +329,23 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
                     for (Mat mat : listImage) mat.release();
                     listImage.clear();
+                    post(LOG.r("processPicture", "clear memo listImage", (System.currentTimeMillis() - time) + "ms"));
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
             hideProcessingDialog();
             isNotSaving = true;
+            post(LOG.r("processPicture", "END", (System.currentTimeMillis() - time) + "ms"));
         };
         new Thread(r).start();
 
     }
 
     Runnable processPartPicture(final ArrayList<Integer> ids) {
-        post(LOG.r(TAG, "processPartPicture"));
+        long time = System.currentTimeMillis();
+        post(LOG.r(TAG, "processPartPicture BEGIN", time + "ms"));
         return () -> {
             final List<Mat> listImage;
             try {
@@ -345,6 +354,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 post(LOG.r(TAG, "run: loadPictureParts failed", e));
                 return;
             }
+            post(LOG.r("processPartPicture", "loadPictureParts", (System.currentTimeMillis() - time) + "ms"));
             try {
                 int images = listImage.size();
                 if (images > 0) {
@@ -357,10 +367,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), false);
+                        post(LOG.r("processPartPicture", "processPanorama", (System.currentTimeMillis() - time) + "ms"));
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
                             isSaved = ImageRW.savePartResultImageExternal(result);
+                        post(LOG.r("processPartPicture", "savePartResultImageExternal", (System.currentTimeMillis() - time) + "ms"));
                         Message message = new Message();
                         message.what = SAVED_PART_IMAGE;
                         message.arg1 = isSaved ? 1 : 0;
@@ -371,10 +383,13 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     }
                     for (Mat mat : listImage) mat.release();
                     listImage.clear();
+                    post(LOG.r("processPartPicture", "clear memo listImage", (System.currentTimeMillis() - time) + "ms"));
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            post(LOG.r("processPartPicture", "END", (System.currentTimeMillis() - time) + "ms"));
         };
     }
 

@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import study.acodexm.Utils.LOG;
 import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.SettingsControl;
@@ -139,20 +137,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             camera.update();
         }
         //if the action mode is set to auto than take picture in center of grid cell when camera is steady
-//        int position = whereIsCameraLooking(centersOfGrid, ids);
-//        if (position != -1 && mActionMode == ActionMode.FullAuto) {
-//            if (!takenPictures.contains(position) && isCameraSteady()) {
-//                LOG.d(TAG, "auto take picture!! at: " + position);
-//                if (canRender && Gdx.app.getType() == Application.ApplicationType.Android) {
-//                    takenPictures.add(position);
-//                    mSphereControl.autoTakePicture(position);
-//                } else if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-//                    takenPictures.add(position);
-//                    lastPosition = position;
-//                    isUpdated = false;
-//                }
-//            }
-//        }
         whereIsCameraLooking(centersOfGrid);
         if (mPosition.isCurrentPositionPossible()) {
             if (canRender && Gdx.app.getType() == Application.ApplicationType.Android && mActionMode == ActionMode.FullAuto) {

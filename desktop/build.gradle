@@ -7,9 +7,8 @@ dependencies {
     implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
     implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
     implementation "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
-
 }
-sourceCompatibility = 1.8
+sourceCompatibility = 1.7
 sourceSets.main.java.srcDirs = ["src/"]
 project.ext.mainClassName = "study.acodexm.desktop.DesktopLauncher"
 project.ext.assetsDir = new File("../android/assets")
