@@ -31,4 +31,4 @@ This application is a study project
 
 # Required:
 * opencv-3.3.1-android-sdk
-* android-ndk-r15c
+* android-ndk-r15c 64bit
