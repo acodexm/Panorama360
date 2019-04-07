@@ -16,3 +16,4 @@ gradle/
 /gradlew
 /gradlew.bat
 /android/project.properties
+/android/src/main/jni/Android.mk
