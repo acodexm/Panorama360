@@ -5,6 +5,7 @@
     <string name="manual">Manual</string>
     <string name="type_of_picture">Type of picture:</string>
     <string name="panorama">Panorama</string>
+    <string name="multithreaded">Multithreaded</string>
     <string name="wide_picture">Wide picture</string>
     <string name="picture_360">Picture 360</string>
     <string name="save_destination">Save destination:</string>
@@ -24,5 +25,6 @@
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_rw_perms_required"><![CDATA[Camera and Read&Write Services Permissions are required for this app]]></string>
     <string name="msg_is_saved">Picture saved:</string>
+    <string name="part_msg_is_saved">Part picture saved:</string>
     <string name="very_low_quality">Very Low quality</string>
 </resources>

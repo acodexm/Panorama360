@@ -5,7 +5,7 @@
 .externalNativeBuild
 *.ipr
 *.iws
-/android/assets/
+
 libs/
 debug/
 release/
@@ -16,3 +16,4 @@ gradle/
 /gradlew
 /gradlew.bat
 /android/project.properties
+/android/src/main/jni/Android.mk

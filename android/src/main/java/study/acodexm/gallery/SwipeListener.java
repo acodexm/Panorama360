@@ -1,7 +1,7 @@
 package study.acodexm.gallery;
 
 
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -25,7 +25,7 @@ public class SwipeListener implements View.OnTouchListener {
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
 
-            Log.d(TAG, "onTouch [ACTION DOWN]");
+            LOG.d(TAG, "onTouch [ACTION DOWN]");
             isTouched = true;
 
             startX = event.getX();
@@ -33,7 +33,7 @@ public class SwipeListener implements View.OnTouchListener {
 
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
 
-            Log.d(TAG, "onTouch [ACTION UP]");
+            LOG.d(TAG, "onTouch [ACTION UP]");
             float x = event.getX();
 
             if (isTouched) {

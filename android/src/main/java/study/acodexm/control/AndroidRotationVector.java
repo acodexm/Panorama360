@@ -28,4 +28,5 @@ public class AndroidRotationVector implements RotationVector {
     public float[] getValues() {
         return values;
     }
+
 }

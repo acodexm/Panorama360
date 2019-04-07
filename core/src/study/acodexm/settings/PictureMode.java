@@ -5,6 +5,7 @@ import study.acodexm.Utils.LOG;
 
 public enum PictureMode {
     auto,
+    multithreaded,
     panorama,
     widePicture,
     picture360;

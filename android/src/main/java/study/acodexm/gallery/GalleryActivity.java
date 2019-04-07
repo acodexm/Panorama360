@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import android.view.MotionEvent;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
@@ -87,7 +87,7 @@ public class GalleryActivity extends Activity {
             imagesPath.remove(current);
             nextImage();
         } else {
-            Log.d(TAG, "onTrashClickListener: failed to delete file!");
+            LOG.d(TAG, "onTrashClickListener: failed to delete file!");
         }
     }
 
@@ -111,16 +111,16 @@ public class GalleryActivity extends Activity {
             if (extrasFolder != null)
                 imagesFolder = extrasFolder;
         }
-        Log.d(TAG, "load images from imagesFolder:" + imagesFolder);
+        LOG.d(TAG, "load images from imagesFolder:" + imagesFolder);
         if (imagesFolder != null) {
             File file = new File(imagesFolder);
-            Log.d(TAG, "loadImages file exist: " + file.exists());
-            Log.d(TAG, "loadImages file id folder: " + file.isDirectory());
+            LOG.d(TAG, "loadImages file exist: " + file.exists());
+            LOG.d(TAG, "loadImages file id folder: " + file.isDirectory());
             if (file.exists() && file.isDirectory()) {
                 File[] listFiles = file.listFiles();
                 for (File fileCurrent : listFiles) {
                     if (fileCurrent.isFile()) {
-                        Log.d(TAG, "loadImages added file:" + fileCurrent.getPath());
+                        LOG.d(TAG, "loadImages added file:" + fileCurrent.getPath());
                         Pattern num = Pattern.compile("\\d+");
                         int offset = fileCurrent.getPath().indexOf("panorama_");
                         //if found file is not named correctly than ignore that file
@@ -129,7 +129,7 @@ public class GalleryActivity extends Activity {
                         double date;
                         if (mN.find()) {
                             date = Double.parseDouble(mN.group());
-                            Log.d(TAG, "number found: " + date);
+                            LOG.d(TAG, "number found: " + date);
                             imagesPath.put(date, fileCurrent.getPath());
                             if (current < date)
                                 current = date;
@@ -137,7 +137,7 @@ public class GalleryActivity extends Activity {
                     }
                 }
             }
-            Log.d(TAG, "loadImages images count :" + imagesPath.size());
+            LOG.d(TAG, "loadImages images count :" + imagesPath.size());
         }
 
     }
@@ -178,7 +178,7 @@ public class GalleryActivity extends Activity {
             viewFlipper.showNext();
             viewFlipper.removeViewAt(0);
         } else {
-            Log.d(TAG, "no more pictures!");
+            LOG.d(TAG, "no more pictures!");
         }
     }
 
@@ -203,7 +203,7 @@ public class GalleryActivity extends Activity {
             viewFlipper.showNext();
             viewFlipper.removeViewAt(0);
         } else {
-            Log.d(TAG, "no more pictures!");
+            LOG.d(TAG, "no more pictures!");
         }
 
     }
@@ -221,7 +221,7 @@ public class GalleryActivity extends Activity {
             decodeStream = BitmapFactory.decodeStream(fileInputStream);
             imageView.setImageBitmap(decodeStream);
         } catch (FileNotFoundException e) {
-            Log.e(TAG, "FileNotFoundException " + e);
+            LOG.e(TAG, "FileNotFoundException " , e);
         }
     }
 }

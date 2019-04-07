@@ -12,7 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
+import study.acodexm.utils.LOG;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -102,7 +102,7 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
      */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        Log.d(TAG, "Permission callback called-------");
+        LOG.d(TAG, "Permission callback called-------");
         switch (requestCode) {
             case REQUEST_ID_MULTIPLE_PERMISSIONS: {
                 Map<String, Integer> perms = new HashMap<>();
@@ -113,10 +113,10 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
                         perms.put(permissions[i], grantResults[i]);
                     if (perms.get(CAMERA) == PackageManager.PERMISSION_GRANTED
                             && perms.get(STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                        Log.d(TAG, "Camera and Read&Write services permission granted");
+                        LOG.d(TAG, "Camera and Read&Write services permission granted");
                         rightBtn.setVisibility(View.VISIBLE);
                     } else {
-                        Log.d(TAG, "Some permissions are not granted ask again ");
+                        LOG.d(TAG, "Some permissions are not granted ask again ");
                         if (ActivityCompat.shouldShowRequestPermissionRationale(this, CAMERA) ||
                                 ActivityCompat.shouldShowRequestPermissionRationale(this, STORAGE)) {
                             showDialogOK(getString(R.string.dialog_rw_perms_required), (dialog, which) -> {

@@ -148,8 +148,7 @@ void cropResult(Mat &result) {
         int ocLeft = 0;
         int ocRight = 0;
 
-        bool finished = checkInteriorExterior(contourMask, croppingMask, ocTop, ocBottom, ocLeft,
-                                              ocRight);
+        bool finished = checkInteriorExterior(contourMask, croppingMask, ocTop, ocBottom, ocLeft, ocRight);
         if (finished) {
             break;
         }
@@ -170,8 +169,7 @@ void cropResult(Mat &result) {
  */
 JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_processPanorama
-        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress,
-         jboolean isCompressed) {
+        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress, jboolean isCropped) {
     // Get the length of the long array
     jsize a_len = env->GetArrayLength(imageAddressArray);
     // Convert the jlongArray to an array of jlong
@@ -186,11 +184,8 @@ Java_study_acodexm_NativePanorama_processPanorama
         // Convert to a 3 channel Mat to use with Stitcher module
         cvtColor(curimage, newimage, CV_BGRA2RGB);
         // Reduce the resolution for fast computation
-        if (isCompressed) {
-            float scale = 1000.0f / curimage.cols;
-            resize(newimage, newimage, Size((int) (scale * curimage.cols),
-                                            (int) (scale * curimage.rows)));
-        }
+        float scale = 1000.0f / curimage.cols;
+        resize(newimage, newimage, Size((int) (scale * curimage.cols), (int) (scale * curimage.rows)));
         imgVec.push_back(newimage);
     }
     Mat &result = *(Mat *) outputAddress;
@@ -201,7 +196,9 @@ Java_study_acodexm_NativePanorama_processPanorama
         LOGE("Can't stitch images, error code = %d", int(status));
     } else {
         LOGD("Success code = %d", int(status));
-        cropResult(result);
+        if(isCropped){
+            cropResult(result);
+        }
     }
     // Release the jlong array
     env->ReleaseLongArrayElements(imageAddressArray, imgAddressArr, 0);

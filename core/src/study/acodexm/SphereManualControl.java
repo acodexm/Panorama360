@@ -2,7 +2,6 @@ package study.acodexm;
 
 
 interface SphereManualControl {
-    int canTakePicture();
 
     boolean isCameraSteady();
 

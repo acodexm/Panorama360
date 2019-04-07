@@ -1,13 +1,12 @@
 package study.acodexm.control;
 
 
-import java.util.List;
-
 import study.acodexm.CameraSurface;
 import study.acodexm.SphereControl;
 
 public interface CameraControl {
-    void takePicture(int id);
+
+    void takePicture();
 
     void startPreview();
 
@@ -17,6 +16,5 @@ public interface CameraControl {
 
     SphereControl getSphereControl();
 
-    List<Integer> getIdsTable();
 
 }
