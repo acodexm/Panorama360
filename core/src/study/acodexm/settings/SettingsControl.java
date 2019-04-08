@@ -13,4 +13,8 @@ public interface SettingsControl {
     PictureQuality getPictureQuality();
 
     void setPictureQuality(PictureQuality pictureQuality);
+
+    GridSize getGridSize();
+
+    void setGridSize(GridSize gridSize);
 }

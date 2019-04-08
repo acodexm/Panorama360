@@ -4,25 +4,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static study.acodexm.AndroidCamera.LAT;
-import static study.acodexm.AndroidCamera.LON;
 
 public class PicturePosition {
     private static final String TAG = PicturePosition.class.getSimpleName();
     private static PicturePosition thisPosition;
     private int lastX;
+    private int LON;
+    private int LAT;
     private int lastY;
     private int currX;
     private int currY;
     private int[][] grid;
 
-    private PicturePosition() {
+    public int getLON() {
+        return LON;
+    }
+
+    public int getLAT() {
+        return LAT;
+    }
+
+    private PicturePosition(int LAT, int LON) {
+        this.LAT = LAT;
+        this.LON = LON;
         this.grid = new int[LON][LAT];
     }
 
-    public static PicturePosition getInstance() {
-        if (thisPosition == null)
-            thisPosition = new PicturePosition();
+    public static PicturePosition getInstance(int LAT, int LON, boolean forceRecreate) {
+        if (thisPosition == null || forceRecreate)
+            thisPosition = new PicturePosition(LAT, LON);
         return thisPosition;
     }
 
@@ -40,14 +50,6 @@ public class PicturePosition {
         return grid;
     }
 
-    public String getPosition() {
-        return lastX + "_" + lastY;
-    }
-
-    public int calculateLastPosition() {
-        int pos = lastX * LAT + lastY + lastX;
-        return pos < 0 ? -1 : pos;
-    }
 
     public int calculateCurrentPosition() {
         int pos = currX * LAT + currY + currX;
@@ -64,16 +66,6 @@ public class PicturePosition {
             this.lastX = lastX;
             this.lastY = lastY;
             this.grid[lastX][lastY] = 1;
-        }
-    }
-
-    public void setLastPosition(String position) {
-        if (position.contains("_")) {
-            String[] s = position.split("_");
-            this.lastX = Integer.valueOf(s[0]);
-            this.lastY = Integer.valueOf(s[1]);
-            if (this.grid[lastX][lastY] == 0)
-                this.grid[lastX][lastY] = 1;
         }
     }
 

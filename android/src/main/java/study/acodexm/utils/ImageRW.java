@@ -4,6 +4,7 @@ package study.acodexm.utils;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
+
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
@@ -129,7 +130,9 @@ public class ImageRW {
             String[] children = dir.list();
             if (children != null && children.length > 0)
                 for (String aChildren : children) {
-                    if (new File(dir, aChildren).delete()) {
+                    if (new File(Environment.getExternalStorageDirectory().getAbsolutePath() + aChildren).isDirectory())
+                        deleteFolderFiles(aChildren);
+                    else if (new File(dir, aChildren).delete()) {
                         LOG.d(TAG, "file " + aChildren.trim() + " deleted");
                     } else {
                         LOG.d(TAG, "deleteTempFiles: failed");
@@ -142,6 +145,7 @@ public class ImageRW {
         SimpleDateFormat simple = new SimpleDateFormat(PATTERN, Locale.getDefault());
         Date date = new Date();
         File from = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + folder);
+        if (from.isDirectory() && from.listFiles().length == 0) return false;
         File to = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + HIST_DIR + folder + simple.format(date));
         if (isPathCreated(HIST_DIR + folder + simple.format(date)))
             return from.renameTo(to);

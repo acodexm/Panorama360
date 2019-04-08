@@ -2,19 +2,17 @@ package study.acodexm.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import study.acodexm.utils.LOG;
+
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import study.acodexm.PicturePosition;
-import study.acodexm.settings.PictureMode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static study.acodexm.AndroidCamera.LAT;
-import static study.acodexm.AndroidCamera.LON;
+import study.acodexm.PicturePosition;
+import study.acodexm.settings.PictureMode;
+
 
 public class ImagePicker {
 
@@ -58,6 +56,7 @@ public class ImagePicker {
     }
 
     private static void gridExtractor(PicturePosition position, int[][] grid, int[] temp2, List<Integer> tempPictures, int i) {
+        int LON = position.getLON();
         for (int j = 0; j < grid[0].length; j++) {
             if (grid[i][j] == 0) {
                 temp2[j] = 0;
@@ -125,11 +124,8 @@ public class ImagePicker {
                 break;
             case picture360:
                 //this will work only when whole sphere is filled with pictures
-                if (instance.getTakenPictures().size() == LAT * LON)
-                    for (int id : instance.getTakenPictures())
-                        pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
-                else
-                    LOG.e(TAG, "Picture360 loadPictures failed: ", new Throwable("not enough pictures"));
+                for (int id : instance.getTakenPictures())
+                    pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
         }
 

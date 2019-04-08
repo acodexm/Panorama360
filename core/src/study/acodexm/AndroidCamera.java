@@ -35,9 +35,9 @@ import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.SettingsControl;
 
 public class AndroidCamera implements ApplicationListener, SphereManualControl {
-    public static final int LAT = 10;
-    public static final int LON = 7;
     private static final String TAG = AndroidCamera.class.getSimpleName();
+    private int LAT;
+    private int LON;
     private PerspectiveCamera camera;
     private ModelInstance instance;
     private ModelBatch modelBatch;
@@ -65,6 +65,8 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         mRotationVector = rotationVector;
         mSphereControl = sphereControl;
         mSettingsControl = settingsControl;
+        LAT = settingsControl.getGridSize().getLAT();
+        LON = settingsControl.getGridSize().getLON();
     }
 
     @Override
@@ -78,7 +80,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         //initialize variables
         fpsLogger = new FPSLogger();
         mat4 = new Matrix4();
-        mPosition = PicturePosition.getInstance();
+        mPosition = PicturePosition.getInstance(LAT, LON, false);
         fpsLogger = new FPSLogger();
         isUpdated = false;
         modelBatch = new ModelBatch();
@@ -418,15 +420,36 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
      * this method checks if the camera is not moving to fast so the taking picture process should
      * be more stable
      *
-     * @param cameraOld
-     * @param camera
      * @return
      */
-    private boolean isCameraSteady(Vector3 cameraOld, Vector3 camera) {
-        float offset = 0.003f;
-        return !((camera.x > cameraOld.x + offset) || (camera.y > cameraOld.y + offset)
-                || (camera.z > cameraOld.z + offset) || (camera.x < cameraOld.x - offset)
-                || (camera.y < cameraOld.y - offset) || (camera.z < cameraOld.z - offset));
+    private boolean isCameraPointingCenter() {
+        float offset = 0.3f;
+
+        if (camera == null || mPosition == null || centersOfGrid == null) return false;
+        Vector3 direction = camera.direction;
+        Vector3 isCollinear;
+        for (int i = 0; i < LON; i++) {
+            for (int j = 0; j < LAT; j++) {
+                //check if the point is in front of us and not on the opposite side
+                int pos = mPosition.calculatePosition(i, j);
+                if (pos != -1)
+                    if (direction.x * centersOfGrid.get(pos).x >= 0
+                            && direction.y * centersOfGrid.get(pos).y >= 0
+                            && direction.z * centersOfGrid.get(pos).z >= 0) {
+                        isCollinear = new Vector3(
+                                direction.y * centersOfGrid.get(pos).z - direction.z * centersOfGrid.get(pos).y,
+                                direction.z * centersOfGrid.get(pos).x - direction.x * centersOfGrid.get(pos).z,
+                                direction.x * centersOfGrid.get(pos).y - direction.y * centersOfGrid.get(pos).x
+                        );
+                        if ((isCollinear.x < offset && isCollinear.x > -offset)
+                                && (isCollinear.y < offset && isCollinear.y > -offset)
+                                && (isCollinear.z < offset && isCollinear.z > -offset)) {
+                            return true;
+                        }
+                    }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -444,8 +467,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
     @Override
     public boolean isCameraSteady() {
-//        return isCameraSteady(cameraOld, camera.direction);
-        return true;
+        return isCameraPointingCenter();
     }
 
     @Override

@@ -148,7 +148,8 @@ void cropResult(Mat &result) {
         int ocLeft = 0;
         int ocRight = 0;
 
-        bool finished = checkInteriorExterior(contourMask, croppingMask, ocTop, ocBottom, ocLeft, ocRight);
+        bool finished = checkInteriorExterior(contourMask, croppingMask, ocTop, ocBottom, ocLeft,
+                                              ocRight);
         if (finished) {
             break;
         }
@@ -169,7 +170,8 @@ void cropResult(Mat &result) {
  */
 JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_processPanorama
-        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress, jboolean isCropped) {
+        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress,
+         jboolean isCropped) {
     // Get the length of the long array
     jsize a_len = env->GetArrayLength(imageAddressArray);
     // Convert the jlongArray to an array of jlong
@@ -185,18 +187,27 @@ Java_study_acodexm_NativePanorama_processPanorama
         cvtColor(curimage, newimage, CV_BGRA2RGB);
         // Reduce the resolution for fast computation
         float scale = 1000.0f / curimage.cols;
-        resize(newimage, newimage, Size((int) (scale * curimage.cols), (int) (scale * curimage.rows)));
+        resize(newimage, newimage,
+               Size((int) (scale * curimage.cols), (int) (scale * curimage.rows)));
         imgVec.push_back(newimage);
     }
     Mat &result = *(Mat *) outputAddress;
     Stitcher::Mode mode = Stitcher::PANORAMA;
     Ptr<Stitcher> stitcher = Stitcher::create(mode, true);
-    Stitcher::Status status = stitcher->stitch(imgVec, result);
+    stitcher->setWaveCorrection(false);
+//    stitcher->setWaveCorrectKind(detail::WAVE_CORRECT_HORIZ);
+//    stitcher->setFeaturesMatcher(makePtr<detail::BestOf2NearestMatcher>(false));
+    stitcher->setBundleAdjuster(makePtr<detail::BundleAdjusterRay>());
+    stitcher->setWarper(makePtr<SphericalWarper>());
+    stitcher->setExposureCompensator(makePtr<detail::BlocksGainCompensator>());
+    stitcher->estimateTransform(imgVec);
+    Stitcher::Status status = stitcher->composePanorama(result);
+//    Stitcher::Status status = stitcher->stitch(imgVec, result);
     if (status != Stitcher::OK) {
         LOGE("Can't stitch images, error code = %d", int(status));
     } else {
         LOGD("Success code = %d", int(status));
-        if(isCropped){
+        if (isCropped) {
             cropResult(result);
         }
     }

@@ -8,19 +8,20 @@ import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import study.acodexm.utils.LOG;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+
+import java.io.ByteArrayOutputStream;
+import java.util.List;
+
 import study.acodexm.control.AndroidSphereControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
 import study.acodexm.settings.SettingsControl;
 import study.acodexm.utils.ImageRW;
-
-import java.io.ByteArrayOutputStream;
-import java.util.List;
+import study.acodexm.utils.LOG;
 
 @SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
@@ -201,19 +202,17 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             try {
                 camera.autoFocus(this);
             } catch (Exception e) {
-                LOG.e(TAG, "Take picture failed",e);
+                LOG.e(TAG, "Take picture failed", e);
             }
         }
     }
 
     /**
      * this method makes sure that taken picture is in focus
-     *
-     * @param success
-     * @param camera
      */
     @Override
     public void onAutoFocus(boolean success, Camera camera) {
+        LOG.d(TAG, "onAutoFocus: " + success);
         if (success && camera != null)
             camera.takePicture(null, null, this);
     }
@@ -225,7 +224,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     public void onPictureTaken(final byte[] bytes, Camera camera) {
         long time = System.currentTimeMillis();
 
-        Runnable saveImage = () -> ImageRW.saveImageExternal(bytes, PicturePosition.getInstance().calculateCurrentPosition());
+        Runnable saveImage = () -> ImageRW.saveImageExternal(bytes, PicturePosition.getInstance(mSettingsControl.getGridSize().getLAT(), mSettingsControl.getGridSize().getLON(), false).calculateCurrentPosition());
         mViewControl.post(saveImage);
 
         Runnable processTexture = () -> {

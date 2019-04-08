@@ -7,7 +7,7 @@ import com.badlogic.gdx.Gdx;
  * simple log utility class
  */
 public class LOG {
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     public static void d(String tag, String message) {
         if (debug) Gdx.app.log(tag, message);

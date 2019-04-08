@@ -1,7 +1,6 @@
 package study.acodexm;
 
 
-import acodexm.panorama.R;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
@@ -18,31 +17,45 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import study.acodexm.utils.LOG;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.*;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+
 import org.opencv.core.Mat;
-import study.acodexm.control.AndroidRotationVector;
-import study.acodexm.control.AndroidSettingsControl;
-import study.acodexm.control.CameraControl;
-import study.acodexm.control.ViewControl;
-import study.acodexm.gallery.GalleryActivity;
-import study.acodexm.settings.*;
-import study.acodexm.utils.ImagePicker;
-import study.acodexm.utils.ImageRW;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import acodexm.panorama.R;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import study.acodexm.control.AndroidRotationVector;
+import study.acodexm.control.AndroidSettingsControl;
+import study.acodexm.control.CameraControl;
+import study.acodexm.control.ViewControl;
+import study.acodexm.gallery.GalleryActivity;
+import study.acodexm.settings.ActionMode;
+import study.acodexm.settings.GridSize;
+import study.acodexm.settings.PictureMode;
+import study.acodexm.settings.PictureQuality;
+import study.acodexm.settings.SettingsControl;
+import study.acodexm.settings.UserPreferences;
+import study.acodexm.utils.ImagePicker;
+import study.acodexm.utils.ImageRW;
+import study.acodexm.utils.LOG;
 
 public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -61,6 +74,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @BindView(R.id.capture)
     ImageView captureBtn;
+    @BindView(R.id.scope)
+    ImageView scope;
     @BindView(R.id.refresh_picture)
     ImageView refreshBtn;
     @BindView(R.id.open_gallery)
@@ -113,11 +128,16 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private boolean onBackBtnPressed = false;
     private int DOUBLE_BACK_PRESSED_DELAY = 2500;
     private boolean isNotSaving = true;
-    private PicturePosition mPicturePosition = PicturePosition.getInstance();
+    private PicturePosition mPicturePosition;
+    private GridSize mGridSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //load preferences
+        mPreferences = new UserPreferences(this);
+        mGridSize = new GridSize(mPreferences.getLat(), mPreferences.getLon());
+        mSettingsControl.setGridSize(mGridSize);
         mCameraControl = new CameraSurface(this, mSettingsControl);
         //getting camera surface view
         mSurfaceView = mCameraControl.getSurface();
@@ -157,13 +177,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         ButterKnife.bind(this);
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        //load preferences
-        mPreferences = new UserPreferences(this);
+
         //delete files from temporary picture folder
         ImageRW.deleteTempFiles();
         ImageRW.deletePartFiles();
 
-
+        mPicturePosition = PicturePosition.getInstance(mGridSize.getLAT(), mGridSize.getLON(), true);
         imageHandler = new Thread(() -> {
             LOG.d(TAG, "image handler call");
             while (mRunning) {
@@ -195,6 +214,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mShutterState = ShutterState.ready;
         loadPreferences();
         setCaptureBtnImage();
+        setScopeImage();
         threadHandler = new Handler(msg -> {
             LOG.d(TAG, "handleMessage" + msg.what);
             switch (msg.what) {
@@ -270,6 +290,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+        setScopeImage();
         if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             SensorManager.getRotationMatrixFromVector(rotationMatrix, sensorEvent.values);
             rotationVector.updateRotationVector(rotationMatrix);
@@ -485,6 +506,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
                 break;
 
+        }
+    }
+
+    private void setScopeImage() {
+        if (mManualControl.isCameraSteady()) {
+            scope.setBackground(ContextCompat.getDrawable(this, R.drawable.scope));
+        } else {
+            scope.setBackground(ContextCompat.getDrawable(this, R.drawable.scope_2));
         }
     }
 

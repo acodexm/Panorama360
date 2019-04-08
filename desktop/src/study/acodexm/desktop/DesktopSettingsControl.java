@@ -1,4 +1,4 @@
-package study.acodexm.control;
+package study.acodexm.desktop;
 
 
 import study.acodexm.settings.ActionMode;
@@ -7,11 +7,11 @@ import study.acodexm.settings.PictureMode;
 import study.acodexm.settings.PictureQuality;
 import study.acodexm.settings.SettingsControl;
 
-public class AndroidSettingsControl implements SettingsControl {
+public class DesktopSettingsControl implements SettingsControl {
     private PictureQuality mPictureQuality;
     private ActionMode mActionMode;
     private PictureMode mPictureMode;
-    private GridSize mGridSize;
+    private GridSize mGridSize = new GridSize(10, 3);
 
     @Override
     public PictureMode getPictureMode() {
@@ -53,3 +53,4 @@ public class AndroidSettingsControl implements SettingsControl {
         mGridSize = gridSize;
     }
 }
+

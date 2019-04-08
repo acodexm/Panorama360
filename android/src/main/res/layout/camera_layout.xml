@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/ui_layout"
     android:layout_width="match_parent"
@@ -10,7 +9,7 @@
     <SurfaceView
         android:id="@+id/camera_surface"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
     <ImageView
         android:id="@+id/capture"
@@ -20,7 +19,15 @@
         android:layout_centerVertical="true"
         android:layout_margin="10dp"
         android:padding="10dp"
-        />
+        tools:ignore="ContentDescription" />
+
+    <ImageView
+        android:id="@+id/scope"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        tools:ignore="ContentDescription" />
 
     <ProgressBar
         android:id="@+id/steady_shot"
@@ -29,42 +36,38 @@
         android:layout_alignTop="@+id/capture"
         android:layout_centerInParent="true"
         android:indeterminateTint="@color/progressRunning"
-        android:visibility="gone"
-        />
+        android:visibility="gone" />
 
     <ImageView
         android:id="@+id/save_picture"
         android:layout_width="70dp"
         android:layout_height="70dp"
-        android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
         android:layout_margin="10dp"
         android:padding="10dp"
-        android:src="@drawable/save"
-        />
+        android:src="@drawable/save" />
 
     <ImageView
         android:id="@+id/refresh_picture"
         android:layout_width="70dp"
         android:layout_height="70dp"
-        android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="80dp"
         android:padding="10dp"
-        android:src="@drawable/refresh"
-        />
+        android:src="@drawable/refresh" />
 
     <ImageView
         android:id="@+id/open_gallery"
         android:layout_width="70dp"
         android:layout_height="70dp"
-        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
         android:layout_margin="10dp"
         android:padding="10dp"
-        android:src="@drawable/panorama"
-        />
+        android:src="@drawable/panorama" />
 
 
 </RelativeLayout>
