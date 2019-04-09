@@ -123,8 +123,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private ShutterState mShutterState;
     private UserPreferences mPreferences;
     private SphereManualControl mManualControl;
-    private boolean test = true;
-    private boolean isCompressed;
     private boolean onBackBtnPressed = false;
     private int DOUBLE_BACK_PRESSED_DELAY = 2500;
     private boolean isNotSaving = true;
@@ -291,7 +289,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         setScopeImage();
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+        if (isNotSaving && sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             SensorManager.getRotationMatrixFromVector(rotationMatrix, sensorEvent.values);
             rotationVector.updateRotationVector(rotationMatrix);
         }
@@ -473,15 +471,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         switch (mPreferences.getPictureQuality()) {
             case LOW:
                 mSwitchLow.setChecked(true);
-                isCompressed = true;
                 break;
             case VERY_LOW:
                 mSwitchVeryLow.setChecked(true);
-                isCompressed = true;
                 break;
             case HIGH:
                 mSwitchHigh.setChecked(true);
-                isCompressed = false;
                 break;
         }
         mSettingsControl.setActionMode(mPreferences.getActionMode());
@@ -612,11 +607,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     void onSwitchAuto() {
         if (isNotSaving) {
             mPreferences.setActionMode(ActionMode.FullAuto);
+            mPreferences.setLat(10);
+            mPreferences.setLon(7);
             mSettingsControl.setActionMode(ActionMode.FullAuto);
             mSwitchManual.setChecked(false);
             setCaptureBtnImage();
             if (!mSwitchAuto.isChecked())
                 mSwitchAuto.setChecked(true);
+            recreate();
         } else showToast(R.string.msg_wait);
     }
 
@@ -625,6 +623,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         if (isNotSaving)
             if (mSwitchAuto.isChecked()) {
                 mPreferences.setActionMode(ActionMode.Manual);
+                mPreferences.setLat(10);
+                mPreferences.setLon(7);
                 mSettingsControl.setActionMode(ActionMode.Manual);
                 mSwitchAuto.setChecked(false);
                 setCaptureBtnImage();
@@ -637,6 +637,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         if (isNotSaving) {
             threadHandler.sendEmptyMessage(STOP_PROCESSING);
             mPreferences.setPictureMode(PictureMode.auto);
+            mPreferences.setLat(10);
+            mPreferences.setLon(7);
             mSettingsControl.setPictureMode(PictureMode.auto);
             mSwitchPanorama.setChecked(false);
             mSwitchMultithreaded.setChecked(false);
@@ -644,6 +646,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             mSwitch360.setChecked(false);
             if (!mSwitchAutoPicture.isChecked())
                 mSwitchAutoPicture.setChecked(true);
+            recreate();
         } else showToast(R.string.msg_wait);
     }
 
@@ -652,12 +655,15 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         if (isNotSaving) {
             if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.multithreaded);
+                mPreferences.setLat(10);
+                mPreferences.setLon(7);
                 mSettingsControl.setPictureMode(PictureMode.multithreaded);
                 mSwitchPanorama.setChecked(false);
                 mSwitchWide.setChecked(false);
                 mSwitchAutoPicture.setChecked(false);
                 mSwitch360.setChecked(false);
                 threadHandler.sendEmptyMessage(START_PROCESSING);
+                recreate();
             } else onSwitchAutoPanorama();
         } else showToast(R.string.msg_wait);
     }
@@ -667,11 +673,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         if (isNotSaving)
             if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.panorama);
+                mPreferences.setLat(7);
+                mPreferences.setLon(3);
                 mSettingsControl.setPictureMode(PictureMode.panorama);
                 mSwitchAutoPicture.setChecked(false);
                 mSwitchMultithreaded.setChecked(false);
                 mSwitchWide.setChecked(false);
                 mSwitch360.setChecked(false);
+                recreate();
             } else onSwitchAutoPanorama();
         else showToast(R.string.msg_wait);
     }
@@ -681,11 +690,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         if (isNotSaving)
             if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.widePicture);
+                mPreferences.setLat(10);
+                mPreferences.setLon(7);
                 mSettingsControl.setPictureMode(PictureMode.widePicture);
                 mSwitchAutoPicture.setChecked(false);
                 mSwitchMultithreaded.setChecked(false);
                 mSwitchPanorama.setChecked(false);
                 mSwitch360.setChecked(false);
+                recreate();
             } else onSwitchAutoPanorama();
         else showToast(R.string.msg_wait);
     }
@@ -695,11 +707,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         if (isNotSaving)
             if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.picture360);
+                mPreferences.setLat(7);
+                mPreferences.setLon(5);
                 mSettingsControl.setPictureMode(PictureMode.picture360);
                 mSwitchMultithreaded.setChecked(false);
                 mSwitchAutoPicture.setChecked(false);
                 mSwitchWide.setChecked(false);
                 mSwitchPanorama.setChecked(false);
+                recreate();
             } else onSwitchAutoPanorama();
         else showToast(R.string.msg_wait);
     }
@@ -712,7 +727,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 mSettingsControl.setPictureQuality(PictureQuality.HIGH);
                 mSwitchLow.setChecked(false);
                 mSwitchVeryLow.setChecked(false);
-                isCompressed = false;
                 recreate();
             } else onSwitchLow();
         else showToast(R.string.msg_wait);
@@ -725,7 +739,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             mSettingsControl.setPictureQuality(PictureQuality.LOW);
             mSwitchHigh.setChecked(false);
             mSwitchVeryLow.setChecked(false);
-            isCompressed = true;
             if (!mSwitchLow.isChecked())
                 mSwitchLow.setChecked(true);
             recreate();
@@ -741,7 +754,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 mSettingsControl.setPictureQuality(PictureQuality.VERY_LOW);
                 mSwitchHigh.setChecked(false);
                 mSwitchLow.setChecked(false);
-                isCompressed = true;
                 recreate();
             } else onSwitchLow();
         } else showToast(R.string.msg_wait);

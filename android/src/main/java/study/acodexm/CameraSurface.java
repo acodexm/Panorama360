@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.Surface;
@@ -26,8 +27,9 @@ import study.acodexm.utils.LOG;
 @SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
+    private final Handler handler = new Handler();
     private Camera camera;
-
+    private CameraSurface thisCamera;
     private byte[] mPicture;
     private boolean safeToTakePicture = false;
     private ViewControl mViewControl;
@@ -42,14 +44,17 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
 
     public CameraSurface(Context context) {
         super(context);
+        thisCamera = this;
     }
 
     public CameraSurface(Context context, AttributeSet attrs) {
         super(context, attrs);
+        thisCamera = this;
     }
 
     public CameraSurface(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        thisCamera = this;
     }
 
     public CameraSurface(MainActivity activity, SettingsControl settingsControl) {
@@ -68,6 +73,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             PHOTO_HEIGHT = metrics.heightPixels / 4;
             PHOTO_WIDTH = metrics.widthPixels / 4;
         }
+        thisCamera = this;
     }
 
     @Override
@@ -200,7 +206,9 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         if (camera != null && safeToTakePicture) {
             safeToTakePicture = false;
             try {
-                camera.autoFocus(this);
+                // the delay fixes autoFocus exception when other camera internal functions
+                // didn't finished after previously taken shot
+                handler.postDelayed(() -> camera.autoFocus(thisCamera), 200);
             } catch (Exception e) {
                 LOG.e(TAG, "Take picture failed", e);
             }
