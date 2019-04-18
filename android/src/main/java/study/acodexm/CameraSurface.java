@@ -205,14 +205,28 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
     public void takePicture() {
         if (camera != null && safeToTakePicture) {
             safeToTakePicture = false;
-            try {
-                // the delay fixes autoFocus exception when other camera internal functions
-                // didn't finished after previously taken shot
-                handler.postDelayed(() -> camera.autoFocus(thisCamera), 200);
-            } catch (Exception e) {
-                LOG.e(TAG, "Take picture failed", e);
-            }
+            safeAutoFocus();
         }
+    }
+
+
+    public void safeAutoFocus() {
+        try {
+            camera.autoFocus(thisCamera);
+        } catch (RuntimeException e) {
+            scheduleAutoFocus();
+            safeToTakePicture = true;
+            LOG.e(TAG, "Take picture failed", e);
+        }
+    }
+
+    private void scheduleAutoFocus() {
+        handler.postDelayed(() -> {
+            if (camera != null && safeToTakePicture) {
+                safeToTakePicture = false;
+                safeAutoFocus();
+            }
+        }, 500);
     }
 
     /**

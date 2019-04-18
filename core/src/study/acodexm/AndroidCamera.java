@@ -4,7 +4,6 @@ package study.acodexm;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -36,6 +35,7 @@ import study.acodexm.settings.SettingsControl;
 
 public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private static final String TAG = AndroidCamera.class.getSimpleName();
+    private static final float offset = 0.3f;
     private int LAT;
     private int LON;
     private PerspectiveCamera camera;
@@ -48,7 +48,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private ModelBuilder mModelBuilder;
     private List<Vector3> vector3s;
     private boolean isUpdated;
-    private FPSLogger fpsLogger;
     private Matrix4 mat4;
     private RotationVector mRotationVector;
     private SphereControl mSphereControl;
@@ -56,8 +55,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     private Map<Integer, Vector3> centersOfGrid;
     private ActionMode mActionMode = ActionMode.FullAuto;
     private List<Integer> ids;
-    private Vector3 cameraOld;
-    private int frames;
     private PicturePosition mPosition;
     private boolean canRender = false;
 
@@ -78,16 +75,12 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         setupSphere();
         makeListOfSphereVertices();
         //initialize variables
-        fpsLogger = new FPSLogger();
         mat4 = new Matrix4();
         mPosition = PicturePosition.getInstance(LAT, LON, false);
-        fpsLogger = new FPSLogger();
         isUpdated = false;
         modelBatch = new ModelBatch();
         setIdList();
         renderPhotos();
-        cameraOld = new Vector3();
-        frames = 0;
     }
 
     @Override
@@ -148,13 +141,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
                 LOG.d(TAG, "position: " + mPosition);
             }
         }
-//        fpsLogger.log();
-//         every 10 frames update camera vector to later detect movement
-        if (frames == 10) {
-            cameraOld = new Vector3(camera.direction);
-            frames = 0;
-        }
-        frames++;
     }
 
     /**
@@ -375,7 +361,6 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
      * @return
      */
     private void whereIsCameraLooking(Map<Integer, Vector3> centersOfGrid) {
-        float offset = 0.3f;
 
         /*
          * we have a camera direction vector which changes with camera move,
@@ -417,20 +402,16 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     }
 
     /**
-     * this method checks if the camera is not moving to fast so the taking picture process should
-     * be more stable
+     * this method checks if the camera is pointing on the center of nearest texture
      *
      * @return
      */
     private boolean isCameraPointingCenter() {
-        float offset = 0.3f;
-
         if (camera == null || mPosition == null || centersOfGrid == null) return false;
         Vector3 direction = camera.direction;
         Vector3 isCollinear;
         for (int i = 0; i < LON; i++) {
             for (int j = 0; j < LAT; j++) {
-                //check if the point is in front of us and not on the opposite side
                 int pos = mPosition.calculatePosition(i, j);
                 if (pos != -1)
                     if (direction.x * centersOfGrid.get(pos).x >= 0

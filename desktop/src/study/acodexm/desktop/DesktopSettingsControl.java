@@ -11,7 +11,7 @@ public class DesktopSettingsControl implements SettingsControl {
     private PictureQuality mPictureQuality;
     private ActionMode mActionMode;
     private PictureMode mPictureMode;
-    private GridSize mGridSize = new GridSize(10, 3);
+    private GridSize mGridSize = new GridSize(7, 5);
 
     @Override
     public PictureMode getPictureMode() {

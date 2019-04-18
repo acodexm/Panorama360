@@ -10,10 +10,8 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import acodexm.panorama.BuildConfig;
-
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class)
+@Config(manifest = "AndroidManifest.xml")
 public class JustTesting {
     @Test
     public void justTest() throws Exception {
@@ -40,4 +38,5 @@ public class JustTesting {
         }
         System.out.println(current);
     }
+
 }

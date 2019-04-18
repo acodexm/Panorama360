@@ -194,6 +194,7 @@ Java_study_acodexm_NativePanorama_processPanorama
     Mat &result = *(Mat *) outputAddress;
     Stitcher::Mode mode = Stitcher::PANORAMA;
     Ptr<Stitcher> stitcher = Stitcher::create(mode, true);
+    Stitcher::Status status = stitcher->stitch(imgVec, result);
 //    stitcher->setWaveCorrection(false);
 ////    stitcher->setWaveCorrectKind(detail::WAVE_CORRECT_HORIZ);
 ////    stitcher->setFeaturesMatcher(makePtr<detail::BestOf2NearestMatcher>(false));
@@ -202,7 +203,6 @@ Java_study_acodexm_NativePanorama_processPanorama
 //    stitcher->setExposureCompensator(makePtr<detail::BlocksGainCompensator>());
 //    stitcher->estimateTransform(imgVec);
 //    Stitcher::Status status = stitcher->composePanorama(result);
-    Stitcher::Status status = stitcher->stitch(imgVec, result);
     if (status != Stitcher::OK) {
         LOGE("Can't stitch images, error code = %d", int(status));
     } else {

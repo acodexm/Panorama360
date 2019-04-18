@@ -14,6 +14,12 @@ public class PicturePosition {
     private int lastY;
     private int currX;
     private int currY;
+
+    //test only
+    public void setGrid(int[][] grid) {
+        this.grid = grid;
+    }
+
     private int[][] grid;
 
     public int getLON() {
