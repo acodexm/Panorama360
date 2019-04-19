@@ -51,6 +51,10 @@ public class LOG {
         return () -> p(tag, message, value);
     }
 
+    public static Runnable r(String tag, String message, int value) {
+        return () -> p(tag, message, value);
+    }
+
     public static void s(String tag, String message, Throwable tr) {
         if (debug) {
             String msg = new Date().toString() +
@@ -65,6 +69,20 @@ public class LOG {
     }
 
     public static void p(String tag, String message, String value) {
+        if (debug) {
+            Log.d(tag, message);
+            String msg = new Date().toString() +
+                    SEPARATOR +
+                    tag +
+                    SEPARATOR +
+                    message +
+                    SEPARATOR +
+                    value;
+            writeLogs(msg, LOG_PERFORMANCE_FILE);
+        }
+    }
+
+    public static void p(String tag, String message, int value) {
         if (debug) {
             Log.d(tag, message);
             String msg = new Date().toString() +
