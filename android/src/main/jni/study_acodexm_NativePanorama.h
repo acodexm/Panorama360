@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT void JNICALL Java_study_acodexm_NativePanorama_processPanorama
   (JNIEnv *, jclass, jlongArray, jlong, jboolean);
 
+/*
+ * Class:     study_acodexm_NativePanorama
+ * Method:    getProgress
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_study_acodexm_NativePanorama_getProgress
+        (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
