@@ -35,6 +35,7 @@ import org.opencv.core.Mat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -62,10 +63,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private static final String PART = "PART_";
     private static final int START_PROCESSING = 100;
     private static final int STOP_PROCESSING = 101;
-    private static final int COUNT_IMAGES = 102;
     private static final int PROCESS_PART_IMAGES = 103;
     private static final int SAVED_PART_IMAGE = 104;
-    private static final int PROCESS_ALL_PARTS = 105;
 
     static {
         System.loadLibrary("opencv_java3");
@@ -104,18 +103,16 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     TextView mSaveDir;
     @BindView(R.id.steady_shot)
     ProgressBar mProgressBar;
+    @BindView(R.id.info_text)
+    TextView mProgressInfo;
 
     // multithreading
     Thread imageHandler;
     Handler threadHandler;
-    private ArrayList<Integer> usedPositions = new ArrayList<>();
+
     private int imageCount = 0;
     private boolean mRunning = false;
-
-    private SurfaceView mSurfaceView;
-    private GLSurfaceView glView;
     private SensorManager mSensorManager;
-    private Sensor mSensor;
     private RotationVector rotationVector = new AndroidRotationVector();
     private SettingsControl mSettingsControl = new AndroidSettingsControl();
     private float[] rotationMatrix = rotationVector.getValues();
@@ -124,28 +121,26 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private UserPreferences mPreferences;
     private SphereManualControl mManualControl;
     private boolean onBackBtnPressed = false;
-    private int DOUBLE_BACK_PRESSED_DELAY = 2500;
     private boolean isNotSaving = true;
+    private boolean partProcessing = false;
     private PicturePosition mPicturePosition;
-    private GridSize mGridSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //load preferences
         mPreferences = new UserPreferences(this);
-        mGridSize = new GridSize(mPreferences.getLat(), mPreferences.getLon());
+        GridSize mGridSize = new GridSize(mPreferences.getLat(), mPreferences.getLon());
         mSettingsControl.setGridSize(mGridSize);
         mCameraControl = new CameraSurface(this, mSettingsControl);
         //getting camera surface view
-        mSurfaceView = mCameraControl.getSurface();
+        SurfaceView mSurfaceView = mCameraControl.getSurface();
         FrameLayout layout = new FrameLayout(getContext());
         //crating main view from activity_main layout
         View mainView = LayoutInflater.from(getContext()).inflate(R.layout.activity_main, layout, false);
-        // setting up gyroscope
+        // setting up sensors
         mSensorManager = (SensorManager) getContext().getSystemService(SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        initListeners();
         //creating and configuring new instance of LibGDX spherical view
         AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
         cfg.useGyroscope = true;
@@ -160,8 +155,8 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         //initializing LibGDX spherical view
         initializeForView(androidCamera, cfg);
         if (graphics.getView() instanceof GLSurfaceView) {
-            LOG.d(TAG, "creating layout");
-            glView = (GLSurfaceView) graphics.getView();
+            LOG.s(TAG, "creating layout");
+            GLSurfaceView glView = (GLSurfaceView) graphics.getView();
             glView.setZOrderMediaOverlay(true);
             glView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
             glView.setKeepScreenOn(true);
@@ -175,31 +170,33 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         ButterKnife.bind(this);
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
         //delete files from temporary picture folder
         ImageRW.deleteTempFiles();
         ImageRW.deletePartFiles();
 
         mPicturePosition = PicturePosition.getInstance(mGridSize.getLAT(), mGridSize.getLON(), true);
-        imageHandler = new Thread(() -> {
-            LOG.d(TAG, "image handler call");
-            while (mRunning) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                ArrayList<Integer> newImagePart = ImagePicker.loadPanoParts(mPicturePosition, usedPositions);
-                if (newImagePart.size() == 3) {
-                    Message message = new Message();
-                    message.what = PROCESS_PART_IMAGES;
-                    usedPositions.addAll(newImagePart);
-                    Bundle data = new Bundle();
-                    int id = imageCount++;
-                    message.arg1 = id;
-                    data.putIntegerArrayList(PART + id, newImagePart);
-                    message.setData(data);
-                    threadHandler.sendMessage(message);
+
+        imageHandler = new Thread(new Runnable() {
+            public synchronized void run() {
+                LOG.s(TAG, "image handler call");
+                while (mRunning) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    List<Integer> newImagePart = ImagePicker.loadPanoParts(mPicturePosition);
+                    if (newImagePart.size() == 3) {
+                        Message message = new Message();
+                        message.what = PROCESS_PART_IMAGES;
+                        mPicturePosition.markAsUsed(newImagePart);
+                        Bundle data = new Bundle();
+                        int id = imageCount++;
+                        message.arg1 = id;
+                        data.putIntegerArrayList(PART + id, (ArrayList<Integer>) newImagePart);
+                        message.setData(data);
+                        threadHandler.sendMessage(message);
+                    }
                 }
             }
         });
@@ -210,38 +207,46 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         super.onResume();
         mCameraControl.startPreview();
         mShutterState = ShutterState.ready;
+        initListeners();
         loadPreferences();
         setCaptureBtnImage();
         setScopeImage();
-        threadHandler = new Handler(msg -> {
-            LOG.d(TAG, "handleMessage" + msg.what);
-            switch (msg.what) {
-                case START_PROCESSING: {
-                    LOG.d(TAG, "START_PROCESSING");
-                    isNotSaving = true;
-                    mRunning = true;
-                    imageHandler.start();
-                    break;
+//        new Thread(mSensorFusion.calculate());
+        threadHandler = new Handler(new Handler.Callback() {
+            @Override
+            public synchronized boolean handleMessage(Message msg) {
+                LOG.s(TAG, "handleMessage" + msg.what);
+                switch (msg.what) {
+                    case START_PROCESSING: {
+                        LOG.s(TAG, "START_PROCESSING");
+                        isNotSaving = true;
+                        mRunning = true;
+                        if (imageHandler.getState() == Thread.State.NEW) imageHandler.start();
+                        break;
+                    }
+                    case STOP_PROCESSING: {
+                        LOG.s(TAG, "STOP_PROCESSING");
+                        isNotSaving = true;
+                        mRunning = false;
+                        if (imageHandler.isAlive() && !imageHandler.isInterrupted())
+                            imageHandler.isInterrupted();
+                        break;
+                    }
+                    case PROCESS_PART_IMAGES: {
+                        LOG.s(TAG, "PROCESS_PART_IMAGES");
+                        partProcessing = true;
+                        new Thread(MainActivity.this.processPartPicture(msg.getData().getIntegerArrayList(PART + msg.arg1))).start();
+                        new Thread(MainActivity.this.getProgressPart()).start();
+                        break;
+                    }
+                    case SAVED_PART_IMAGE: {
+                        LOG.s(TAG, "SAVED_PART_IMAGE");
+                        MainActivity.this.showToastRunnable(MainActivity.this.getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
+                        break;
+                    }
                 }
-                case STOP_PROCESSING: {
-                    LOG.d(TAG, "STOP_PROCESSING");
-                    isNotSaving = true;
-                    mRunning = false;
-//                        imageHandler.stop();
-                    break;
-                }
-                case PROCESS_PART_IMAGES: {
-                    LOG.d(TAG, "PROCESS_PART_IMAGES");
-                    new Thread(processPartPicture(msg.getData().getIntegerArrayList(PART + msg.arg1))).start();
-                    break;
-                }
-                case SAVED_PART_IMAGE: {
-                    LOG.d(TAG, "SAVED_PART_IMAGE");
-                    showToastRunnable(getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
-                    break;
-                }
+                return true;
             }
-            return true;
         });
         if (mPreferences.getPictureMode() == PictureMode.multithreaded)
             threadHandler.sendEmptyMessage(START_PROCESSING);
@@ -250,7 +255,16 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     @Override
     protected void onPause() {
         mCameraControl.stopPreview();
+        threadHandler.sendEmptyMessage(STOP_PROCESSING);
+        mSensorManager.unregisterListener(this);
         super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // unregister sensor listeners to prevent the activity from draining the device's battery.
+        mSensorManager.unregisterListener(this);
     }
 
     @Override
@@ -266,6 +280,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         } else {
             onBackBtnPressed = true;
             showToast(R.string.msg_exit);
+            int DOUBLE_BACK_PRESSED_DELAY = 2500;
             new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -274,7 +289,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             }, DOUBLE_BACK_PRESSED_DELAY);
         }
     }
-
 
     public void post(Runnable r) {
         handler.post(r);
@@ -299,6 +313,12 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
 
+    public void initListeners() {
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
+                SensorManager.SENSOR_DELAY_FASTEST);
+    }
+
     /**
      * this method is executed on new Thread.
      * first depending on selected picture mode method loads selected pictures to be processed.
@@ -308,11 +328,11 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
      * @param pictureMode
      */
     void processPicture(final PictureMode pictureMode) {
-        long time = System.currentTimeMillis();
-        post(LOG.r(TAG, "processPicture BEGIN", time + "ms"));
-        showProcessingDialog();
+        final long time = System.currentTimeMillis();
         final Runnable r = () -> {
+            post(LOG.r(TAG, "processPicture BEGIN", time + "ms"));
             isNotSaving = false;
+            showProcessingDialog();
             final List<Mat> listImage;
             try {
                 listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
@@ -329,7 +349,6 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
                     }
                     post(LOG.r("processPicture", "tempObjAddress", (System.currentTimeMillis() - time) + "ms"));
-
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
@@ -363,9 +382,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     }
 
     Runnable processPartPicture(final ArrayList<Integer> ids) {
-        long time = System.currentTimeMillis();
-        post(LOG.r(TAG, "processPartPicture BEGIN", time + "ms"));
+        final long time = System.currentTimeMillis();
         return () -> {
+            post(LOG.r(TAG, "processPartPicture BEGIN", time + "ms"));
+
             final List<Mat> listImage;
             try {
                 listImage = ImagePicker.loadPictureParts(ids);
@@ -374,6 +394,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                 return;
             }
             post(LOG.r("processPartPicture", "loadPictureParts", (System.currentTimeMillis() - time) + "ms"));
+
             try {
                 int images = listImage.size();
                 if (images > 0) {
@@ -383,19 +404,24 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
                     }
                     Mat result = new Mat();
-                    // Call the OpenCV C++ Code to perform stitching process
+                    //Call the OpenCV C++ Code to perform stitching process
                     try {
+
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), false);
                         post(LOG.r("processPartPicture", "processPanorama", (System.currentTimeMillis() - time) + "ms"));
+
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
                             isSaved = ImageRW.savePartResultImageExternal(result);
                         post(LOG.r("processPartPicture", "savePartResultImageExternal", (System.currentTimeMillis() - time) + "ms"));
+
                         Message message = new Message();
                         message.what = SAVED_PART_IMAGE;
                         message.arg1 = isSaved ? 1 : 0;
-                        showToastRunnable(getString(R.string.part_msg_is_saved) + isSaved);
+
+                        //if part pictures failed mark used pictures as unused
+                        if (!isSaved) post(() -> mPicturePosition.markAsUnused(ids));
                         threadHandler.sendMessage(message);
                     } catch (Exception e) {
                         post(LOG.r(TAG, "native processPanorama not working ", e));
@@ -404,16 +430,25 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
                     listImage.clear();
                     post(LOG.r("processPartPicture", "clear memo listImage", (System.currentTimeMillis() - time) + "ms"));
 
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            partProcessing = false;
             post(LOG.r("processPartPicture", "END", (System.currentTimeMillis() - time) + "ms"));
+
         };
+
     }
 
     public void showToastRunnable(final String message) {
         post(() -> Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show());
+    }
+
+    @Override
+    public synchronized void showProcessingDialog() {
+        post(getProgress());
     }
 
     private void showToast(String message) {
@@ -424,21 +459,56 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
+
     /***
      * when picture is processed, to release more cpu and gpu power camera preview is stopped, and
-     * additionally process circle is shown
+     * additionally progress info with circle is shown
      */
-    public synchronized void showProcessingDialog() {
-        post(() -> {
-            mCameraControl.stopPreview();
-            mProgressBar.setVisibility(View.VISIBLE);
-        });
+    Runnable getProgress() {
+        LOG.s(TAG, "getProgress");
+        return () -> {
+            post(() -> {
+                mCameraControl.stopPreview();
+                mProgressBar.setVisibility(View.VISIBLE);
+            });
+            while (!isNotSaving) {
+                int progress = NativePanorama.getProgress();
+                post(() -> mProgressInfo.setText(String.format(Locale.getDefault(), "%s%d%s", getString(R.string.stitching_in_progress), progress, "%")));
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
     }
+
+    /***
+     * when part of picture is processed
+     * additional progress info is shown
+     */
+    Runnable getProgressPart() {
+        LOG.s(TAG, "getProgressPart");
+        return () -> {
+            while (partProcessing) {
+                int progress = NativePanorama.getProgress();
+                post(() -> mProgressInfo.setText(String.format(Locale.getDefault(), "%s%d%s", getString(R.string.stitching_part_in_progress), progress, "%")));
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+    }
+
 
     public synchronized void hideProcessingDialog() {
         post(() -> {
+            LOG.s(TAG, "hideProcessingDialog");
             mCameraControl.startPreview();
             mProgressBar.setVisibility(View.GONE);
+            mProgressInfo.setText("");
         });
     }
 
@@ -768,7 +838,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             try {
                 return valueOf(s);
             } catch (Exception e) {
-                LOG.e("ShutterState", "string casting failed", e);
+                LOG.s("ShutterState", "string casting failed", e);
                 return ready;
             }
         }

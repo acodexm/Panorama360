@@ -22,13 +22,12 @@ public class ImagePicker {
     private static final String TAG = ImagePicker.class.getSimpleName();
 
 
-
-    public static ArrayList<Integer> loadPanoParts(PicturePosition position, ArrayList<Integer> usedPositions) {
+    public static List<Integer> loadPanoParts(PicturePosition position) {
         ArrayList<Integer> result = new ArrayList<>();
         int[][] grid = position.getGrid();
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {
-                if (grid[x][y] == 1 && !usedPositions.contains(position.calculatePosition(x, y))) {
+                if (grid[x][y] == 1 && !position.getUsedPositions().contains(position.calculatePosition(x, y))) {
                     result.add(position.calculatePosition(x, y));
                 }
             }
@@ -40,8 +39,12 @@ public class ImagePicker {
         return ids.stream().map(id -> bitmapToMat(ImageRW.loadImageExternal(id))).collect(Collectors.toList());
     }
 
-    private static List<Mat> loadAllPictureParts() {
-        return ImageRW.loadImagePartsExternal().stream().map(ImagePicker::bitmapToMat).collect(Collectors.toList());
+    private static List<Mat> loadAllPictureParts(PicturePosition position) {
+        List<Mat> parts = ImageRW.loadImagePartsExternal().stream()
+                .map(ImagePicker::bitmapToMat)
+                .collect(Collectors.toList());
+        parts.addAll(loadPictureParts((ArrayList<Integer>) loadPanoParts(position)));
+        return parts;
     }
 
     public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance) {
@@ -52,7 +55,7 @@ public class ImagePicker {
                     pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
             case multithreaded:
-                return loadAllPictureParts();
+                return loadAllPictureParts(instance);
             case panorama:
                 Set<Integer> longestIDS = maxLength(instance);
                 if (longestIDS != null && longestIDS.size() > 0)
@@ -60,7 +63,7 @@ public class ImagePicker {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    LOG.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.s(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
                 break;
             case widePicture:
                 Set<Integer> optimalIDS = maxArea(instance);
@@ -69,7 +72,7 @@ public class ImagePicker {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    LOG.e(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.s(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
                 break;
             case picture360:
                 //this will work only when whole sphere is filled with pictures

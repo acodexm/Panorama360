@@ -313,15 +313,19 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
     }
 
     private void updateTextures(int id, Texture texture) {
-        for (Attribute att : instance.materials.get(id - LAT)) {
-            if (att.type == TextureAttribute.Diffuse) {
-                ((TextureAttribute) att).textureDescription.texture.dispose();
-                ((TextureAttribute) att).textureDescription.set(texture,
-                        Texture.TextureFilter.Linear,
-                        Texture.TextureFilter.Linear,
-                        Texture.TextureWrap.ClampToEdge,
-                        Texture.TextureWrap.ClampToEdge);
+        try {
+            for (Attribute att : instance.materials.get(id - LAT)) {
+                if (att.type == TextureAttribute.Diffuse) {
+                    ((TextureAttribute) att).textureDescription.texture.dispose();
+                    ((TextureAttribute) att).textureDescription.set(texture,
+                            Texture.TextureFilter.Linear,
+                            Texture.TextureFilter.Linear,
+                            Texture.TextureWrap.ClampToEdge,
+                            Texture.TextureWrap.ClampToEdge);
+                }
             }
+        } catch (IndexOutOfBoundsException e) {
+            LOG.e(TAG, "updateTextures ", e);
         }
     }
 

@@ -8,6 +8,9 @@ import java.util.List;
 public class PicturePosition {
     private static final String TAG = PicturePosition.class.getSimpleName();
     private static PicturePosition thisPosition;
+
+
+    private List<Integer> usedPositions = new ArrayList<>();
     private int lastX;
     private int LON;
     private int LAT;
@@ -18,6 +21,18 @@ public class PicturePosition {
     //test only
     public void setGrid(int[][] grid) {
         this.grid = grid;
+    }
+
+    public void markAsUsed(List<Integer> used) {
+        usedPositions.addAll(used);
+    }
+
+    public void markAsUnused(List<Integer> used) {
+        usedPositions.removeAll(used);
+    }
+
+    public List<Integer> getUsedPositions() {
+        return usedPositions;
     }
 
     private int[][] grid;

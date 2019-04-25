@@ -27,4 +27,6 @@
     <string name="msg_is_saved">Picture saved:</string>
     <string name="part_msg_is_saved">Part picture saved:</string>
     <string name="very_low_quality">Very Low quality</string>
+    <string name="stitching_in_progress">Stitching in progress: </string>
+    <string name="stitching_part_in_progress">Stitching part in progress: </string>
 </resources>

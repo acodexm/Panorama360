@@ -250,10 +250,8 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         mViewControl.post(saveImage);
 
         Runnable processTexture = () -> {
-            mViewControl.showProcessingDialog();
             mPicture = resizeImage(bytes);
             mSphereControl.setPicture(mPicture);
-            mViewControl.hideProcessingDialog();
             mViewControl.updateRender();
             safeToTakePicture = true;
         };

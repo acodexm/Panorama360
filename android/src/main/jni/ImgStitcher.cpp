@@ -74,8 +74,6 @@ namespace {
     bool do_wave_correct = true;
 
     WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
-    bool save_graph = true;
-    string save_graph_to = "graph.txt";
 
     /** Warp surface type.
     plane|cylindrical|spherical|fisheye|stereographic
@@ -110,9 +108,6 @@ namespace {
 /*************
  * ATTRIBUTES
  ************/
-
-/** final panorama name **/
-static string _resultPath = "result.jpg";
 
 /** loaded images loaded **/
 int imgAmount;

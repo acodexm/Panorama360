@@ -59,6 +59,15 @@
         android:padding="10dp"
         android:src="@drawable/refresh" />
 
+    <TextView
+        android:id="@+id/info_text"
+        android:layout_width="wrap_content"
+        android:layout_height="35dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="10dp"
+        android:textColor="@android:color/white" />
+
     <ImageView
         android:id="@+id/open_gallery"
         android:layout_width="70dp"
