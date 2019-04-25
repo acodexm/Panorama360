@@ -122,11 +122,11 @@ public class LOG {
                     tag,
                     SEPARATOR,
                     message,
-                    SEPARATOR,
+                    SEPARATOR + "NativeHeapAllocatedSize: ",
                     NativeHeapAllocatedSize,
-                    SEPARATOR,
+                    SEPARATOR + "NativeHeapSize: ",
                     NativeHeapSize,
-                    SEPARATOR,
+                    SEPARATOR + "NativeHeapFreeSize: ",
                     NativeHeapFreeSize
             );
             writeLogs(msg, LOG_PERFORMANCE_FILE);
