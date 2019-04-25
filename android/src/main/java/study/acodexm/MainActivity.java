@@ -398,7 +398,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             try {
                 int images = listImage.size();
                 if (images > 0) {
-                    post(LOG.r(TAG, "Pictures taken:" + images));
+                    post(LOG.r(TAG, "Pictures taken: " + images));
                     long[] tempObjAddress = new long[images];
                     for (int i = 0; i < images; i++) {
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();

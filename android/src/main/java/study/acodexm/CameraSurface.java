@@ -258,7 +258,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         mViewControl.post(processTexture);
 
         camera.startPreview();
-        LOG.d(TAG, "onPictureTaken process time: " + (System.currentTimeMillis() - time));
+        LOG.s(TAG, "onPictureTaken process time: " + (System.currentTimeMillis() - time));
 
     }
 

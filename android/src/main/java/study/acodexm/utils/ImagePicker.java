@@ -63,7 +63,7 @@ public class ImagePicker {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    LOG.s(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
                 break;
             case widePicture:
                 Set<Integer> optimalIDS = maxArea(instance);
@@ -72,7 +72,7 @@ public class ImagePicker {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    LOG.s(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.e(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
                 break;
             case picture360:
                 //this will work only when whole sphere is filled with pictures
