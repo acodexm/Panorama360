@@ -19,6 +19,16 @@ public class LOG {
     private static final String SEPARATOR = " <&&> ";
     private static final boolean debug = true;
 
+    public static Runnable cpJ() {
+        return () -> copyJniLogs();
+    }
+
+    private static boolean copyJniLogs(){
+    File from = new File("/data/data/study.acodexm/files");
+    if (from.isDirectory() && from.listFiles().length == 0) return false;
+    File to = new File(Environment.getExternalStorageDirectory() + LOG_DIR);
+    return from.renameTo(to);
+}
     /**
      * WRITE MESSAGE TO SPECIFIED FILE
      *

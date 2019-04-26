@@ -376,6 +376,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             hideProcessingDialog();
             isNotSaving = true;
             post(LOG.r("processPicture", "END", (System.currentTimeMillis() - time) + "ms"));
+            post(LOG.cpJ());
         };
         new Thread(r).start();
 
@@ -437,7 +438,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
             }
             partProcessing = false;
             post(LOG.r("processPartPicture", "END", (System.currentTimeMillis() - time) + "ms"));
-
+            post(LOG.cpJ());
         };
 
     }
