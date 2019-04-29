@@ -25,11 +25,7 @@ using namespace cv::detail;
 
 #define TAG "customized stitcher "
 #define ENABLE_LOG true
-#define LOGD(...)  {__android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__ )\
-FILE f = fopen("/data/data/study.acodexm/files/jlogs.txt", 'w+');\
-fprintf(f, __VA_ARGS__);\
-fclose(f);\
-};
+#define LOGD(...)  do{ __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__ ); FILE* f = fopen("/data/data/study.acodexm/files/jlogs.txt","a+"); fprintf(f, __VA_ARGS__); fprintf(f,"\r\n"); fclose(f); }while(0);
 
 
 /*************

@@ -18,11 +18,8 @@ using namespace cv;
 
 #define TAG "crop image "
 #define ENABLE_LOG true
-#define LOGD(...)  {__android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__ )\
-FILE f = fopen("/data/data/study.acodexm/files/jlogs.txt", 'w+');\
-fprintf(f, __VA_ARGS__);\
-fclose(f);\
-};
+#define LOGD(...)  do{ __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__ ); FILE* f = fopen("/data/data/study.acodexm/files/jlogs.txt","a+"); fprintf(f, __VA_ARGS__,"\r\n"); fclose(f); }while(0);
+
 
 
 bool checkInteriorExterior(const Mat &mask, const Rect &interiorBB, int &top, int &bottom,

@@ -6,6 +6,9 @@ import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
@@ -20,15 +23,43 @@ public class LOG {
     private static final boolean debug = true;
 
     public static Runnable cpJ() {
-        return () -> copyJniLogs();
+        return () -> d("copyJniLogs success: ", String.valueOf(copyJniLogs()));
     }
 
-    private static boolean copyJniLogs(){
-    File from = new File("/data/data/study.acodexm/files");
-    if (from.isDirectory() && from.listFiles().length == 0) return false;
-    File to = new File(Environment.getExternalStorageDirectory() + LOG_DIR);
-    return from.renameTo(to);
-}
+    private static boolean copyJniLogs() {
+        File from = new File(Environment.getDataDirectory() + "/data/study.acodexm/files/jlogs.txt");
+        if (!from.isFile()) {
+            d("copyJniLogs", " no such file /data/study.acodexm/files/jlog.txt");
+            return false;
+        }
+        File file = new File(Environment.getExternalStorageDirectory() + LOG_DIR + "/jlogs.txt");
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e("LOG", "copyJniLogs", e);
+                return false;
+            }
+        }
+        try {
+            FileOutputStream fos = new FileOutputStream(file, true);
+            FileInputStream fis = new FileInputStream(from);
+            int c;
+            while ((c = fis.read()) != -1) {
+                fos.write(c);
+            }
+            fos.close();
+            fis.close();
+        } catch (FileNotFoundException e) {
+            e("LOG", "copyJniLogs", e);
+            return false;
+        } catch (IOException e) {
+            e("LOG", "copyJniLogs", e);
+            return false;
+        }
+        return from.delete();
+    }
+
     /**
      * WRITE MESSAGE TO SPECIFIED FILE
      *
@@ -102,14 +133,10 @@ public class LOG {
      */
     public static void p(String tag, String message, String value) {
         if (debug) {
-            Log.d(tag, message);
-            String msg = String.format(Locale.getDefault(), "%s%s%s%s%s",
-                    new Date().toString(),
-                    SEPARATOR,
+            p(tag, String.format(Locale.getDefault(), "%s%s%s",
                     message,
                     SEPARATOR,
-                    value);
-            p(tag, msg);
+                    value));
         }
     }
 
@@ -125,7 +152,6 @@ public class LOG {
         double NativeHeapSize = (double) Debug.getNativeHeapSize();
         double NativeHeapFreeSize = (double) Debug.getNativeHeapFreeSize();
         if (debug) {
-            Log.d(tag, message);
             String msg = String.format(Locale.getDefault(), "%s%s%s%s%s%s%f%s%f%s%f",
                     new Date().toString(),
                     SEPARATOR,
@@ -139,6 +165,7 @@ public class LOG {
                     SEPARATOR + "NativeHeapFreeSize: ",
                     NativeHeapFreeSize
             );
+            Log.d(tag, msg);
             writeLogs(msg, LOG_PERFORMANCE_FILE);
         }
     }
