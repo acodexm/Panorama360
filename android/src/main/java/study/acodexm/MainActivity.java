@@ -48,6 +48,10 @@ import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
 import study.acodexm.control.ViewControl;
 import study.acodexm.gallery.GalleryActivity;
+import study.acodexm.orientationProvider.ImprovedOrientationSensor2Provider;
+import study.acodexm.orientationProvider.OrientationProvider;
+import study.acodexm.representation.MatrixF4x4;
+import study.acodexm.representation.Quaternion;
 import study.acodexm.settings.ActionMode;
 import study.acodexm.settings.GridSize;
 import study.acodexm.settings.PictureMode;
@@ -58,7 +62,7 @@ import study.acodexm.utils.ImagePicker;
 import study.acodexm.utils.ImageRW;
 import study.acodexm.utils.LOG;
 
-public class MainActivity extends AndroidApplication implements SensorEventListener, ViewControl, NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AndroidApplication implements ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String PART = "PART_";
     private static final int START_PROCESSING = 100;
@@ -112,10 +116,9 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
 
     private int imageCount = 0;
     private boolean mRunning = false;
-    private SensorManager mSensorManager;
     private RotationVector rotationVector = new AndroidRotationVector();
     private SettingsControl mSettingsControl = new AndroidSettingsControl();
-    private float[] rotationMatrix = rotationVector.getValues();
+    //    private float[] rotationMatrix = rotationVector.getValues();
     private CameraControl mCameraControl;
     private ShutterState mShutterState;
     private UserPreferences mPreferences;
@@ -124,6 +127,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     private boolean isNotSaving = true;
     private boolean partProcessing = false;
     private PicturePosition mPicturePosition;
+    private OrientationProvider orientationProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,8 +143,7 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         //crating main view from activity_main layout
         View mainView = LayoutInflater.from(getContext()).inflate(R.layout.activity_main, layout, false);
         // setting up sensors
-        mSensorManager = (SensorManager) getContext().getSystemService(SENSOR_SERVICE);
-        initListeners();
+        orientationProvider = new ImprovedOrientationSensor2Provider(this, (SensorManager) getContext().getSystemService(SENSOR_SERVICE));
         //creating and configuring new instance of LibGDX spherical view
         AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
         cfg.useGyroscope = true;
@@ -207,11 +210,10 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         super.onResume();
         mCameraControl.startPreview();
         mShutterState = ShutterState.ready;
-        initListeners();
+        orientationProvider.start();
         loadPreferences();
         setCaptureBtnImage();
         setScopeImage();
-//        new Thread(mSensorFusion.calculate());
         threadHandler = new Handler(new Handler.Callback() {
             @Override
             public synchronized boolean handleMessage(Message msg) {
@@ -256,15 +258,14 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
     protected void onPause() {
         mCameraControl.stopPreview();
         threadHandler.sendEmptyMessage(STOP_PROCESSING);
-        mSensorManager.unregisterListener(this);
         super.onPause();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        // unregister sensor listeners to prevent the activity from draining the device's battery.
-        mSensorManager.unregisterListener(this);
+        orientationProvider.stop();
+
     }
 
     @Override
@@ -299,25 +300,15 @@ public class MainActivity extends AndroidApplication implements SensorEventListe
         mManualControl.updateRender();
     }
 
-
     @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
+    public void rotateSphere(MatrixF4x4 matrix) {
         setScopeImage();
-        if (isNotSaving && sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-            SensorManager.getRotationMatrixFromVector(rotationMatrix, sensorEvent.values);
-            rotationVector.updateRotationVector(rotationMatrix);
+        if (isNotSaving) {
+            orientationProvider.getRotationMatrix(matrix);
+            rotationVector.updateRotationVector(matrix.getMatrix());
         }
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-    }
-
-    public void initListeners() {
-        mSensorManager.registerListener(this,
-                mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
-                SensorManager.SENSOR_DELAY_FASTEST);
-    }
 
     /**
      * this method is executed on new Thread.
