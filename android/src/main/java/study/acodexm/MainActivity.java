@@ -1,11 +1,9 @@
 package study.acodexm;
 
 
+import acodexm.panorama.R;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -21,28 +19,13 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.Switch;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import com.badlogic.gdx.backends.android.AndroidApplication;
-import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-
-import org.opencv.core.Mat;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import acodexm.panorama.R;
+import android.widget.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import org.opencv.core.Mat;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
@@ -51,23 +34,20 @@ import study.acodexm.gallery.GalleryActivity;
 import study.acodexm.orientationProvider.ImprovedOrientationSensor2Provider;
 import study.acodexm.orientationProvider.OrientationProvider;
 import study.acodexm.representation.MatrixF4x4;
-import study.acodexm.representation.Quaternion;
-import study.acodexm.settings.ActionMode;
-import study.acodexm.settings.GridSize;
-import study.acodexm.settings.PictureMode;
-import study.acodexm.settings.PictureQuality;
-import study.acodexm.settings.SettingsControl;
-import study.acodexm.settings.UserPreferences;
+import study.acodexm.settings.*;
 import study.acodexm.utils.ImagePicker;
 import study.acodexm.utils.ImageRW;
 import study.acodexm.utils.LOG;
+
+import java.util.*;
 
 public class MainActivity extends AndroidApplication implements ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String PART = "PART_";
     private static final int START_PROCESSING = 100;
     private static final int STOP_PROCESSING = 101;
-    private static final int PROCESS_PART_IMAGES = 103;
+    private static final int PROCESS_PART_IMAGES = 102;
+    private static final int PROCESS_FINAL_IMAGES = 103;
     private static final int SAVED_PART_IMAGE = 104;
 
     static {
@@ -111,14 +91,13 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     TextView mProgressInfo;
 
     // multithreading
-    Thread imageHandler;
-    Handler threadHandler;
+    private Thread imageHandler;
+    private Handler threadHandler;
 
     private int imageCount = 0;
     private boolean mRunning = false;
     private RotationVector rotationVector = new AndroidRotationVector();
     private SettingsControl mSettingsControl = new AndroidSettingsControl();
-    //    private float[] rotationMatrix = rotationVector.getValues();
     private CameraControl mCameraControl;
     private ShutterState mShutterState;
     private UserPreferences mPreferences;
@@ -234,6 +213,13 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                             imageHandler.isInterrupted();
                         break;
                     }
+                    case PROCESS_FINAL_IMAGES: {
+                        LOG.s(TAG, "PROCESS_FINAL_IMAGES");
+                        isNotSaving = false;
+                        new Thread(MainActivity.this.processPicture(PictureMode.intToEnum(msg.arg1))).start();
+                        new Thread(MainActivity.this.getProgress()).start();
+                        break;
+                    }
                     case PROCESS_PART_IMAGES: {
                         LOG.s(TAG, "PROCESS_PART_IMAGES");
                         partProcessing = true;
@@ -318,12 +304,10 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
      *
      * @param pictureMode
      */
-    void processPicture(final PictureMode pictureMode) {
+    private Runnable processPicture(final PictureMode pictureMode) {
         final long time = System.currentTimeMillis();
-        final Runnable r = () -> {
+        return () -> {
             post(LOG.r(TAG, "processPicture BEGIN", time + "ms"));
-            isNotSaving = false;
-            showProcessingDialog();
             final List<Mat> listImage;
             try {
                 listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
@@ -364,16 +348,14 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            hideProcessingDialog();
             isNotSaving = true;
             post(LOG.r("processPicture", "END", (System.currentTimeMillis() - time) + "ms"));
             post(LOG.cpJ());
         };
-        new Thread(r).start();
 
     }
 
-    Runnable processPartPicture(final ArrayList<Integer> ids) {
+    private Runnable processPartPicture(final ArrayList<Integer> ids) {
         final long time = System.currentTimeMillis();
         return () -> {
             post(LOG.r(TAG, "processPartPicture BEGIN", time + "ms"));
@@ -438,10 +420,6 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         post(() -> Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show());
     }
 
-    @Override
-    public synchronized void showProcessingDialog() {
-        post(getProgress());
-    }
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
@@ -456,13 +434,13 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
      * when picture is processed, to release more cpu and gpu power camera preview is stopped, and
      * additionally progress info with circle is shown
      */
-    Runnable getProgress() {
+    private Runnable getProgress() {
         LOG.s(TAG, "getProgress");
+        post(() -> {
+            mCameraControl.stopPreview();
+            mProgressBar.setVisibility(View.VISIBLE);
+        });
         return () -> {
-            post(() -> {
-                mCameraControl.stopPreview();
-                mProgressBar.setVisibility(View.VISIBLE);
-            });
             while (!isNotSaving) {
                 int progress = NativePanorama.getProgress();
                 post(() -> mProgressInfo.setText(String.format(Locale.getDefault(), "%s%d%s", getString(R.string.stitching_in_progress), progress, "%")));
@@ -472,6 +450,12 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     e.printStackTrace();
                 }
             }
+            post(() -> {
+                LOG.s(TAG, "hideProcessingDialog");
+                mCameraControl.startPreview();
+                mProgressBar.setVisibility(View.GONE);
+                mProgressInfo.setText("");
+            });
         };
     }
 
@@ -479,7 +463,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
      * when part of picture is processed
      * additional progress info is shown
      */
-    Runnable getProgressPart() {
+    private Runnable getProgressPart() {
         LOG.s(TAG, "getProgressPart");
         return () -> {
             while (partProcessing) {
@@ -492,16 +476,6 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 }
             }
         };
-    }
-
-
-    public synchronized void hideProcessingDialog() {
-        post(() -> {
-            LOG.s(TAG, "hideProcessingDialog");
-            mCameraControl.startPreview();
-            mProgressBar.setVisibility(View.GONE);
-            mProgressInfo.setText("");
-        });
     }
 
     private void loadPreferences() {
@@ -633,24 +607,27 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
         if (isNotSaving) {
+            Message message = new Message();
+            message.what = PROCESS_FINAL_IMAGES;
             showToast(getString(R.string.msg_save));
             switch (mSettingsControl.getPictureMode()) {
                 case auto:
-                    processPicture(PictureMode.auto);
+                    message.arg1 = 0;
                     break;
                 case multithreaded:
-                    processPicture(PictureMode.multithreaded);
+                    message.arg1 = 1;
                     break;
                 case panorama:
-                    processPicture(PictureMode.panorama);
+                    message.arg1 = 2;
                     break;
                 case widePicture:
-                    processPicture(PictureMode.widePicture);
+                    message.arg1 = 3;
                     break;
                 case picture360:
-                    processPicture(PictureMode.picture360);
+                    message.arg1 = 4;
                     break;
             }
+            threadHandler.sendMessage(message);
         } else showToast(R.string.msg_wait);
     }
 

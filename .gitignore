@@ -5,7 +5,7 @@
 .externalNativeBuild
 *.ipr
 *.iws
-
+gen/
 libs/
 debug/
 release/

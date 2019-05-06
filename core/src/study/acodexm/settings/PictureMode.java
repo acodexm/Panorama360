@@ -18,4 +18,27 @@ public enum PictureMode {
             return auto;
         }
     }
+
+    public static PictureMode intToEnum(int i) {
+        switch (i) {
+            case 0: {
+                return auto;
+            }
+            case 1: {
+                return multithreaded;
+            }
+            case 2: {
+                return panorama;
+            }
+            case 3: {
+                return widePicture;
+            }
+            case 4: {
+                return picture360;
+            }
+            default: {
+                return auto;
+            }
+        }
+    }
 }

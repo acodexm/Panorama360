@@ -98,22 +98,4 @@ public abstract class OrientationProvider implements SensorEventListener {
             matrix.set(currentOrientationRotationMatrix);
         }
     }
-
-    /**
-     * Get the current rotation of the device in the quaternion format (vector4f)
-     */
-    public void getQuaternion(Quaternion quaternion) {
-        synchronized (synchronizationToken) {
-            quaternion.set(currentOrientationQuaternion);
-        }
-    }
-
-    /**
-     * Get the current rotation of the device in the Euler angles
-     */
-    public void getEulerAngles(float angles[]) {
-        synchronized (synchronizationToken) {
-            SensorManager.getOrientation(currentOrientationRotationMatrix.matrix, angles);
-        }
-    }
 }
