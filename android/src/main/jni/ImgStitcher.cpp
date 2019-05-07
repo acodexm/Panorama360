@@ -4,6 +4,7 @@
 #include "ImgStitcher.h"
 #include <iostream>
 #include <fstream>
+#include <numeric>
 #include <string>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -125,29 +126,37 @@ float _progressStep = 1;
 
 int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     _progress = 0;
-for (int i = 1; i < params.size(); ++i) {
-		if (string(params[i]) == "auto") {
+        string s;
+        s = accumulate(begin(params), end(params), s);
+        LOGD("stitchImg params: %s", s.c_str() )
+    string mode="auto";
+for (int i = 0; i < params.size(); i++) {
+        mode = string(params[i]);
+		if (mode == "auto") {
 		    //default
 		}
-		else if (string(params[i]) == "multithreaded") {
+		else if (mode == "multithreaded") {
 		    ORB_GRID_SIZE = Size(4, 2);
             ORB_FEATURES_N = 1000;
 		}
-		else if (string(params[i]) == "part") {
+		else if (mode == "part") {
 		    ORB_GRID_SIZE = Size(3, 1);
             ORB_FEATURES_N = 1000;
             warp_type="cylindrical";
 		}
-		else if (string(params[i]) == "panorama") {
+		else if (mode == "panorama") {
 		    warp_type="cylindrical";
 		}
-		else if (string(params[i]) == "widePicture") {
+		else if (mode == "widePicture") {
 			warp_type="stereographic";
 		}
-		else if (string(params[i]) == "picture360") {
+		else if (mode == "picture360") {
+		    work_megapix = 0.15;
+            seam_megapix = 0.1;
+            compose_megapix = 0.7;
 		}
 	}
-	LOGD("set arguments: wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", warp_type.c_str(), (int)ORB_FEATURES_N, (int)ORB_GRID_SIZE.width, (int)ORB_GRID_SIZE.height)
+	LOGD("set arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(), (int)ORB_FEATURES_N, (int)ORB_GRID_SIZE.width, (int)ORB_GRID_SIZE.height)
 #if ENABLE_LOG
     LOGD("Compose panorama...");
     int64 app_start_time = getTickCount();
@@ -160,6 +169,11 @@ for (int i = 1; i < params.size(); ++i) {
     if (imgAmount < 2) {
         LOGD("Not enough images...");
         return -1;
+    }
+    else if(imgAmount > 10){
+        work_megapix = 0.15;
+        seam_megapix = 0.1;
+        compose_megapix = 0.7;
     }
 
     double work_scale = 1, seam_scale = 1, compose_scale = 1;
