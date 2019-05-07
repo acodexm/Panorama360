@@ -27,7 +27,7 @@ import study.acodexm.utils.LOG;
 @SuppressWarnings("deprecation")
 public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback, Camera.PictureCallback, Camera.AutoFocusCallback, CameraControl {
     private static final String TAG = CameraSurface.class.getSimpleName();
-    private final Handler handler = new Handler();
+    private Handler handler;
     private Camera camera;
     private CameraSurface thisCamera;
     private byte[] mPicture;
@@ -73,6 +73,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             PHOTO_HEIGHT = metrics.heightPixels / 4;
             PHOTO_WIDTH = metrics.widthPixels / 4;
         }
+        handler = new Handler();
         thisCamera = this;
     }
 
@@ -98,6 +99,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         int orientation = setCameraDisplayOrientation(context);
         if (myBestSize != null) {
             myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
+            myParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             switch (mSettingsControl.getPictureQuality()) {
                 case LOW:
                     myParameters.set("jpeg-quality", 70);
@@ -118,6 +120,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
                     myParameters.setPictureSize(highestRes.width, highestRes.height);
                     break;
             }
+
             camera.setParameters(myParameters);
             camera.setDisplayOrientation(orientation);
             camera.startPreview();
@@ -216,7 +219,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         } catch (RuntimeException e) {
             scheduleAutoFocus();
             safeToTakePicture = true;
-            LOG.e(TAG, "Take picture failed", e);
+            LOG.s(TAG, "Take picture failed", e);
         }
     }
 

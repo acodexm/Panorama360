@@ -76,7 +76,7 @@ namespace {
     WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
 
     /** Warp surface type.
-    plane|cylindrical|spherical|fisheye|stereographic
+    plane|cylindrical|spherical|stereographic
     **/
     string warp_type = "spherical";
 
@@ -102,8 +102,8 @@ namespace {
     * highly important for performance and matching features
     *
     **/
-    Size ORB_GRID_SIZE = Size(4, 2);
-    size_t ORB_FEATURES_N = 1000;
+    Size ORB_GRID_SIZE = Size(3, 1); // ORIGINAL Size(3,1);
+    size_t ORB_FEATURES_N = 1500; // ORIGINAL 1500;
 }
 /*************
  * ATTRIBUTES
@@ -123,9 +123,31 @@ vector<int> _indices;
 
 float _progressStep = 1;
 
-int stitchImg(vector<Mat> &imagesArg, Mat &result) {
+int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     _progress = 0;
-
+for (int i = 1; i < params.size(); ++i) {
+		if (string(params[i]) == "auto") {
+		    //default
+		}
+		else if (string(params[i]) == "multithreaded") {
+		    ORB_GRID_SIZE = Size(4, 2);
+            ORB_FEATURES_N = 1000;
+		}
+		else if (string(params[i]) == "part") {
+		    ORB_GRID_SIZE = Size(3, 1);
+            ORB_FEATURES_N = 1000;
+            warp_type="cylindrical";
+		}
+		else if (string(params[i]) == "panorama") {
+		    warp_type="cylindrical";
+		}
+		else if (string(params[i]) == "widePicture") {
+			warp_type="stereographic";
+		}
+		else if (string(params[i]) == "picture360") {
+		}
+	}
+	LOGD("set arguments: wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", warp_type.c_str(), (int)ORB_FEATURES_N, (int)ORB_GRID_SIZE.width, (int)ORB_GRID_SIZE.height)
 #if ENABLE_LOG
     LOGD("Compose panorama...");
     int64 app_start_time = getTickCount();
@@ -136,7 +158,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result) {
     // Check if have enough images
     imgAmount = static_cast<int>(imagesArg.size());
     if (imgAmount < 2) {
-        LOGD("Not enaugh images...");
+        LOGD("Not enough images...");
         return -1;
     }
 
@@ -339,8 +361,6 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result) {
         warper_creator = new cv::CylindricalWarper();
     else if (warp_type == "spherical")
         warper_creator = new cv::SphericalWarper();
-    else if (warp_type == "fisheye")
-        warper_creator = new cv::FisheyeWarper();
     else if (warp_type == "stereographic")
         warper_creator = new cv::StereographicWarper();
 

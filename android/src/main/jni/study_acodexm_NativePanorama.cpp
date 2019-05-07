@@ -11,7 +11,7 @@
 using namespace std;
 using namespace cv;
 
-int stitchImg(vector<Mat> &imagesArg, Mat &result);
+int stitchImg(vector<Mat> &imagesArg, Mat &result,vector<string> params);
 
 int cropp(Mat &result);
 /*
@@ -20,8 +20,25 @@ int cropp(Mat &result);
  */
 JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_processPanorama
-        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress,
-         jboolean isCropped) {
+        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress, jobjectArray stringArray) {
+
+     bool isCropped = false;
+     int size = env->GetArrayLength(stringArray);
+     vector<string> params;
+     for (int i=0; i < size; ++i)
+     {
+         jstring args = (jstring)env->GetObjectArrayElement(stringArray, i);
+         const char* value = env->GetStringUTFChars(args, 0);
+          if (string(value) == "cropp"){
+            isCropped = true;
+          }
+          else{
+            params.push_back(value);
+          }
+         env->ReleaseStringUTFChars(args, value);
+         env->DeleteLocalRef(args);
+     }
+
     // Get the length of the long array
     jsize a_len = env->GetArrayLength(imageAddressArray);
     // Convert the jlongArray to an array of jlong
@@ -39,7 +56,7 @@ Java_study_acodexm_NativePanorama_processPanorama
     }
 
     Mat &result = *(Mat *) outputAddress;
-    int status = stitchImg(imgVec, result);
+    int status = stitchImg(imgVec, result, params);
     if (status != 0) {
         LOGE("Can't stitch images, error code = %d", status);
     } else {

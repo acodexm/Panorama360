@@ -327,7 +327,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), true);
+                        String[] args = {"cropp", pictureMode.toString()};
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPicture", "processPanorama", (System.currentTimeMillis() - time) + "ms"));
 
                         //save to external storage
@@ -380,8 +381,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
-
-                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), false);
+                        String[] args = {"part"};
+                        NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPartPicture", "processPanorama", (System.currentTimeMillis() - time) + "ms"));
 
                         //save to external storage

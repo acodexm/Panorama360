@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     study_acodexm_NativePanorama
  * Method:    processPanorama
- * Signature: ([JJZ)V
+ * Signature: ([JJ[Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_study_acodexm_NativePanorama_processPanorama
-  (JNIEnv *, jclass, jlongArray, jlong, jboolean);
+  (JNIEnv *, jclass, jlongArray, jlong, jobjectArray);
 
 /*
  * Class:     study_acodexm_NativePanorama
@@ -21,7 +21,7 @@ JNIEXPORT void JNICALL Java_study_acodexm_NativePanorama_processPanorama
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_study_acodexm_NativePanorama_getProgress
-        (JNIEnv *, jclass);
+  (JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }

@@ -7,7 +7,7 @@
 #define PANORAMA360_IMGSTITCHER_H
 
 template<typename T>
-int stitchImg(T &, cv::Mat &);
+int stitchImg(T &, cv::Mat &, std::vector<std::string>);
 
 int getProgress();
 
