@@ -12,4 +12,6 @@ public interface ViewControl {
 
     void rotateSphere(MatrixF4x4 matrix);
 
+    void rotateSphere(float[] matrix);
+
 }

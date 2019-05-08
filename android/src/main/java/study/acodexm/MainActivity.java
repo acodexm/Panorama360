@@ -295,6 +295,14 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         }
     }
 
+    @Override
+    public void rotateSphere(float[] matrix) {
+        setScopeImage();
+        if (isNotSaving) {
+            rotationVector.updateRotationVector(matrix);
+        }
+    }
+
 
     /**
      * this method is executed on new Thread.
