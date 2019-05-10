@@ -42,13 +42,10 @@ int SEAM_STEP = 10;
 int COMPOSITOR_STEP = 30;
 
 
-/*************
- * PARAMETERS
- ************/
-namespace {
+    float _progress = 1;
 
-
-    /** working resolution **/
+int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
+/** working resolution **/
     double work_megapix = 0.35;
 
     /** seam finding resolution **/
@@ -105,27 +102,21 @@ namespace {
     **/
     Size ORB_GRID_SIZE = Size(3, 1); // ORIGINAL Size(3,1);
     size_t ORB_FEATURES_N = 1500; // ORIGINAL 1500;
-}
-/*************
- * ATTRIBUTES
- ************/
 
-/** loaded images loaded **/
-int imgAmount;
+    /** loaded images loaded **/
+    int imgAmount;
 
-/** current progression of the stitching **/
-float _progress = -1;
 
-/** mask used to know what images should we match together **/
-static UMat _matchingMask;
+    /** mask used to know what images should we match together **/
+    static UMat _matchingMask;
 
-/** indices of used images **/
-vector<int> _indices;
+    /** indices of used images **/
+    vector<int> _indices;
 
-float _progressStep = 1;
+    float _progressStep = 1;
+        /** current progression of the stitching **/
+     _progress = 0;
 
-int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
-    _progress = 0;
         string s;
         s = accumulate(begin(params), end(params), s);
         LOGD("stitchImg params: %s", s.c_str() )
@@ -134,26 +125,29 @@ for (int i = 0; i < params.size(); i++) {
         mode = string(params[i]);
 		if (mode == "auto") {
 		    //default
+		    warp_type="spherical";
 		}
 		else if (mode == "multithreaded") {
 		    ORB_GRID_SIZE = Size(4, 2);
             ORB_FEATURES_N = 1000;
+            warp_type="spherical";
 		}
 		else if (mode == "part") {
 		    ORB_GRID_SIZE = Size(3, 1);
             ORB_FEATURES_N = 1000;
-            warp_type="cylindrical";
+            warp_type="spherical";
 		}
 		else if (mode == "panorama") {
 		    warp_type="cylindrical";
 		}
 		else if (mode == "widePicture") {
-			warp_type="stereographic";
+			warp_type="spherical";
 		}
 		else if (mode == "picture360") {
 		    work_megapix = 0.15;
             seam_megapix = 0.1;
             compose_megapix = 0.7;
+            warp_type="spherical";
 		}
 	}
 	LOGD("set arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(), (int)ORB_FEATURES_N, (int)ORB_GRID_SIZE.width, (int)ORB_GRID_SIZE.height)
@@ -170,7 +164,7 @@ for (int i = 0; i < params.size(); i++) {
         LOGD("Not enough images...");
         return -1;
     }
-    else if(imgAmount > 10){
+    else if(imgAmount > 16){
         work_megapix = 0.15;
         seam_megapix = 0.1;
         compose_megapix = 0.7;

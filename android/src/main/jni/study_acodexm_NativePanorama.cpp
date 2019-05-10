@@ -79,3 +79,20 @@ Java_study_acodexm_NativePanorama_getProgress
         (JNIEnv *env, jclass clazz) {
     return getProgress();
 }
+
+
+JNIEXPORT void JNICALL
+Java_study_acodexm_NativePanorama_cropPanorama
+        (JNIEnv *env, jclass clazz, jlong imageAddress, jlong outputAddress) {
+
+        Mat &curimage = *(Mat *) imageAddress;
+        Mat &result = *(Mat *) outputAddress;
+        cvtColor(curimage, result, CV_RGB2BGRA);
+
+        LOGD("cropping...");
+        if (cropp(result) != 0) {
+            LOGE("cropping FAILED");
+        } else {
+            LOGD("cropping SUCCESS");
+        }
+    }

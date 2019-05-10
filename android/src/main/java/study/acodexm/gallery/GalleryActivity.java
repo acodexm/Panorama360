@@ -3,7 +3,12 @@ package study.acodexm.gallery;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Bundle;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import study.acodexm.NativePanorama;
+import study.acodexm.utils.ImageRW;
 import study.acodexm.utils.LOG;
 import android.view.MotionEvent;
 import android.view.ViewGroup.LayoutParams;
@@ -18,6 +23,7 @@ import android.widget.ViewFlipper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -89,6 +95,39 @@ public class GalleryActivity extends Activity {
         } else {
             LOG.d(TAG, "onTrashClickListener: failed to delete file!");
         }
+    }
+
+    @OnClick(R.id.crop)
+    void onCropClickListener() {
+        new Thread(() -> {
+            File picToCrop = new File(imagesPath.get(current));
+            Bitmap bitmap;
+            try {
+                FileInputStream fos = new FileInputStream(picToCrop);
+                bitmap = BitmapFactory.decodeStream(fos);
+                fos.close();
+            } catch (IOException e) {
+                LOG.s(TAG, "File loading failed", e);
+                return;
+            }
+            Matrix matrix = new Matrix();
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+            Mat mat = new Mat();
+            Utils.bitmapToMat(bitmap, mat);
+            bitmap.recycle();
+            Mat result = new Mat();
+
+            NativePanorama.cropPanorama(mat.getNativeObjAddr(), result.getNativeObjAddr());
+            boolean isSaved = false;
+            if (!result.empty())
+                isSaved = ImageRW.saveResultImageExternal(result);
+            if (!isSaved) {
+                LOG.d(TAG, "onCropClickListener: failed to delete file!");
+            }
+            mat.release();
+            result.release();
+            recreate();
+        }).run();
     }
 
     @Override
@@ -221,7 +260,7 @@ public class GalleryActivity extends Activity {
             decodeStream = BitmapFactory.decodeStream(fileInputStream);
             imageView.setImageBitmap(decodeStream);
         } catch (FileNotFoundException e) {
-            LOG.e(TAG, "FileNotFoundException " , e);
+            LOG.e(TAG, "FileNotFoundException ", e);
         }
     }
 }

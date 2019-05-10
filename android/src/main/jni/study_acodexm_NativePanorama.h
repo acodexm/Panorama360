@@ -17,6 +17,14 @@ JNIEXPORT void JNICALL Java_study_acodexm_NativePanorama_processPanorama
 
 /*
  * Class:     study_acodexm_NativePanorama
+ * Method:    cropPanorama
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_study_acodexm_NativePanorama_cropPanorama
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     study_acodexm_NativePanorama
  * Method:    getProgress
  * Signature: ()I
  */

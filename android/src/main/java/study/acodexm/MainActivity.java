@@ -335,7 +335,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {"cropp", pictureMode.toString()};
+                        String[] args = {pictureMode.toString()};
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPicture", "processPanorama", (System.currentTimeMillis() - time) + "ms"));
 
@@ -721,7 +721,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         if (isNotSaving)
             if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.panorama);
-                mPreferences.setLat(7);
+                mPreferences.setLat(10);
                 mPreferences.setLon(3);
                 mSettingsControl.setPictureMode(PictureMode.panorama);
                 mSwitchAutoPicture.setChecked(false);
@@ -755,7 +755,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         if (isNotSaving)
             if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
                 mPreferences.setPictureMode(PictureMode.picture360);
-                mPreferences.setLat(7);
+                mPreferences.setLat(10);
                 mPreferences.setLon(5);
                 mSettingsControl.setPictureMode(PictureMode.picture360);
                 mSwitchMultithreaded.setChecked(false);
