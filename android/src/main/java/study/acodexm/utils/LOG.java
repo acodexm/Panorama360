@@ -11,28 +11,34 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 
 public class LOG {
     private static final String LOG_DIR = "/PanoramaApp/logs";
     private static final String LOG_FILE = "/logs.txt";
+    private static final String JNI_LOG_FILE = "/jlogs.txt";
+    private static final String JNI_PERFORMANCE_FILE = "/jperformance.txt";
     private static final String LOG_PERFORMANCE_FILE = "/performance.txt";
-    private static final String SEPARATOR = " <&&> ";
+    private static final String SEPARATOR = "|";
+    private static final String PATTERN = "ddMMyyyyHHmmss";
     private static final boolean debug = true;
 
     public static Runnable cpJ() {
-        return () -> d("copyJniLogs success: ", String.valueOf(copyJniLogs()));
+        return () -> {
+            d("copyJniLogs success: ", String.valueOf(copyJniLogs(JNI_LOG_FILE)));
+            d("copyJniLogs success: ", String.valueOf(copyJniLogs(JNI_PERFORMANCE_FILE)));
+        };
     }
 
-    private static boolean copyJniLogs() {
-        File from = new File(Environment.getDataDirectory() + "/data/study.acodexm/files/jlogs.txt");
+    private static boolean copyJniLogs(String filename) {
+        File from = new File(Environment.getDataDirectory() + "/data/study.acodexm/files" + filename);
         if (!from.isFile()) {
-            d("copyJniLogs", " no such file /data/study.acodexm/files/jlog.txt");
+            d("copyJniLogs", " no such file /data/study.acodexm/files" + filename);
             return false;
         }
-        File file = new File(Environment.getExternalStorageDirectory() + LOG_DIR + "/jlogs.txt");
+        File file = new File(Environment.getExternalStorageDirectory() + LOG_DIR + filename);
         if (!file.exists()) {
             try {
                 file.createNewFile();
@@ -153,16 +159,16 @@ public class LOG {
         double NativeHeapFreeSize = (double) Debug.getNativeHeapFreeSize();
         if (debug) {
             String msg = String.format(Locale.getDefault(), "%s%s%s%s%s%s%f%s%f%s%f",
-                    new Date().toString(),
+                    new SimpleDateFormat(PATTERN, Locale.getDefault()),
                     SEPARATOR,
                     tag,
                     SEPARATOR,
                     message,
-                    SEPARATOR + "NativeHeapAllocatedSize: ",
+                    SEPARATOR + "NativeHeapAllocatedSize:" + SEPARATOR,
                     NativeHeapAllocatedSize,
-                    SEPARATOR + "NativeHeapSize: ",
+                    SEPARATOR + "NativeHeapSize:" + SEPARATOR,
                     NativeHeapSize,
-                    SEPARATOR + "NativeHeapFreeSize: ",
+                    SEPARATOR + "NativeHeapFreeSize:" + SEPARATOR,
                     NativeHeapFreeSize
             );
             Log.d(tag, msg);
@@ -180,7 +186,7 @@ public class LOG {
     public static void s(String tag, String message, Throwable tr) {
         if (debug) {
             String msg = String.format(Locale.getDefault(), "%s%s%s%s%s%s%s",
-                    new Date().toString(),
+                    new SimpleDateFormat(PATTERN, Locale.getDefault()),
                     SEPARATOR,
                     tag,
                     SEPARATOR,

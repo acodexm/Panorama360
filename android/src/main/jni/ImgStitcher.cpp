@@ -27,6 +27,7 @@ using namespace cv::detail;
 #define TAG "customized stitcher "
 #define ENABLE_LOG true
 #define LOGD(...)  do{ __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__ ); FILE* f = fopen("/data/data/study.acodexm/files/jlogs.txt","a+"); fprintf(f, __VA_ARGS__); fprintf(f,"\r\n"); fclose(f); }while(0);
+#define LOGP(...)  do{ __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__ ); FILE* f = fopen("/data/data/study.acodexm/files/jperformance.txt","a+"); fprintf(f, __VA_ARGS__); fprintf(f,"\r\n"); fclose(f); }while(0);
 
 
 /*************
@@ -42,7 +43,7 @@ int SEAM_STEP = 10;
 int COMPOSITOR_STEP = 30;
 
 
-    float _progress = 1;
+float _progress = 1;
 
 int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 /** working resolution **/
@@ -74,7 +75,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
 
     /** Warp surface type.
-    plane|cylindrical|spherical|stereographic
+    plane|cylindrical|spherical
     **/
     string warp_type = "spherical";
 
@@ -114,43 +115,37 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     vector<int> _indices;
 
     float _progressStep = 1;
-        /** current progression of the stitching **/
-     _progress = 0;
+    /** current progression of the stitching **/
+    _progress = 0;
 
-        string s;
-        s = accumulate(begin(params), end(params), s);
-        LOGD("stitchImg params: %s", s.c_str() )
-    string mode="auto";
-for (int i = 0; i < params.size(); i++) {
+    string s;
+    s = accumulate(begin(params), end(params), s);
+    LOGD("stitchImg params: %s", s.c_str())
+    string mode = "auto";
+    for (int i = 0; i < params.size(); i++) {
         mode = string(params[i]);
-		if (mode == "auto") {
-		    //default
-		    warp_type="spherical";
-		}
-		else if (mode == "multithreaded") {
-		    ORB_GRID_SIZE = Size(4, 2);
+        if (mode == "auto") {
+            //default
+        } else if (mode == "multithreaded") {
+            ORB_GRID_SIZE = Size(4, 2);
             ORB_FEATURES_N = 1000;
-            warp_type="spherical";
-		}
-		else if (mode == "part") {
-		    ORB_GRID_SIZE = Size(3, 1);
+        } else if (mode == "part") {
+            ORB_GRID_SIZE = Size(3, 1);
             ORB_FEATURES_N = 1000;
-            warp_type="spherical";
-		}
-		else if (mode == "panorama") {
-		    warp_type="cylindrical";
-		}
-		else if (mode == "widePicture") {
-			warp_type="spherical";
-		}
-		else if (mode == "picture360") {
-		    work_megapix = 0.15;
+        } else if (mode == "panorama") {
+            warp_type = "cylindrical";
+        } else if (mode == "widePicture") {
+            //default
+        } else if (mode == "picture360") {
+            work_megapix = 0.15;
             seam_megapix = 0.1;
             compose_megapix = 0.7;
-            warp_type="spherical";
-		}
-	}
-	LOGD("set arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(), (int)ORB_FEATURES_N, (int)ORB_GRID_SIZE.width, (int)ORB_GRID_SIZE.height)
+        }
+    }
+    LOGD("set arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(),
+         (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
+    LOGP("arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(), (int) ORB_FEATURES_N,
+         (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
 #if ENABLE_LOG
     LOGD("Compose panorama...");
     int64 app_start_time = getTickCount();
@@ -163,12 +158,13 @@ for (int i = 0; i < params.size(); i++) {
     if (imgAmount < 2) {
         LOGD("Not enough images...");
         return -1;
-    }
-    else if(imgAmount > 16){
+    } else if (imgAmount > 16) {
         work_megapix = 0.15;
         seam_megapix = 0.1;
         compose_megapix = 0.7;
+        LOGD("over 16 images, lowering quality");
     }
+    LOGP("All images: %d", imgAmount);
 
     double work_scale = 1, seam_scale = 1, compose_scale = 1;
     bool is_work_scale_set = false, is_seam_scale_set = false, is_compose_scale_set = false;
@@ -227,6 +223,7 @@ for (int i = 0; i < params.size(); i++) {
     img.release();
 
     LOGD("Finding features, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Finding features, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
     // ================ Pairwise matching... ==================
 #if ENABLE_LOG
@@ -242,11 +239,7 @@ for (int i = 0; i < params.size(); i++) {
     _progress += MATCHER_STEP;
 
     LOGD("Pairwise matching, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-
-
-
-    // Check if we should save matches graph
-
+    LOGP("Pairwise matching, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
     // Leave only images we are sure are from the same panorama
     _indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
@@ -272,6 +265,8 @@ for (int i = 0; i < params.size(); i++) {
 
         return -1;
     }
+    LOGP("Left images: %d", imgAmount);
+
     // ================ estimate homography... ==================
     LOGD("Estimate homography");
 
@@ -279,6 +274,7 @@ for (int i = 0; i < params.size(); i++) {
     vector<CameraParams> cameras;
     estimator(features, pairwise_matches, cameras);
     LOGD("Estimate homography, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Estimate homography, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
 
     for (size_t i = 0; i < cameras.size(); ++i) {
@@ -309,6 +305,7 @@ for (int i = 0; i < params.size(); i++) {
     (*adjuster)(features, pairwise_matches, cameras);
     _progress += ADJUSTER_STEP;
     LOGD("Adjusting bundle, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Adjusting bundle, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
 
     // Find median focal length
@@ -327,8 +324,8 @@ for (int i = 0; i < params.size(); i++) {
         warped_image_scale =
                 static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) *
                 0.5f;
-    LOGD("Find median focal lengths, time: %f%s", ((getTickCount() - t) / getTickFrequency()),
-         " sec");
+    LOGD("Find median focal lengths, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Find median focal lengths, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
     if (do_wave_correct) {
         vector<Mat> rmats;
@@ -369,8 +366,6 @@ for (int i = 0; i < params.size(); i++) {
         warper_creator = new cv::CylindricalWarper();
     else if (warp_type == "spherical")
         warper_creator = new cv::SphericalWarper();
-    else if (warp_type == "stereographic")
-        warper_creator = new cv::StereographicWarper();
 
 
     if (!warper_creator) {
@@ -404,6 +399,7 @@ for (int i = 0; i < params.size(); i++) {
 
 
     LOGD("Warping images, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Warping images, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
     // ================ Compensate exposure... ==================
     LOGD("Compensate exposure");
@@ -412,6 +408,7 @@ for (int i = 0; i < params.size(); i++) {
     compensator->feed(corners, images_warped, masks_warped);
     _progress += COMPENSATOR_STEP;
     LOGD("Compensate exposure, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Compensate exposure, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
     Ptr<SeamFinder> seam_finder;
     if (seam_find_type == "no")
@@ -438,6 +435,7 @@ for (int i = 0; i < params.size(); i++) {
     seam_finder->find(images_warped_f, corners, masks_warped);
     _progress += SEAM_STEP;
     LOGD("Finding seam, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Finding seam, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
     // Release unused memory
     images.clear();
@@ -554,9 +552,10 @@ for (int i = 0; i < params.size(); i++) {
     blender->blend(result, result_mask);
 
     LOGD("Compositing, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
+    LOGP("Compositing, time: %f", ((getTickCount() - t) / getTickFrequency()));
 
-    LOGD("Finished, total time: %f%s", ((getTickCount() - app_start_time) / getTickFrequency()),
-         " sec");
+    LOGD("Finished, total time: %f%s", ((getTickCount() - app_start_time) / getTickFrequency()), " sec");
+    LOGP("Finished, total time: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
 
     return 0;
 }
