@@ -15,6 +15,7 @@
     <string name="low_quality">Low quality</string>
     <string name="smart_auto">Smart Auto</string>
     <string name="msg_exit">Press once again to exit</string>
+    <string name="msg_delete_main_folder">PanoramaApp external folder cleared</string>
     <string name="msg_wait">Please wait for process to finish</string>
     <string name="msg_take_picture_not_allowed">You can\'t take picture here!</string>
     <string name="msg_do_not_move">please don\'t move</string>

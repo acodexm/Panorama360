@@ -113,31 +113,42 @@ public class ImageRW {
     /**
      * methods deletes all pictures from temporary files if any exists
      */
+    public static void deleteAllFiles() {
+        deleteFolderFiles(MAIN_DIR, false);
+    }
+
     public static void deleteTempFiles() {
-        deleteFolderFiles(TEMP_DIR);
+        deleteFolderFiles(TEMP_DIR, true);
     }
 
     public static void deletePartFiles() {
-        deleteFolderFiles(PART_DIR);
+        deleteFolderFiles(PART_DIR, true);
     }
 
-    private static void deleteFolderFiles(String folder) {
+    private static void deleteFolderFiles(String folder, boolean archive) {
         isPathCreated(folder);
-        if (archive(folder))
-            LOG.s(TAG, "archived " + folder);
+        if (archive)
+            if (archive(folder))
+                LOG.s(TAG, "archived " + folder);
         File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + folder);
         if (dir.isDirectory()) {
             String[] children = dir.list();
             if (children != null && children.length > 0)
                 for (String aChildren : children) {
-                    if (new File(Environment.getExternalStorageDirectory().getAbsolutePath() + aChildren).isDirectory())
-                        deleteFolderFiles(aChildren);
-                    else if (new File(dir, aChildren).delete()) {
+                    File fileToDelete = new File(dir, aChildren);
+                    File folderToDelete = new File(dir + "/" + aChildren);
+                    if (folderToDelete.isDirectory()) {
+                        deleteFolderFiles(folder + "/" + aChildren, archive);
+                        if (folderToDelete.delete() && archive)
+                            LOG.s(TAG, "folder " + aChildren.trim() + " deleted");
+                    } else if (fileToDelete.delete() && archive) {
                         LOG.s(TAG, "file " + aChildren.trim() + " deleted");
-                    } else {
+                    } else if (archive) {
                         LOG.s(TAG, "deleteTempFiles: failed");
                     }
                 }
+            if (dir.delete() && archive)
+                LOG.s(TAG, "folder " + folder + " deleted");
         }
     }
 

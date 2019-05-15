@@ -63,6 +63,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     ImageView refreshBtn;
     @BindView(R.id.open_gallery)
     ImageView galleryBtn;
+    @BindView(R.id.delete_folder)
+    ImageView deleteFolderBtn;
     @BindView(R.id.mode_auto)
     Switch mSwitchAuto;
     @BindView(R.id.mode_manual)
@@ -649,6 +651,18 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         return false;
+    }
+
+    @OnClick(R.id.delete_folder)
+    void onDeleteFolder() {
+        if (isNotSaving) {
+            post(() -> {
+                ImageRW.deleteAllFiles();
+                showToast(R.string.msg_delete_main_folder);
+            });
+        } else {
+            showToast(R.string.msg_wait);
+        }
     }
 
     @OnClick(R.id.mode_auto)
