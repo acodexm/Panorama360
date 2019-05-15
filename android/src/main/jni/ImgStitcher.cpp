@@ -142,10 +142,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
             compose_megapix = 0.7;
         }
     }
-    LOGD("set arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(),
-         (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
-    LOGP("arguments: MODE:%s wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d", mode.c_str(), warp_type.c_str(), (int) ORB_FEATURES_N,
-         (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
+
 #if ENABLE_LOG
     LOGD("Compose panorama...");
     int64 app_start_time = getTickCount();
@@ -164,7 +161,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         compose_megapix = 0.7;
         LOGD("over 16 images, lowering quality");
     }
-    LOGP("All images: %d", imgAmount);
+    LOGD("All images: %d, MODE:%s, wrap_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d",imgAmount, mode.c_str(), warp_type.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
+    LOGP("All images: %d: MODE:%s: wrap_type:%s: ORB_FEATURES_N:%d: ORB_GRID_SIZE:%d%d",imgAmount, mode.c_str(), warp_type.c_str(), (int) ORB_FEATURES_N,(int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
 
     double work_scale = 1, seam_scale = 1, compose_scale = 1;
     bool is_work_scale_set = false, is_seam_scale_set = false, is_compose_scale_set = false;

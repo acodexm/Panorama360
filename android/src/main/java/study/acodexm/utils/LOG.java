@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 
@@ -22,7 +23,7 @@ public class LOG {
     private static final String JNI_PERFORMANCE_FILE = "/jperformance.txt";
     private static final String LOG_PERFORMANCE_FILE = "/performance.txt";
     private static final String SEPARATOR = "|";
-    private static final String PATTERN = "ddMMyyyyHHmmss";
+    private static final String PATTERN = "ddMMyyyyHHmmssSSS";
     private static final boolean debug = true;
 
     public static Runnable cpJ() {
@@ -129,6 +130,10 @@ public class LOG {
         return () -> p(tag, message, value);
     }
 
+    public static Runnable r(String tag, String message, long value) {
+        return () -> p(tag, message, value + "");
+    }
+
     /**
      * SAVE PERFORMANCE LOG VALUE
      *
@@ -159,7 +164,7 @@ public class LOG {
         double NativeHeapFreeSize = (double) Debug.getNativeHeapFreeSize();
         if (debug) {
             String msg = String.format(Locale.getDefault(), "%s%s%s%s%s%s%f%s%f%s%f",
-                    new SimpleDateFormat(PATTERN, Locale.getDefault()),
+                    new SimpleDateFormat(PATTERN, Locale.getDefault()).format(new Date()),
                     SEPARATOR,
                     tag,
                     SEPARATOR,
@@ -186,7 +191,7 @@ public class LOG {
     public static void s(String tag, String message, Throwable tr) {
         if (debug) {
             String msg = String.format(Locale.getDefault(), "%s%s%s%s%s%s%s",
-                    new SimpleDateFormat(PATTERN, Locale.getDefault()),
+                    new SimpleDateFormat(PATTERN, Locale.getDefault()).format(new Date()),
                     SEPARATOR,
                     tag,
                     SEPARATOR,
