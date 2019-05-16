@@ -318,6 +318,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         final long time = System.currentTimeMillis();
         return () -> {
             post(LOG.r(TAG, "processPicture BEGIN", 0));
+            long t = System.currentTimeMillis();
             final List<Mat> listImage;
             try {
                 listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
@@ -325,7 +326,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 post(LOG.r(TAG, "run: loadPictures failed", e));
                 return;
             }
-            post(LOG.r("processPicture", "loadPictureParts", (System.currentTimeMillis() - time)));
+            post(LOG.r("loadPictureParts", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
+            t = System.currentTimeMillis();
             try {
                 int images = listImage.size();
                 if (images > 0) {
@@ -333,19 +335,19 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     for (int i = 0; i < images; i++) {
                         tempObjAddress[i] = listImage.get(i).getNativeObjAddr();
                     }
-                    post(LOG.r("processPicture", "tempObjAddress", (System.currentTimeMillis() - time)));
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
                         String[] args = {pictureMode.toString()};
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
-                        post(LOG.r("processPicture", "processPanorama", (System.currentTimeMillis() - time)));
+                        post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
 
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
                             isSaved = ImageRW.saveResultImageExternal(result);
-                        post(LOG.r("processPicture", "saveResultImageExternal", (System.currentTimeMillis() - time)));
+                        post(LOG.r("saveResultImageExternal", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
+                        t = System.currentTimeMillis();
                         showToastRunnable(getString(R.string.msg_is_saved) + isSaved);
                     } catch (Exception e) {
                         post(LOG.r(TAG, "native processPanorama not working ", e));
@@ -353,7 +355,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
                     for (Mat mat : listImage) mat.release();
                     listImage.clear();
-                    post(LOG.r("processPicture", "clear memo listImage", (System.currentTimeMillis() - time)));
+                    post(LOG.r("clearMemoListImage", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
 
                 }
             } catch (Exception e) {
@@ -370,6 +372,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         final long time = System.currentTimeMillis();
         return () -> {
             post(LOG.r(TAG, "processPartPicture BEGIN", 0));
+            long t = System.currentTimeMillis();
 
             final List<Mat> listImage;
             try {
@@ -378,7 +381,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 post(LOG.r(TAG, "run: loadPictureParts failed", e));
                 return;
             }
-            post(LOG.r("processPartPicture", "loadPictureParts", (System.currentTimeMillis() - time)));
+            post(LOG.r("loadPictureParts", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
 
             try {
                 int images = listImage.size();
@@ -392,14 +395,15 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
                         String[] args = {"part"};
+                        t = System.currentTimeMillis();
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
-                        post(LOG.r("processPartPicture", "processPanorama", (System.currentTimeMillis() - time)));
-
+                        post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
+                        t = System.currentTimeMillis();
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
                             isSaved = ImageRW.savePartResultImageExternal(result);
-                        post(LOG.r("processPartPicture", "savePartResultImageExternal", (System.currentTimeMillis() - time)));
+                        post(LOG.r("savePartResultImageExternal", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
 
                         Message message = new Message();
                         message.what = SAVED_PART_IMAGE;
@@ -411,9 +415,10 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     } catch (Exception e) {
                         post(LOG.r(TAG, "native processPanorama not working ", e));
                     }
+                    t = System.currentTimeMillis();
                     for (Mat mat : listImage) mat.release();
                     listImage.clear();
-                    post(LOG.r("processPartPicture", "clear memo listImage", (System.currentTimeMillis() - time)));
+                    post(LOG.r("partClearMemoListImage", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
 
 
                 }
@@ -451,9 +456,12 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             mCameraControl.stopPreview();
             mProgressBar.setVisibility(View.VISIBLE);
         });
+        final long time = System.currentTimeMillis();
+
         return () -> {
             while (!isNotSaving) {
                 int progress = NativePanorama.getProgress();
+                post(LOG.r("getProgress", progress + "", (System.currentTimeMillis() - time)));
                 post(() -> mProgressInfo.setText(String.format(Locale.getDefault(), "%s%d%s", getString(R.string.stitching_in_progress), progress, "%")));
                 try {
                     Thread.sleep(300);
@@ -476,9 +484,11 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
      */
     private Runnable getProgressPart() {
         LOG.s(TAG, "getProgressPart");
+        final long time = System.currentTimeMillis();
         return () -> {
             while (partProcessing) {
                 int progress = NativePanorama.getProgress();
+                post(LOG.r("getProgressPart", progress + "", (System.currentTimeMillis() - time)));
                 post(() -> mProgressInfo.setText(String.format(Locale.getDefault(), "%s%d%s", getString(R.string.stitching_part_in_progress), progress, "%")));
                 try {
                     Thread.sleep(300);

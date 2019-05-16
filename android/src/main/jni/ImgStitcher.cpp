@@ -221,7 +221,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     img.release();
 
     LOGD("Finding features, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Finding features, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Finding features, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     // ================ Pairwise matching... ==================
 #if ENABLE_LOG
@@ -237,7 +237,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     _progress += MATCHER_STEP;
 
     LOGD("Pairwise matching, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Pairwise matching, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Pairwise matching, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     // Leave only images we are sure are from the same panorama
     _indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
@@ -266,13 +266,15 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     LOGP("Left images: %d", imgAmount);
 
     // ================ estimate homography... ==================
+#if ENABLE_LOG
     LOGD("Estimate homography");
-
+    t = getTickCount();
+#endif
     HomographyBasedEstimator estimator;
     vector<CameraParams> cameras;
     estimator(features, pairwise_matches, cameras);
     LOGD("Estimate homography, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Estimate homography, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Estimate homography, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
 
     for (size_t i = 0; i < cameras.size(); ++i) {
@@ -298,17 +300,21 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     if (ba_refine_mask[3] == 'x') refine_mask(1, 1) = 1;
     if (ba_refine_mask[4] == 'x') refine_mask(1, 2) = 1;
     adjuster->setRefinementMask(refine_mask);
+#if ENABLE_LOG
     LOGD("Adjusting bundle");
-
+    t = getTickCount();
+#endif
     (*adjuster)(features, pairwise_matches, cameras);
     _progress += ADJUSTER_STEP;
     LOGD("Adjusting bundle, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Adjusting bundle, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Adjusting bundle, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
 
     // Find median focal length
+#if ENABLE_LOG
     LOGD("Find median focal length");
-
+    t = getTickCount();
+#endif
     vector<double> focals;
     for (size_t i = 0; i < cameras.size(); ++i) {
         focals.push_back(cameras[i].focal);
@@ -323,7 +329,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
                 static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) *
                 0.5f;
     LOGD("Find median focal lengths, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Find median focal lengths, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Find median focal lengths, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     if (do_wave_correct) {
         vector<Mat> rmats;
@@ -397,16 +403,19 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
 
     LOGD("Warping images, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Warping images, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Warping images, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     // ================ Compensate exposure... ==================
+    #if ENABLE_LOG
     LOGD("Compensate exposure");
+        t = getTickCount();
+    #endif
     Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(expos_comp_type);
 
     compensator->feed(corners, images_warped, masks_warped);
     _progress += COMPENSATOR_STEP;
     LOGD("Compensate exposure, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Compensate exposure, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Compensate exposure, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     Ptr<SeamFinder> seam_finder;
     if (seam_find_type == "no")
@@ -428,12 +437,14 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     }
     // ================ finding seam... ==================
 
+#if ENABLE_LOG
     LOGD("Finding seam");
-
+    t = getTickCount();
+#endif
     seam_finder->find(images_warped_f, corners, masks_warped);
     _progress += SEAM_STEP;
     LOGD("Finding seam, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Finding seam, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Finding seam, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     // Release unused memory
     images.clear();
@@ -550,7 +561,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     blender->blend(result, result_mask);
 
     LOGD("Compositing, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Compositing, time: %f", ((getTickCount() - t) / getTickFrequency()));
+    LOGP("Compositing, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
 
     LOGD("Finished, total time: %f%s", ((getTickCount() - app_start_time) / getTickFrequency()), " sec");
     LOGP("Finished, total time: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
