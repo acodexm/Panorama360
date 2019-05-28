@@ -129,6 +129,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         } else if (mode == "multithreaded") {
             ORB_GRID_SIZE = Size(4, 2);
             ORB_FEATURES_N = 1000;
+            warp_type = "cylindrical";
         } else if (mode == "part") {
             ORB_GRID_SIZE = Size(3, 1);
             ORB_FEATURES_N = 1000;

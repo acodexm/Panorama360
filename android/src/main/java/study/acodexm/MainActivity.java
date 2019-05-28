@@ -341,7 +341,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                         String[] args = {pictureMode.toString()};
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
-
+                        t = System.currentTimeMillis();
                         //save to external storage
                         boolean isSaved = false;
                         if (!result.empty())
