@@ -81,16 +81,6 @@ public class Quaternion extends Vector4f {
 
 
     /**
-     * Multiplies this Quaternion with a scalar
-     *
-     * @param scalar the value that the vector should be multiplied with
-     */
-    public void multiplyByScalar(float scalar) {
-        multiplyByScalar(scalar);
-    }
-
-
-    /**
      * Sets the quaternion to an identity quaternion of 0,0,0,1.
      */
     public void loadIdentityQuat() {

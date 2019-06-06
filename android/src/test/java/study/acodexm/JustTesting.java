@@ -18,9 +18,9 @@ public class JustTesting {
         Date date = new Date();
         SimpleDateFormat simple = new SimpleDateFormat("ddMMyyyyHHmmss");
         System.out.println(simple.format(date));
-        StringBuilder sb = new StringBuilder(simple.format(date));
-        sb.append(".png");
-        sb.insert(0, "panorama_");
+//        StringBuilder sb = new StringBuilder(simple.format(date));
+//        sb.append(".png");
+//        sb.insert(0, "panorama_");
 //        String file=sb.toString();
         String file = "/storage/emulated/0/PanoramaApp/panorama_15012018215307.png";
         file = file.substring(file.indexOf("panorama_"));

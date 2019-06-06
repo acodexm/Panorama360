@@ -141,7 +141,7 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
         android.hardware.Camera.getCameraInfo(0, info); // Use the first rear-facing camera
         int rotation = getDeviceCurrentOrientation(context);
 
-        int degrees = 0;
+        int degrees;
         switch (rotation) {
             case Surface.ROTATION_0:
                 degrees = 0;
@@ -155,6 +155,8 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             case Surface.ROTATION_270:
                 degrees = 270;
                 break;
+            default:
+                degrees = 0;
         }
 
         int result;

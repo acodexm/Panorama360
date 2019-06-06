@@ -1,14 +1,10 @@
 package study.acodexm.control;
 
-import java.util.List;
-
 import study.acodexm.SphereControl;
 
 public class AndroidSphereControl implements SphereControl {
     private byte[] mPicture;
-    private List<Integer> ids;
     private CameraControl mCameraControl;
-    private int position;
 
     public AndroidSphereControl(CameraControl cameraControl) {
         mCameraControl = cameraControl;

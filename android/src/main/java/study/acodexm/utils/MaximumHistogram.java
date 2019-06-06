@@ -28,7 +28,7 @@ public class MaximumHistogram {
     }
 
     private static void removeUnusedAreas(int[][] grid, Set<Integer> tempPictures, Set<Integer> points, PicturePosition position) {
-        for (int x = 0; x < Math.round(Math.abs(grid.length / 2)); x++) {
+        for (int x = 0; x < Math.round(grid.length / 2); x++) {
             for (int y = 0; y < grid[0].length; y++) {
                 if (points.contains(y))
                     continue;
@@ -57,42 +57,31 @@ public class MaximumHistogram {
 
     private static void gridExtractor(PicturePosition position, int[][] grid, int[] temp, Set<Integer> tempPictures, int x) {
         for (int y = 0; y < grid[0].length; y++) {
-            int offset = Math.round(Math.abs(grid.length / 2));
+            int offset = Math.round(grid.length / 2);
             if (x >= offset) {// edge check
                 int xo = x - offset;
-                int newItem = position.calculatePosition(xo, y);
-                if (grid[xo][y] == 0) {
-                    temp[y] = 0;
-                    for (int rmX = 0; rmX < offset; rmX++)
-                        tempPictures.remove(position.calculatePosition(rmX, y));
-
-                } else if (// pictures taken closer to middle of grid has higher weight value
-                        y == Math.round(Math.abs(grid[0].length / 2)) &&
-                                !tempPictures.contains(newItem)
-                ) {
-                    temp[y] += 2 * grid[xo][y];
-                    tempPictures.add(newItem);
-                } else if (!tempPictures.contains(newItem)) {
-                    temp[y] += grid[xo][y];
-                    tempPictures.add(newItem);
-                }
+                processGrid(position, grid, temp, tempPictures, xo, y, offset);
             } else {
-                int newItem = position.calculatePosition(x, y);
-                if (grid[x][y] == 0) {
-                    temp[y] = 0;
-                    for (int rmX = 0; rmX < offset; rmX++)
-                        tempPictures.remove(position.calculatePosition(rmX, y));
-                } else if (// pictures taken closer to middle of grid has higher weight value
-                        y == Math.round(Math.abs(grid[0].length / 2)) &&
-                                !tempPictures.contains(newItem)
-                ) {
-                    temp[y] += 2 * grid[x][y];
-                    tempPictures.add(newItem);
-                } else if (!tempPictures.contains(newItem)) {
-                    temp[y] += grid[x][y];
-                    tempPictures.add(newItem);
-                }
+                processGrid(position, grid, temp, tempPictures, x, y, offset);
             }
+        }
+    }
+
+    private static void processGrid(PicturePosition position, int[][] grid, int[] temp, Set<Integer> tempPictures, int x, int y, int offset) {
+        int newItem = position.calculatePosition(x, y);
+        if (grid[x][y] == 0) {
+            temp[y] = 0;
+            for (int rmX = 0; rmX < offset; rmX++)
+                tempPictures.remove(position.calculatePosition(rmX, y));
+        } else if (// pictures taken closer to middle of grid has higher weight value
+                y == Math.round(grid[0].length / 2) &&
+                        !tempPictures.contains(newItem)
+        ) {
+            temp[y] += 2 * grid[x][y];
+            tempPictures.add(newItem);
+        } else if (!tempPictures.contains(newItem)) {
+            temp[y] += grid[x][y];
+            tempPictures.add(newItem);
         }
     }
 
@@ -110,7 +99,7 @@ public class MaximumHistogram {
     }
 
 
-    public int maxHistogram(int input[]) {
+    public int maxHistogram(int[] input) {
         Deque<Integer> stack = new LinkedList<>();
         int maxArea = 0;
         int area = 0;
@@ -119,41 +108,31 @@ public class MaximumHistogram {
             if (stack.isEmpty() || input[stack.peekFirst()] <= input[i]) {
                 stack.offerFirst(i++);
             } else {
-                int top = stack.pollFirst();
-                //if stack is empty means everything till i has to be
-                //greater or equal to input[top] so get area by
-                //input[top] * i;
-                if (stack.isEmpty()) {
-                    area = input[top] * i;
-                }
-                //if stack is not empty then everything from i-1 to input.peek() + 1
-                //has to be greater or equal to input[top]
-                //so area = input[top]*(i - stack.peek() - 1);
-                else {
-                    area = input[top] * (i - stack.peekFirst() - 1);
-                }
-                if (area > maxArea) {
-                    maxArea = area;
-                }
+                maxArea = getMaxArea(input, stack, maxArea, i, area);
             }
         }
         while (!stack.isEmpty()) {
-            int top = stack.pollFirst();
-            //if stack is empty means everything till i has to be
-            //greater or equal to input[top] so get area by
-            //input[top] * i;
-            if (stack.isEmpty()) {
-                area = input[top] * i;
-            }
-            //if stack is not empty then everything from i-1 to input.peek() + 1
-            //has to be greater or equal to input[top]
-            //so area = input[top]*(i - stack.peek() - 1);
-            else {
-                area = input[top] * (i - stack.peekFirst() - 1);
-            }
-            if (area > maxArea) {
-                maxArea = area;
-            }
+            maxArea = getMaxArea(input, stack, maxArea, i, area);
+        }
+        return maxArea;
+    }
+
+    private int getMaxArea(int[] input, Deque<Integer> stack, int maxArea, int i, int area) {
+        int top = stack.pollFirst();
+        //if stack is empty means everything till i has to be
+        //greater or equal to input[top] so get area by
+        //input[top] * i;
+        if (stack.isEmpty()) {
+            area = input[top] * i;
+        }
+        //if stack is not empty then everything from i-1 to input.peek() + 1
+        //has to be greater or equal to input[top]
+        //so area = input[top]*(i - stack.peek() - 1);
+        else {
+            area = input[top] * (i - stack.peekFirst() - 1);
+        }
+        if (area > maxArea) {
+            maxArea = area;
         }
         return maxArea;
     }

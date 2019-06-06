@@ -28,7 +28,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class WelcomeActivity extends Activity implements ActivityCompat.OnRequestPermissionsResultCallback {
-    public static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 1;
+    private static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 1;
     private static final String TAG = WelcomeActivity.class.getSimpleName();
     private final String CAMERA = Manifest.permission.CAMERA;
     private final String STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
@@ -70,6 +70,7 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
         Intent intent = new Intent(WelcomeActivity.this, MainActivity.class);
         startActivity(intent);
     }
+
     /**
      * method checks if permissions are granted, if they are not then it request them to be granted
      *
@@ -101,7 +102,7 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
      * @param grantResults
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         LOG.d(TAG, "Permission callback called-------");
         switch (requestCode) {
             case REQUEST_ID_MULTIPLE_PERMISSIONS: {
@@ -126,6 +127,8 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
                                         break;
                                     case DialogInterface.BUTTON_NEGATIVE:
                                         break;
+                                    default:
+                                        break;
                                 }
                             });
                         } else {
@@ -133,7 +136,10 @@ public class WelcomeActivity extends Activity implements ActivityCompat.OnReques
                         }
                     }
                 }
+                break;
             }
+            default:
+                break;
         }
 
     }

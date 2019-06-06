@@ -127,7 +127,7 @@ public class GalleryActivity extends Activity {
             mat.release();
             result.release();
             recreate();
-        }).run();
+        }).start();
     }
 
     @Override

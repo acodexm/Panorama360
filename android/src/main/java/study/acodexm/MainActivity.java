@@ -165,7 +165,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 LOG.s(TAG, "image handler call");
                 while (mRunning) {
                     try {
-                        Thread.sleep(500);
+                        wait(500);
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
                     }
@@ -234,6 +234,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                         MainActivity.this.showToastRunnable(MainActivity.this.getString(R.string.part_msg_is_saved) + (msg.arg1 == 1));
                         break;
                     }
+                    default:
+                        break;
                 }
                 return true;
             }
