@@ -8,7 +8,8 @@ public enum PictureMode {
     multithreaded,
     panorama,
     widePicture,
-    picture360;
+    picture360,
+    test;
 
     public static PictureMode stringToEnum(String s) {
         try {
@@ -35,6 +36,9 @@ public enum PictureMode {
             }
             case 4: {
                 return picture360;
+            }
+            case 5: {
+                return test;
             }
             default: {
                 return auto;

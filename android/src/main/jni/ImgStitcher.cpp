@@ -130,6 +130,16 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
             ORB_GRID_SIZE = Size(4, 2);
             ORB_FEATURES_N = 1000;
             warp_type = "cylindrical";
+        }else if (mode == "test") {
+//            ORB_GRID_SIZE = Size(2, 2);
+            ORB_FEATURES_N = 1000;
+//            work_megapix = 1;
+//            seam_megapix = 0.5;
+//            compose_megapix = 1;
+//            warp_type = "cylindrical";
+work_megapix = 0.15;
+            seam_megapix = 0.1;
+            compose_megapix = 0.7;
         } else if (mode == "part") {
             ORB_GRID_SIZE = Size(3, 1);
             ORB_FEATURES_N = 1000;

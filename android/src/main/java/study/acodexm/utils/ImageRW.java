@@ -23,6 +23,7 @@ public class ImageRW {
     private static final String MAIN_DIR = "/PanoramaApp";
     private static final String TEMP_DIR = "/PanoramaApp/temp";
     private static final String PART_DIR = "/PanoramaApp/part";
+    private static final String TEST_DIR = "/PanoramaApp/test";
     private static final String HIST_DIR = "/PanoramaApp/archived";
     private static final String MAIN_PREFIX = "/panorama_";
     private static final String PART_PREFIX = "/part_panorama_";
@@ -207,6 +208,31 @@ public class ImageRW {
             }
         }
         LOG.s(TAG, "loadImagePartsExternal parts count :" + result.size());
+        return result;
+    }
+
+    public static List<Bitmap> loadTestImagesExternal() {
+        isPathCreated(TEST_DIR);
+        List<Bitmap> result = new ArrayList<>();
+        LOG.s(TAG, "load test images from imagesFolder:" + TEST_DIR);
+        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + TEST_DIR);
+        LOG.s(TAG, "loadImages file exist: " + file.exists());
+        LOG.s(TAG, "loadImages file id folder: " + file.isDirectory());
+        if (file.exists() && file.isDirectory()) {
+            File[] listFiles = file.listFiles();
+            for (File fileCurrent : listFiles) {
+                if (fileCurrent.isFile()) {
+                    try {
+                        FileInputStream fos = new FileInputStream(fileCurrent.getPath());
+                        result.add(BitmapFactory.decodeStream(fos));
+                        fos.close();
+                    } catch (IOException e) {
+                        LOG.s(TAG, "Test File loading failed", e);
+                    }
+                }
+            }
+        }
+        LOG.s(TAG, "loadTestImagesExternal images count :" + result.size());
         return result;
     }
 }

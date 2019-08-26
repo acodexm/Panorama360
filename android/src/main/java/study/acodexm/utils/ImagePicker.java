@@ -47,6 +47,12 @@ public class ImagePicker {
         return parts;
     }
 
+    private static List<Mat> loadTestPictures() {
+        return ImageRW.loadTestImagesExternal().stream()
+                .map(ImagePicker::bitmapToMat)
+                .collect(Collectors.toList());
+    }
+
     public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance) {
         List<Mat> pictures = new ArrayList<>();
         switch (pictureMode) {
@@ -79,6 +85,9 @@ public class ImagePicker {
                 for (int id : instance.getTakenPictures())
                     pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
+            case test: {
+                return loadTestPictures();
+            }
         }
         return pictures;
     }

@@ -67,6 +67,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     ImageView deleteFolderBtn;
     @BindView(R.id.mode_auto)
     Switch mSwitchAuto;
+    @BindView(R.id.mode_test)
+    Switch mSwitchTest;
     @BindView(R.id.mode_manual)
     Switch mSwitchManual;
     @BindView(R.id.picture_panorama)
@@ -509,6 +511,9 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             case FullAuto:
                 mSwitchAuto.setChecked(true);
                 break;
+            case Test:
+                mSwitchTest.setChecked(true);
+                break;
         }
         switch (mPreferences.getPictureMode()) {
             case auto:
@@ -599,6 +604,10 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.capture)
     void onCaptureClickListener() {
+        if (mSettingsControl.getActionMode() == ActionMode.Test) {
+            showToast(R.string.msg_press_save_for_compute_test_images);
+            return;
+        }
         if (isNotSaving)
             if (mShutterState == ShutterState.recording
                     || (mShutterState == ShutterState.ready
@@ -629,6 +638,14 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
+        if (mSettingsControl.getActionMode() == ActionMode.Test) {
+            Message message = new Message();
+            message.what = PROCESS_FINAL_IMAGES;
+            showToast(getString(R.string.msg_process_test_images));
+            message.arg1 = 5;
+            threadHandler.sendMessage(message);
+            return;
+        }
         if (isNotSaving) {
             Message message = new Message();
             message.what = PROCESS_FINAL_IMAGES;
@@ -685,6 +702,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             mPreferences.setLon(7);
             mSettingsControl.setActionMode(ActionMode.FullAuto);
             mSwitchManual.setChecked(false);
+            mSwitchTest.setChecked(false);
             setCaptureBtnImage();
             if (!mSwitchAuto.isChecked())
                 mSwitchAuto.setChecked(true);
@@ -695,12 +713,28 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     @OnClick(R.id.mode_manual)
     void onSwitchManual() {
         if (isNotSaving)
-            if (mSwitchAuto.isChecked()) {
+            if (mSwitchAuto.isChecked() || mSwitchTest.isChecked()) {
                 mPreferences.setActionMode(ActionMode.Manual);
                 mPreferences.setLat(10);
                 mPreferences.setLon(7);
                 mSettingsControl.setActionMode(ActionMode.Manual);
                 mSwitchAuto.setChecked(false);
+                mSwitchTest.setChecked(false);
+                setCaptureBtnImage();
+            } else onSwitchAuto();
+        else showToast(R.string.msg_wait);
+    }
+
+    @OnClick(R.id.mode_test)
+    void onSwitchTest() {
+        if (isNotSaving)
+            if (mSwitchAuto.isChecked() || mSwitchManual.isChecked()) {
+                mPreferences.setActionMode(ActionMode.Test);
+                mPreferences.setLat(10);
+                mPreferences.setLon(7);
+                mSettingsControl.setActionMode(ActionMode.Test);
+                mSwitchAuto.setChecked(false);
+                mSwitchManual.setChecked(false);
                 setCaptureBtnImage();
             } else onSwitchAuto();
         else showToast(R.string.msg_wait);
