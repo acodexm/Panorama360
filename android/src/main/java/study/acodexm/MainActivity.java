@@ -685,6 +685,9 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     @OnItemSelected(R.id.picture_mode)
     void modeSelected(Spinner spinner, int position) {
         if (isNotSaving) {
+            boolean shouldRecreate = false;
+            if (PictureMode.intToEnum(position) != mPreferences.getPictureMode())
+                shouldRecreate = true;
             if (PictureMode.intToEnum(position) == PictureMode.picture360) {
                 mPreferences.setLat(10);
                 mPreferences.setLon(5);
@@ -698,6 +701,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             mSettingsControl.setPictureMode(PictureMode.intToEnum(position));
             mPreferences.setPictureMode(PictureMode.intToEnum(position));
             setCaptureBtnImage();
+            if (shouldRecreate) recreate();
         } else {
             showToast(R.string.msg_wait);
             spinner.setSelection(PictureMode.enumToInt(mPreferences.getPictureMode()));
@@ -731,7 +735,6 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             setCaptureBtnImage();
             if (!mSwitchAuto.isChecked())
                 mSwitchAuto.setChecked(true);
-            recreate();
         } else showToast(R.string.msg_wait);
     }
 
