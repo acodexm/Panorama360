@@ -256,7 +256,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
         ColorAttribute colorAttribute = ColorAttribute.createSpecular(1f, 1f, 1f, 1f);
         for (int id : ids) {
             try {
-                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+                texture = new Texture(Gdx.files.internal("data/empty.png"));
             } catch (Exception e) {
                 LOG.e(TAG, "loading texture failed", e);
             }
@@ -287,7 +287,7 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
             texture = new Texture(pixmap);
         } catch (Exception e) {
             LOG.e(TAG, "texture load failed, loading empty ", e);
-            texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+            texture = new Texture(Gdx.files.internal("data/empty.png"));
         }
         if (id != -1)
             updateTextures(id, texture);
@@ -302,12 +302,11 @@ public class AndroidCamera implements ApplicationListener, SphereManualControl {
 
             try {
                 LOG.d(TAG, "loading texture " + id + ".png");
-                texture = new Texture(Gdx.files.internal("data/numbers/" + id + ".png"));
+                texture = new Texture(Gdx.files.local("data/" + id + ".png"));
             } catch (Exception e) {
                 LOG.e(TAG, "texture load failed, loading empty ", e);
-                texture = new Texture(Gdx.files.internal("data/numbers/empty.png"));
+                texture = new Texture(Gdx.files.local("data/empty.png"));
             }
-
             updateTextures(id, texture);
         }
     }

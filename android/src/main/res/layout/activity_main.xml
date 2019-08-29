@@ -66,7 +66,18 @@
                         android:gravity="start"
                         android:padding="10dp"
                         android:text="@string/test"/>
-
+                <Spinner
+                        android:id="@+id/detector_select"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:padding="10dp"
+                />
+                <Spinner
+                        android:id="@+id/wrap_select"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:padding="10dp"
+                />
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

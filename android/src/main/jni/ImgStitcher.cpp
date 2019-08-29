@@ -3,6 +3,9 @@
 //
 #include "ImgStitcher.h"
 #include <iostream>
+#include "opencv2/core.hpp"
+#include "opencv2/features2d.hpp"
+#include "opencv2/opencv_modules.hpp"
 #include <fstream>
 #include <numeric>
 #include <string>
@@ -121,38 +124,33 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     string s;
     s = accumulate(begin(params), end(params), s);
     LOGD("stitchImg params: %s", s.c_str())
-    string mode = "auto";
-    for (int i = 0; i < params.size(); i++) {
-        mode = string(params[i]);
-        if (mode == "auto") {
-            //default
-        } else if (mode == "multithreaded") {
-            ORB_GRID_SIZE = Size(4, 2);
-            ORB_FEATURES_N = 1000;
-            warp_type = "cylindrical";
-        }else if (mode == "test") {
-//            ORB_GRID_SIZE = Size(2, 2);
-            ORB_FEATURES_N = 1000;
-//            work_megapix = 1;
-//            seam_megapix = 0.5;
-//            compose_megapix = 1;
-//            warp_type = "cylindrical";
-work_megapix = 0.15;
-            seam_megapix = 0.1;
-            compose_megapix = 0.7;
-        } else if (mode == "part") {
-            ORB_GRID_SIZE = Size(3, 1);
-            ORB_FEATURES_N = 1000;
-        } else if (mode == "panorama") {
-            warp_type = "cylindrical";
-        } else if (mode == "widePicture") {
-            //default
-        } else if (mode == "picture360") {
-            work_megapix = 0.15;
-            seam_megapix = 0.1;
-            compose_megapix = 0.7;
-        }
-    }
+    string mode = string(params[0]);
+    string detector = string(params[1]);
+    warp_type = string(params[2]);
+    if (mode == "multithreaded") {
+        ORB_GRID_SIZE = Size(4, 2);
+        ORB_FEATURES_N = 1000;
+        warp_type = "cylindrical";
+    } else if (mode == "test") {
+//      ORB_GRID_SIZE = Size(2, 2);
+//      ORB_FEATURES_N = 1000;
+//      work_megapix = 1;
+//      seam_megapix = 0.5;
+//      compose_megapix = 1;
+//      warp_type = "cylindrical";
+//      work_megapix = 0.15;
+//      seam_megapix = 0.1;
+//      compose_megapix = 0.7;
+     } else if (mode == "part") {
+        ORB_GRID_SIZE = Size(3, 1);
+        ORB_FEATURES_N = 1000;
+     } else if (mode == "panorama") {
+        warp_type = "cylindrical";
+     }  else if (mode == "picture360") {
+        work_megapix = 0.15;
+        seam_megapix = 0.1;
+        compose_megapix = 0.7;
+     }
 
 #if ENABLE_LOG
     LOGD("Compose panorama...");
@@ -180,12 +178,19 @@ work_megapix = 0.15;
 
     // ================ Finding features... ==================
 #if ENABLE_LOG
-    LOGD("Finding features...");
+    LOGD("Finding features... MODE:%s",detector.c_str());
     int64 t = getTickCount();
 #endif
-
     _progressStep = ((float) FINDER_STEP / (float) imgAmount);
-    Ptr<FeaturesFinder> finder = new OrbFeaturesFinder(ORB_GRID_SIZE, ORB_FEATURES_N);
+    Ptr<FeaturesFinder> finder;
+    if(detector=="orb"){
+        finder = new OrbFeaturesFinder(ORB_GRID_SIZE, ORB_FEATURES_N);
+    }else if(detector=="akaze"){
+        finder = new AKAZEFeaturesFinder();
+    }else {
+        finder = new OrbFeaturesFinder(ORB_GRID_SIZE, ORB_FEATURES_N);
+    }
+
     Mat full_img, img;
     vector<ImageFeatures> features(imgAmount);
     vector<Mat> images(imgAmount);

@@ -23,6 +23,7 @@ import android.widget.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnItemSelected;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import org.opencv.core.Mat;
@@ -35,9 +36,7 @@ import study.acodexm.orientationProvider.ImprovedOrientationSensor2Provider;
 import study.acodexm.orientationProvider.OrientationProvider;
 import study.acodexm.representation.MatrixF4x4;
 import study.acodexm.settings.*;
-import study.acodexm.utils.ImagePicker;
-import study.acodexm.utils.ImageRW;
-import study.acodexm.utils.LOG;
+import study.acodexm.utils.*;
 
 import java.util.*;
 
@@ -55,6 +54,10 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         System.loadLibrary("MyLib");
     }
 
+    @BindView(R.id.wrap_select)
+    Spinner wrapSelect;
+    @BindView(R.id.detector_select)
+    Spinner detectorSelect;
     @BindView(R.id.capture)
     ImageView captureBtn;
     @BindView(R.id.scope)
@@ -111,6 +114,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     private boolean partProcessing = false;
     private PicturePosition mPicturePosition;
     private OrientationProvider orientationProvider;
+    private String wrapType;
+    private String detectorType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,7 +164,19 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         //delete files from temporary picture folder
         ImageRW.deleteTempFiles();
         ImageRW.deletePartFiles();
+        //spinner init
+        ArrayAdapter<String> wrapAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, WrapType.items);
+        wrapAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        wrapSelect.setAdapter(wrapAdapter);
+        wrapType = mPreferences.getWrapType();
+        wrapSelect.setSelection(WrapType.getPosition(wrapType));
 
+        ArrayAdapter<String> detectorAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, DetectorType.items);
+        detectorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        detectorSelect.setAdapter(detectorAdapter);
+        detectorType = mPreferences.getDetectorType();
+        detectorSelect.setSelection(DetectorType.getPosition(detectorType));
+        //init grid
         mPicturePosition = PicturePosition.getInstance(mGridSize.getLAT(), mGridSize.getLON(), true);
 
         imageHandler = new Thread(new Runnable() {
@@ -342,7 +359,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {pictureMode.toString()};
+                        String[] args = {pictureMode.toString(), detectorType, wrapType};
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
                         t = System.currentTimeMillis();
@@ -398,7 +415,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {"part"};
+                        String[] args = {"part", "orb", "spherical"};
                         t = System.currentTimeMillis();
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
@@ -692,6 +709,18 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         } else {
             showToast(R.string.msg_wait);
         }
+    }
+
+    @OnItemSelected(R.id.wrap_select)
+    void wrapSelected(Spinner spinner, int position) {
+        wrapType = WrapType.get(position);
+        mPreferences.setWrapType(wrapType);
+    }
+
+    @OnItemSelected(R.id.detector_select)
+    void detectorSelected(Spinner spinner, int position) {
+        detectorType = DetectorType.get(position);
+        mPreferences.setDetectorType(detectorType);
     }
 
     @OnClick(R.id.mode_auto)
