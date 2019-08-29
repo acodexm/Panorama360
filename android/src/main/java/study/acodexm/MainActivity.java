@@ -1,7 +1,6 @@
 package study.acodexm;
 
 
-import acodexm.panorama.R;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.hardware.SensorManager;
@@ -19,14 +18,31 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.*;
+import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+
+import org.opencv.core.Mat;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import acodexm.panorama.R;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.OnItemSelected;
-import com.badlogic.gdx.backends.android.AndroidApplication;
-import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-import org.opencv.core.Mat;
 import study.acodexm.control.AndroidRotationVector;
 import study.acodexm.control.AndroidSettingsControl;
 import study.acodexm.control.CameraControl;
@@ -35,10 +51,19 @@ import study.acodexm.gallery.GalleryActivity;
 import study.acodexm.orientationProvider.ImprovedOrientationSensor2Provider;
 import study.acodexm.orientationProvider.OrientationProvider;
 import study.acodexm.representation.MatrixF4x4;
-import study.acodexm.settings.*;
-import study.acodexm.utils.*;
-
-import java.util.*;
+import study.acodexm.settings.ActionMode;
+import study.acodexm.settings.GridSize;
+import study.acodexm.settings.PictureMode;
+import study.acodexm.settings.PictureQuality;
+import study.acodexm.settings.SettingsControl;
+import study.acodexm.settings.UserPreferences;
+import study.acodexm.utils.DetectorType;
+import study.acodexm.utils.ExpCompType;
+import study.acodexm.utils.ImagePicker;
+import study.acodexm.utils.ImageRW;
+import study.acodexm.utils.LOG;
+import study.acodexm.utils.SeamType;
+import study.acodexm.utils.WrapType;
 
 public class MainActivity extends AndroidApplication implements ViewControl, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -54,6 +79,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         System.loadLibrary("MyLib");
     }
 
+    @BindView(R.id.exp_comp_select)
+    Spinner expCompSelect;
     @BindView(R.id.picture_mode)
     Spinner modeSelect;
     @BindView(R.id.wrap_select)
@@ -64,6 +91,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     Spinner detectorSelect;
     @BindView(R.id.capture)
     ImageView captureBtn;
+    @BindView(R.id.settings)
+    ImageView settingsBtn;
     @BindView(R.id.scope)
     ImageView scope;
     @BindView(R.id.refresh_picture)
@@ -109,6 +138,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     private String wrapType;
     private String detectorType;
     private String seamType;
+    private String expCompType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,26 +188,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         ImageRW.deleteTempFiles();
         ImageRW.deletePartFiles();
         //spinner init
-        ArrayAdapter<String> wrapAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, WrapType.items);
-        wrapAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        wrapSelect.setAdapter(wrapAdapter);
-        wrapType = mPreferences.getWrapType();
-        wrapSelect.setSelection(WrapType.getPosition(wrapType));
-
-        ArrayAdapter<String> detectorAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, DetectorType.items);
-        detectorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        detectorSelect.setAdapter(detectorAdapter);
-        detectorType = mPreferences.getDetectorType();
-        detectorSelect.setSelection(DetectorType.getPosition(detectorType));
-        ArrayAdapter<String> seamAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SeamType.items);
-        seamAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        seamSelect.setAdapter(seamAdapter);
-        seamType = mPreferences.getSeamType();
-        seamSelect.setSelection(SeamType.getPosition(seamType));
-        ArrayAdapter<String> modeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, PictureMode.getValues());
-        modeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        modeSelect.setAdapter(modeAdapter);
-        modeSelect.setSelection(PictureMode.enumToInt(mPreferences.getPictureMode()));
+        initSpinners();
         //init grid
         mPicturePosition = PicturePosition.getInstance(mGridSize.getLAT(), mGridSize.getLON(), true);
 
@@ -205,6 +216,38 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 }
             }
         });
+    }
+
+    private void initSpinners() {
+        // wrapping type selector
+        ArrayAdapter<String> wrapAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, WrapType.items);
+        wrapAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        wrapSelect.setAdapter(wrapAdapter);
+        wrapType = mPreferences.getWrapType();
+        wrapSelect.setSelection(WrapType.getPosition(wrapType));
+        // detector type selector
+        ArrayAdapter<String> detectorAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, DetectorType.items);
+        detectorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        detectorSelect.setAdapter(detectorAdapter);
+        detectorType = mPreferences.getDetectorType();
+        detectorSelect.setSelection(DetectorType.getPosition(detectorType));
+        // seam type selector
+        ArrayAdapter<String> seamAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SeamType.items);
+        seamAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        seamSelect.setAdapter(seamAdapter);
+        seamType = mPreferences.getSeamType();
+        seamSelect.setSelection(SeamType.getPosition(seamType));
+        // exposure compensator type selector
+        ArrayAdapter<String> expCompAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, ExpCompType.items);
+        expCompAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        expCompSelect.setAdapter(expCompAdapter);
+        expCompType = mPreferences.getExpCompType();
+        expCompSelect.setSelection(ExpCompType.getPosition(expCompType));
+        // picture mode selector
+        ArrayAdapter<String> modeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, PictureMode.getValues());
+        modeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        modeSelect.setAdapter(modeAdapter);
+        modeSelect.setSelection(PictureMode.enumToInt(mPreferences.getPictureMode()));
     }
 
     @Override
@@ -261,7 +304,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 return true;
             }
         });
-        if (mPreferences.getPictureMode() == PictureMode.multithreaded)
+        if (mPreferences.getPictureMode() == PictureMode.MULTITHREADED)
             threadHandler.sendEmptyMessage(START_PROCESSING);
     }
 
@@ -361,7 +404,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {pictureMode.toString(), detectorType, wrapType, seamType};
+                        String[] args = {pictureMode.toString(), detectorType, wrapType, seamType, expCompType};
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
                         t = System.currentTimeMillis();
@@ -417,7 +460,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {"part", "orb", "spherical", "dp_color"};
+                        String[] args = {"PART", "orb", "spherical", "dp_color"};
                         t = System.currentTimeMillis();
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
@@ -561,7 +604,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                         captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready));
                         break;
                 }
-                if (mSettingsControl.getPictureMode() == PictureMode.test)
+                if (mSettingsControl.getPictureMode() == PictureMode.TEST)
                     captureBtn.setVisibility(View.GONE);
                 break;
             case recording:
@@ -607,7 +650,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.capture)
     void onCaptureClickListener() {
-        if (mSettingsControl.getPictureMode() == PictureMode.test) {
+        if (mSettingsControl.getPictureMode() == PictureMode.TEST) {
             showToast(R.string.msg_press_save_for_compute_test_images);
             return;
         }
@@ -641,7 +684,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
-        if (mSettingsControl.getPictureMode() == PictureMode.test) {
+        if (mSettingsControl.getPictureMode() == PictureMode.TEST) {
             Message message = new Message();
             message.what = PROCESS_FINAL_IMAGES;
             showToast(getString(R.string.msg_process_test_images));
@@ -670,6 +713,13 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         return false;
     }
 
+    @OnClick(R.id.settings)
+    void onSettingsClick() {
+        DrawerLayout navDrawer = findViewById(R.id.drawer_layout);
+        // If the navigation drawer is not open then open it, if its already open then close it.
+        if (!navDrawer.isDrawerOpen(GravityCompat.START)) navDrawer.openDrawer(GravityCompat.START);
+        else navDrawer.closeDrawer(GravityCompat.END);
+    }
     @OnClick(R.id.delete_folder)
     void onDeleteFolder() {
         if (isNotSaving) {
@@ -688,10 +738,10 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             boolean shouldRecreate = false;
             if (PictureMode.intToEnum(position) != mPreferences.getPictureMode())
                 shouldRecreate = true;
-            if (PictureMode.intToEnum(position) == PictureMode.picture360) {
+            if (PictureMode.intToEnum(position) == PictureMode.PICTURE_360) {
                 mPreferences.setLat(10);
                 mPreferences.setLon(5);
-            } else if (PictureMode.intToEnum(position) == PictureMode.panorama) {
+            } else if (PictureMode.intToEnum(position) == PictureMode.PANORAMA) {
                 mPreferences.setLat(10);
                 mPreferences.setLon(3);
             } else {
@@ -706,6 +756,12 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             showToast(R.string.msg_wait);
             spinner.setSelection(PictureMode.enumToInt(mPreferences.getPictureMode()));
         }
+    }
+
+    @OnItemSelected(R.id.exp_comp_select)
+    void expCompSelected(Spinner spinner, int position) {
+        expCompType = ExpCompType.get(position);
+        mPreferences.setExpCompType(expCompType);
     }
 
     @OnItemSelected(R.id.seam_select)

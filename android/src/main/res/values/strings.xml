@@ -32,4 +32,9 @@
     <string name="stitching_part_in_progress">Stitching part in progress: </string>
     <string name="msg_press_save_for_compute_test_images">Press save button to process test images</string>
     <string name="msg_process_test_images">Processing test images</string>
+    <string name="stitcher_settings">Advanced stitcher settings:</string>
+    <string name="exposure_composition_type">Exposure composition type:</string>
+    <string name="seam_finder_type">Seam finder type:</string>
+    <string name="wrap_type">Wrap type:</string>
+    <string name="detector_type">Detector type:</string>
 </resources>

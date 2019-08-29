@@ -83,7 +83,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     string warp_type = "spherical";
 
     /** Exposure compensation method. **/
-    int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
+    int expos_comp_type = ExposureCompensator::NO;
 
     /** Confidence for feature matching step. **/
     float match_conf = 0.25f;
@@ -128,11 +128,12 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     string detector = string(params[1]);
     warp_type = string(params[2]);
     seam_find_type = string(params[3]);
-    if (mode == "multithreaded") {
+    string expCompType = string(params[4]);
+    if (mode == "MULTITHREADED") {
         ORB_GRID_SIZE = Size(4, 2);
         ORB_FEATURES_N = 1000;
         warp_type = "cylindrical";
-    } else if (mode == "test") {
+    } else if (mode == "TEST") {
 //      ORB_GRID_SIZE = Size(2, 2);
 //      ORB_FEATURES_N = 1000;
 //      work_megapix = 1;
@@ -142,16 +143,22 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 //      work_megapix = 0.15;
 //      seam_megapix = 0.1;
 //      compose_megapix = 0.7;
-     } else if (mode == "part") {
+    } else if (mode == "PART") {
         ORB_GRID_SIZE = Size(3, 1);
         ORB_FEATURES_N = 1000;
-     } else if (mode == "panorama") {
+    } else if (mode == "PANORAMA") {
         warp_type = "cylindrical";
-     }  else if (mode == "picture360") {
+    } else if (mode == "PICTURE_360") {
         work_megapix = 0.15;
         seam_megapix = 0.1;
         compose_megapix = 0.7;
-     }
+    }
+    // set expos_comp_type
+    if (expCompType == "GAIN") {
+        expos_comp_type = ExposureCompensator::GAIN;
+    } else if (expCompType == "GAIN_BLOCKS") {
+        expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
+    }
 
 #if ENABLE_LOG
     LOGD("Compose panorama...");
@@ -171,24 +178,28 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         compose_megapix = 0.7;
         LOGD("over 16 images, lowering quality");
     }
-    LOGD("All images: %d, MODE:%s, detector_type=%s, wrap_type=%s, seam_find_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d",imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
-    LOGP("All images: %d: MODE:%s: detector_type:%s:  wrap_type:%s: seam_find_type=%s, ORB_FEATURES_N:%d: ORB_GRID_SIZE:%d%d",imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(), (int) ORB_FEATURES_N,(int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
+    LOGD("All images: %d, MODE:%s, detector_type=%s, wrap_type=%s, seam_find_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d",
+         imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
+         (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
+    LOGP("All images: %d: MODE:%s: detector_type:%s:  wrap_type:%s: seam_find_type=%s, ORB_FEATURES_N:%d: ORB_GRID_SIZE:%d%d",
+         imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
+         (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
 
     double work_scale = 1, seam_scale = 1, compose_scale = 1;
     bool is_work_scale_set = false, is_seam_scale_set = false, is_compose_scale_set = false;
 
     // ================ Finding features... ==================
 #if ENABLE_LOG
-    LOGD("Finding features... MODE:%s",detector.c_str());
+    LOGD("Finding features... MODE:%s", detector.c_str());
     int64 t = getTickCount();
 #endif
     _progressStep = ((float) FINDER_STEP / (float) imgAmount);
     Ptr<FeaturesFinder> finder;
-    if(detector=="orb"){
+    if (detector == "orb") {
         finder = new OrbFeaturesFinder(ORB_GRID_SIZE, ORB_FEATURES_N);
-    }else if(detector=="akaze"){
+    } else if (detector == "akaze") {
         finder = new AKAZEFeaturesFinder();
-    }else {
+    } else {
         finder = new OrbFeaturesFinder(ORB_GRID_SIZE, ORB_FEATURES_N);
     }
 
@@ -238,7 +249,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     img.release();
 
     LOGD("Finding features, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Finding features, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Finding features, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
     // ================ Pairwise matching... ==================
 #if ENABLE_LOG
@@ -254,7 +266,9 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     _progress += MATCHER_STEP;
 
     LOGD("Pairwise matching, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Pairwise matching, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Pairwise matching, time: %f: %f: progress:%f",
+         ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
     // Leave only images we are sure are from the same panorama
     _indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
@@ -263,10 +277,10 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     vector<Mat> img_subset;
     vector<Mat> _imagesPath_subset;
     vector<Size> full_img_sizes_subset;
-    for (size_t i = 0; i < _indices.size(); ++i) {
-        _imagesPath_subset.push_back(imagesArg[_indices[i]]);
-        img_subset.push_back(images[_indices[i]]);
-        full_img_sizes_subset.push_back(full_img_sizes[_indices[i]]);
+    for (int _indice : _indices) {
+        _imagesPath_subset.push_back(imagesArg[_indice]);
+        img_subset.push_back(images[_indice]);
+        full_img_sizes_subset.push_back(full_img_sizes[_indice]);
     }
 
     images = img_subset;
@@ -291,13 +305,15 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     vector<CameraParams> cameras;
     estimator(features, pairwise_matches, cameras);
     LOGD("Estimate homography, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Estimate homography, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Estimate homography, time: %f: %f: progress:%f",
+         ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
 
-    for (size_t i = 0; i < cameras.size(); ++i) {
+    for (auto &camera : cameras) {
         Mat R;
-        cameras[i].R.convertTo(R, CV_32F);
-        cameras[i].R = R;
+        camera.R.convertTo(R, CV_32F);
+        camera.R = R;
     }
     _progress += ESTIMATOR_STEP;
 
@@ -324,7 +340,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     (*adjuster)(features, pairwise_matches, cameras);
     _progress += ADJUSTER_STEP;
     LOGD("Adjusting bundle, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Adjusting bundle, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Adjusting bundle, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
 
     // Find median focal length
@@ -333,8 +350,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     t = getTickCount();
 #endif
     vector<double> focals;
-    for (size_t i = 0; i < cameras.size(); ++i) {
-        focals.push_back(cameras[i].focal);
+    for (auto &camera : cameras) {
+        focals.push_back(camera.focal);
     }
 
     sort(focals.begin(), focals.end());
@@ -345,13 +362,16 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         warped_image_scale =
                 static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) *
                 0.5f;
-    LOGD("Find median focal lengths, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Find median focal lengths, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGD("Find median focal lengths, time: %f%s", ((getTickCount() - t) / getTickFrequency()),
+         " sec");
+    LOGP("Find median focal lengths, time: %f: %f: progress:%f",
+         ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
     if (do_wave_correct) {
         vector<Mat> rmats;
-        for (size_t i = 0; i < cameras.size(); ++i)
-            rmats.push_back(cameras[i].R);
+        for (auto &camera : cameras)
+            rmats.push_back(camera.R);
         waveCorrect(rmats, wave_correct);
         for (size_t i = 0; i < cameras.size(); ++i)
             cameras[i].R = rmats[i];
@@ -424,19 +444,22 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
 
     LOGD("Warping images, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Warping images, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Warping images, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
     // ================ Compensate exposure... ==================
-    #if ENABLE_LOG
+#if ENABLE_LOG
     LOGD("Compensate exposure");
-        t = getTickCount();
-    #endif
+    t = getTickCount();
+#endif
     Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(expos_comp_type);
 
     compensator->feed(corners, images_warped, masks_warped);
     _progress += COMPENSATOR_STEP;
     LOGD("Compensate exposure, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Compensate exposure, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Compensate exposure, time: %f: %f: progress:%f",
+         ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
     Ptr<SeamFinder> seam_finder;
     if (seam_find_type == "no")
@@ -456,16 +479,17 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         LOGD("Can't create the following seam finder '%s'\n", seam_find_type.c_str());
         return 1;
     }
-    // ================ finding seam... ==================
+        // ================ finding seam... ==================
 
 #if ENABLE_LOG
-    LOGD("Finding seam TYPE:%s:",seam_find_type.c_str());
+    LOGD("Finding seam TYPE:%s:", seam_find_type.c_str());
     t = getTickCount();
 #endif
     seam_finder->find(images_warped_f, corners, masks_warped);
     _progress += SEAM_STEP;
     LOGD("Finding seam, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Finding seam, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Finding seam, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
     // Release unused memory
     images.clear();
@@ -582,9 +606,11 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     blender->blend(result, result_mask);
 
     LOGD("Compositing, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
-    LOGP("Compositing, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()), ((getTickCount() - app_start_time) / getTickFrequency()),_progress);
+    LOGP("Compositing, time: %f: %f: progress:%f", ((getTickCount() - t) / getTickFrequency()),
+         ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
-    LOGD("Finished, total time: %f%s", ((getTickCount() - app_start_time) / getTickFrequency()), " sec");
+    LOGD("Finished, total time: %f%s", ((getTickCount() - app_start_time) / getTickFrequency()),
+         " sec");
     LOGP("Finished, total time: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
 
     return 0;

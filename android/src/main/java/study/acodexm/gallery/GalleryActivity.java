@@ -5,11 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.os.Bundle;
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import study.acodexm.NativePanorama;
-import study.acodexm.utils.ImageRW;
-import study.acodexm.utils.LOG;
 import android.view.MotionEvent;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
@@ -19,6 +14,9 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +31,9 @@ import java.util.regex.Pattern;
 import acodexm.panorama.R;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import study.acodexm.NativePanorama;
+import study.acodexm.utils.ImageRW;
+import study.acodexm.utils.LOG;
 
 public class GalleryActivity extends Activity {
     public static final String INTENT_EXTRAS_FOLDER = "panorama_app_folder";
@@ -127,7 +128,7 @@ public class GalleryActivity extends Activity {
             mat.release();
             result.release();
             recreate();
-        }).start();
+        }).run();
     }
 
     @Override

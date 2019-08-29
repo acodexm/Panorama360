@@ -8,10 +8,12 @@
 
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define  LOGP(...)  do{ __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__ ); FILE* f = fopen("/data/data/study.acodexm/files/jperformance.txt","a+"); fprintf(f, __VA_ARGS__); fprintf(f,"\r\n"); fclose(f); }while(0);
+
 using namespace std;
 using namespace cv;
 
-int stitchImg(vector<Mat> &imagesArg, Mat &result,vector<string> params);
+int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params);
 
 int cropp(Mat &result);
 /*
@@ -20,24 +22,23 @@ int cropp(Mat &result);
  */
 JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_processPanorama
-        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress, jobjectArray stringArray) {
+        (JNIEnv *env, jclass clazz, jlongArray imageAddressArray, jlong outputAddress,
+         jobjectArray stringArray) {
 
-     bool isCropped = false;
-     int size = env->GetArrayLength(stringArray);
-     vector<string> params;
-     for (int i=0; i < size; ++i)
-     {
-         jstring args = (jstring)env->GetObjectArrayElement(stringArray, i);
-         const char* value = env->GetStringUTFChars(args, 0);
-          if (string(value) == "cropp"){
+    bool isCropped = false;
+    int size = env->GetArrayLength(stringArray);
+    vector<string> params;
+    for (int i = 0; i < size; ++i) {
+        auto args = (jstring) env->GetObjectArrayElement(stringArray, i);
+        const char *value = env->GetStringUTFChars(args, nullptr);
+        if (string(value) == "cropp") {
             isCropped = true;
-          }
-          else{
-            params.push_back(value);
-          }
-         env->ReleaseStringUTFChars(args, value);
-         env->DeleteLocalRef(args);
-     }
+        } else {
+            params.emplace_back(value);
+        }
+        env->ReleaseStringUTFChars(args, value);
+        env->DeleteLocalRef(args);
+    }
 
     // Get the length of the long array
     jsize a_len = env->GetArrayLength(imageAddressArray);
@@ -45,28 +46,63 @@ Java_study_acodexm_NativePanorama_processPanorama
     jlong *imgAddressArr = env->GetLongArrayElements(imageAddressArray, 0);
     // Create a vector to store all the image
     vector<Mat> imgVec;
+    if (params[0] == "OPEN_CV_DEFAULT") {
+        for (int k = 0; k < a_len; k++) {
+            // Get the image
+            Mat &curimage = *(Mat *) imgAddressArr[k];
+            Mat newimage;
+            // Convert to a 3 channel Mat to use with Stitcher module
+            cvtColor(curimage, newimage, CV_BGRA2RGB);
+            // Reduce the resolution for fast computation
+            float scale = 1000.0f / curimage.cols;
+            resize(newimage, newimage, Size((int) (scale * curimage.cols),
+                                            (int) (scale * curimage.rows)));
+            imgVec.push_back(newimage);
+        }
+        int64 t = getTickCount();
+        int64 app_start_time = getTickCount();
 
-    for (int k = 0; k < a_len; k++) {
-        // Get the image
-        Mat &curimage = *(Mat *) imgAddressArr[k];
-        Mat newimage;
-        // Convert to a 3 channel Mat
-        cvtColor(curimage, newimage, CV_BGRA2RGB);
-        imgVec.push_back(newimage);
-    }
-
-    Mat &result = *(Mat *) outputAddress;
-    int status = stitchImg(imgVec, result, params);
-    if (status != 0) {
-        LOGE("Can't stitch images, error code = %d", status);
+        Mat &result = *(Mat *) outputAddress;
+        Stitcher::Mode mode = Stitcher::PANORAMA;
+        Ptr<Stitcher> stitcher = Stitcher::create(mode, false);
+        Stitcher::Status status = stitcher->stitch(imgVec, result);
+        LOGP("OpenCV Stitcher, time: %f: %f: ", ((getTickCount() - t) / getTickFrequency()),
+             ((getTickCount() - app_start_time) / getTickFrequency()));
+        if (status != Stitcher::OK) {
+            LOGE("Can't stitch images, error code = %d", int(status));
+        } else {
+            LOGD("Stitch SUCCESS");
+            if (isCropped) {
+                LOGD("cropping...");
+                if (cropp(result) != 0) {
+                    LOGE("cropping FAILED");
+                } else {
+                    LOGD("cropping SUCCESS");
+                }
+            }
+        }
     } else {
-        LOGD("Stitch SUCCESS");
-        if (isCropped) {
-            LOGD("cropping...");
-            if (cropp(result) != 0) {
-                LOGE("cropping FAILED");
-            } else {
-                LOGD("cropping SUCCESS");
+        for (int k = 0; k < a_len; k++) {
+            // Get the image
+            Mat &curimage = *(Mat *) imgAddressArr[k];
+            Mat newimage;
+            // Convert to a 3 channel Mat
+            cvtColor(curimage, newimage, CV_BGRA2RGB);
+            imgVec.push_back(newimage);
+        }
+        Mat &result = *(Mat *) outputAddress;
+        int status = stitchImg(imgVec, result, params);
+        if (status != 0) {
+            LOGE("Can't stitch images, error code = %d", status);
+        } else {
+            LOGD("Stitch SUCCESS");
+            if (isCropped) {
+                LOGD("cropping...");
+                if (cropp(result) != 0) {
+                    LOGE("cropping FAILED");
+                } else {
+                    LOGD("cropping SUCCESS");
+                }
             }
         }
     }
@@ -85,14 +121,14 @@ JNIEXPORT void JNICALL
 Java_study_acodexm_NativePanorama_cropPanorama
         (JNIEnv *env, jclass clazz, jlong imageAddress, jlong outputAddress) {
 
-        Mat &curimage = *(Mat *) imageAddress;
-        Mat &result = *(Mat *) outputAddress;
-        cvtColor(curimage, result, CV_RGB2BGRA);
+    Mat &curimage = *(Mat *) imageAddress;
+    Mat &result = *(Mat *) outputAddress;
+    cvtColor(curimage, result, CV_RGB2BGRA);
 
-        LOGD("cropping...");
-        if (cropp(result) != 0) {
-            LOGE("cropping FAILED");
-        } else {
-            LOGD("cropping SUCCESS");
-        }
+    LOGD("cropping...");
+    if (cropp(result) != 0) {
+        LOGE("cropping FAILED");
+    } else {
+        LOGD("cropping SUCCESS");
     }
+}

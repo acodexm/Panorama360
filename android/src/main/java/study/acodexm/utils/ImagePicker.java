@@ -56,13 +56,15 @@ public class ImagePicker {
     public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance) {
         List<Mat> pictures = new ArrayList<>();
         switch (pictureMode) {
-            case auto:
+            case OPEN_CV_DEFAULT:
+            case AUTO:
+            case PICTURE_360:
                 for (int id : instance.getTakenPictures())
                     pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                 break;
-            case multithreaded:
+            case MULTITHREADED:
                 return loadAllPictureParts(instance);
-            case panorama:
+            case PANORAMA:
                 Set<Integer> longestIDS = maxLength(instance);
                 if (longestIDS != null && longestIDS.size() > 0)
                     for (int id : longestIDS) {
@@ -71,21 +73,16 @@ public class ImagePicker {
                 else
                     LOG.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
                 break;
-            case widePicture:
+            case WIDE_PICTURE:
                 Set<Integer> optimalIDS = maxArea(instance);
                 if (optimalIDS != null && optimalIDS.size() > 0)
                     for (int id : optimalIDS) {
                         pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
                     }
                 else
-                    LOG.e(TAG, "widePicture loadPictures failed: ", new Throwable("empty list or null"));
+                    LOG.e(TAG, "WIDE_PICTURE loadPictures failed: ", new Throwable("empty list or null"));
                 break;
-            case picture360:
-                //this will work only when whole sphere is filled with pictures
-                for (int id : instance.getTakenPictures())
-                    pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
-                break;
-            case test: {
+            case TEST: {
                 return loadTestPictures();
             }
         }

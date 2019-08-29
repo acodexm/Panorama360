@@ -8,6 +8,7 @@ import java.io.File;
 
 
 public class UserPreferences {
+    private static final String PREF_EXP_COMP_TYPE = "exp_comp";
     private static final String PREF_SEAM_TYPE = "seam_type";
     private static final String PREF_WRAP_TYPE = "wrap_type";
     private static final String PREF_DETECTOR_TYPE = "detector_type";
@@ -33,7 +34,7 @@ public class UserPreferences {
     }
 
     public PictureMode getPictureMode() {
-        return PictureMode.stringToEnum(mPreferences.getString(PREF_PICTURE_MODE, PictureMode.auto.name()));
+        return PictureMode.stringToEnum(mPreferences.getString(PREF_PICTURE_MODE, PictureMode.AUTO.name()));
     }
 
     public String getWrapType() {
@@ -50,6 +51,14 @@ public class UserPreferences {
 
     public void setSeamType(String seamType) {
         mPreferences.edit().putString(PREF_SEAM_TYPE, seamType).apply();
+    }
+
+    public String getExpCompType() {
+        return mPreferences.getString(PREF_EXP_COMP_TYPE, "NO");
+    }
+
+    public void setExpCompType(String expCompType) {
+        mPreferences.edit().putString(PREF_EXP_COMP_TYPE, expCompType).apply();
     }
 
     public String getDetectorType() {
@@ -100,4 +109,5 @@ public class UserPreferences {
     public void setLon(int lon) {
         mPreferences.edit().putInt(PREF_GRID_LON, lon).apply();
     }
+
 }

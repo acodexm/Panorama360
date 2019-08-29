@@ -49,6 +49,16 @@
         android:src="@drawable/save" />
 
     <ImageView
+        android:id="@+id/settings"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="10dp"
+        android:padding="10dp"
+        android:src="@drawable/setting" />
+
+    <ImageView
         android:id="@+id/refresh_picture"
         android:layout_width="70dp"
         android:layout_height="70dp"
