@@ -571,11 +571,15 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             case ready:
                 switch (mSettingsControl.getActionMode()) {
                     case FullAuto:
+                        captureBtn.setVisibility(View.VISIBLE);
                         captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready_auto));
                         break;
                     case Manual:
+                        captureBtn.setVisibility(View.VISIBLE);
                         captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready));
                         break;
+                    case Test:
+                        captureBtn.setVisibility(View.GONE);
                 }
                 break;
             case recording:
