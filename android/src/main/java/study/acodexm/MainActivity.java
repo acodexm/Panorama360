@@ -54,8 +54,12 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         System.loadLibrary("MyLib");
     }
 
+    @BindView(R.id.picture_mode)
+    Spinner modeSelect;
     @BindView(R.id.wrap_select)
     Spinner wrapSelect;
+    @BindView(R.id.seam_select)
+    Spinner seamSelect;
     @BindView(R.id.detector_select)
     Spinner detectorSelect;
     @BindView(R.id.capture)
@@ -70,20 +74,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     ImageView deleteFolderBtn;
     @BindView(R.id.mode_auto)
     Switch mSwitchAuto;
-    @BindView(R.id.mode_test)
-    Switch mSwitchTest;
     @BindView(R.id.mode_manual)
     Switch mSwitchManual;
-    @BindView(R.id.picture_panorama)
-    Switch mSwitchPanorama;
-    @BindView(R.id.picture_auto)
-    Switch mSwitchAutoPicture;
-    @BindView(R.id.picture_multithreaded)
-    Switch mSwitchMultithreaded;
-    @BindView(R.id.picture_wide)
-    Switch mSwitchWide;
-    @BindView(R.id.picture_360)
-    Switch mSwitch360;
     @BindView(R.id.quality_high)
     Switch mSwitchHigh;
     @BindView(R.id.quality_low)
@@ -116,6 +108,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     private OrientationProvider orientationProvider;
     private String wrapType;
     private String detectorType;
+    private String seamType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,6 +169,15 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         detectorSelect.setAdapter(detectorAdapter);
         detectorType = mPreferences.getDetectorType();
         detectorSelect.setSelection(DetectorType.getPosition(detectorType));
+        ArrayAdapter<String> seamAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SeamType.items);
+        seamAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        seamSelect.setAdapter(seamAdapter);
+        seamType = mPreferences.getSeamType();
+        seamSelect.setSelection(SeamType.getPosition(seamType));
+        ArrayAdapter<String> modeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, PictureMode.getValues());
+        modeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        modeSelect.setAdapter(modeAdapter);
+        modeSelect.setSelection(PictureMode.enumToInt(mPreferences.getPictureMode()));
         //init grid
         mPicturePosition = PicturePosition.getInstance(mGridSize.getLAT(), mGridSize.getLON(), true);
 
@@ -359,7 +361,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {pictureMode.toString(), detectorType, wrapType};
+                        String[] args = {pictureMode.toString(), detectorType, wrapType, seamType};
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
                         t = System.currentTimeMillis();
@@ -415,7 +417,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {"part", "orb", "spherical"};
+                        String[] args = {"part", "orb", "spherical", "dp_color"};
                         t = System.currentTimeMillis();
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
@@ -528,26 +530,6 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             case FullAuto:
                 mSwitchAuto.setChecked(true);
                 break;
-            case Test:
-                mSwitchTest.setChecked(true);
-                break;
-        }
-        switch (mPreferences.getPictureMode()) {
-            case auto:
-                mSwitchAutoPicture.setChecked(true);
-                break;
-            case multithreaded:
-                mSwitchMultithreaded.setChecked(true);
-                break;
-            case panorama:
-                mSwitchPanorama.setChecked(true);
-                break;
-            case widePicture:
-                mSwitchWide.setChecked(true);
-                break;
-            case picture360:
-                mSwitch360.setChecked(true);
-                break;
         }
         switch (mPreferences.getPictureQuality()) {
             case LOW:
@@ -578,9 +560,9 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                         captureBtn.setVisibility(View.VISIBLE);
                         captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready));
                         break;
-                    case Test:
-                        captureBtn.setVisibility(View.GONE);
                 }
+                if (mSettingsControl.getPictureMode() == PictureMode.test)
+                    captureBtn.setVisibility(View.GONE);
                 break;
             case recording:
                 captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
@@ -625,7 +607,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.capture)
     void onCaptureClickListener() {
-        if (mSettingsControl.getActionMode() == ActionMode.Test) {
+        if (mSettingsControl.getPictureMode() == PictureMode.test) {
             showToast(R.string.msg_press_save_for_compute_test_images);
             return;
         }
@@ -659,7 +641,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
-        if (mSettingsControl.getActionMode() == ActionMode.Test) {
+        if (mSettingsControl.getPictureMode() == PictureMode.test) {
             Message message = new Message();
             message.what = PROCESS_FINAL_IMAGES;
             showToast(getString(R.string.msg_process_test_images));
@@ -671,23 +653,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             Message message = new Message();
             message.what = PROCESS_FINAL_IMAGES;
             showToast(getString(R.string.msg_save));
-            switch (mSettingsControl.getPictureMode()) {
-                case auto:
-                    message.arg1 = 0;
-                    break;
-                case multithreaded:
-                    message.arg1 = 1;
-                    break;
-                case panorama:
-                    message.arg1 = 2;
-                    break;
-                case widePicture:
-                    message.arg1 = 3;
-                    break;
-                case picture360:
-                    message.arg1 = 4;
-                    break;
-            }
+            message.arg1 = PictureMode.enumToInt(mSettingsControl.getPictureMode());
+
             threadHandler.sendMessage(message);
         } else showToast(R.string.msg_wait);
     }
@@ -715,6 +682,34 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         }
     }
 
+    @OnItemSelected(R.id.picture_mode)
+    void modeSelected(Spinner spinner, int position) {
+        if (isNotSaving) {
+            if (PictureMode.intToEnum(position) == PictureMode.picture360) {
+                mPreferences.setLat(10);
+                mPreferences.setLon(5);
+            } else if (PictureMode.intToEnum(position) == PictureMode.panorama) {
+                mPreferences.setLat(10);
+                mPreferences.setLon(3);
+            } else {
+                mPreferences.setLat(10);
+                mPreferences.setLon(7);
+            }
+            mSettingsControl.setPictureMode(PictureMode.intToEnum(position));
+            mPreferences.setPictureMode(PictureMode.intToEnum(position));
+            setCaptureBtnImage();
+        } else {
+            showToast(R.string.msg_wait);
+            spinner.setSelection(PictureMode.enumToInt(mPreferences.getPictureMode()));
+        }
+    }
+
+    @OnItemSelected(R.id.seam_select)
+    void seamSelected(Spinner spinner, int position) {
+        seamType = SeamType.get(position);
+        mPreferences.setSeamType(seamType);
+    }
+
     @OnItemSelected(R.id.wrap_select)
     void wrapSelected(Spinner spinner, int position) {
         wrapType = WrapType.get(position);
@@ -731,11 +726,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     void onSwitchAuto() {
         if (isNotSaving) {
             mPreferences.setActionMode(ActionMode.FullAuto);
-            mPreferences.setLat(10);
-            mPreferences.setLon(7);
             mSettingsControl.setActionMode(ActionMode.FullAuto);
             mSwitchManual.setChecked(false);
-            mSwitchTest.setChecked(false);
             setCaptureBtnImage();
             if (!mSwitchAuto.isChecked())
                 mSwitchAuto.setChecked(true);
@@ -746,119 +738,15 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     @OnClick(R.id.mode_manual)
     void onSwitchManual() {
         if (isNotSaving)
-            if (mSwitchAuto.isChecked() || mSwitchTest.isChecked()) {
+            if (mSwitchAuto.isChecked()) {
                 mPreferences.setActionMode(ActionMode.Manual);
-                mPreferences.setLat(10);
-                mPreferences.setLon(7);
                 mSettingsControl.setActionMode(ActionMode.Manual);
                 mSwitchAuto.setChecked(false);
-                mSwitchTest.setChecked(false);
                 setCaptureBtnImage();
             } else onSwitchAuto();
         else showToast(R.string.msg_wait);
     }
 
-    @OnClick(R.id.mode_test)
-    void onSwitchTest() {
-        if (isNotSaving)
-            if (mSwitchAuto.isChecked() || mSwitchManual.isChecked()) {
-                mPreferences.setActionMode(ActionMode.Test);
-                mPreferences.setLat(10);
-                mPreferences.setLon(7);
-                mSettingsControl.setActionMode(ActionMode.Test);
-                mSwitchAuto.setChecked(false);
-                mSwitchManual.setChecked(false);
-                setCaptureBtnImage();
-            } else onSwitchAuto();
-        else showToast(R.string.msg_wait);
-    }
-
-    @OnClick(R.id.picture_auto)
-    void onSwitchAutoPanorama() {
-        if (isNotSaving) {
-            threadHandler.sendEmptyMessage(STOP_PROCESSING);
-            mPreferences.setPictureMode(PictureMode.auto);
-            mPreferences.setLat(10);
-            mPreferences.setLon(7);
-            mSettingsControl.setPictureMode(PictureMode.auto);
-            mSwitchPanorama.setChecked(false);
-            mSwitchMultithreaded.setChecked(false);
-            mSwitchWide.setChecked(false);
-            mSwitch360.setChecked(false);
-            if (!mSwitchAutoPicture.isChecked())
-                mSwitchAutoPicture.setChecked(true);
-            recreate();
-        } else showToast(R.string.msg_wait);
-    }
-
-    @OnClick(R.id.picture_multithreaded)
-    void onSwitchMultithreadedPanorama() {
-        if (isNotSaving) {
-            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
-                mPreferences.setPictureMode(PictureMode.multithreaded);
-                mPreferences.setLat(10);
-                mPreferences.setLon(7);
-                mSettingsControl.setPictureMode(PictureMode.multithreaded);
-                mSwitchPanorama.setChecked(false);
-                mSwitchWide.setChecked(false);
-                mSwitchAutoPicture.setChecked(false);
-                mSwitch360.setChecked(false);
-                threadHandler.sendEmptyMessage(START_PROCESSING);
-                recreate();
-            } else onSwitchAutoPanorama();
-        } else showToast(R.string.msg_wait);
-    }
-
-    @OnClick(R.id.picture_panorama)
-    void onSwitchPanorama() {
-        if (isNotSaving)
-            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
-                mPreferences.setPictureMode(PictureMode.panorama);
-                mPreferences.setLat(10);
-                mPreferences.setLon(3);
-                mSettingsControl.setPictureMode(PictureMode.panorama);
-                mSwitchAutoPicture.setChecked(false);
-                mSwitchMultithreaded.setChecked(false);
-                mSwitchWide.setChecked(false);
-                mSwitch360.setChecked(false);
-                recreate();
-            } else onSwitchAutoPanorama();
-        else showToast(R.string.msg_wait);
-    }
-
-    @OnClick(R.id.picture_wide)
-    void onSwitchWide() {
-        if (isNotSaving)
-            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
-                mPreferences.setPictureMode(PictureMode.widePicture);
-                mPreferences.setLat(10);
-                mPreferences.setLon(7);
-                mSettingsControl.setPictureMode(PictureMode.widePicture);
-                mSwitchAutoPicture.setChecked(false);
-                mSwitchMultithreaded.setChecked(false);
-                mSwitchPanorama.setChecked(false);
-                mSwitch360.setChecked(false);
-                recreate();
-            } else onSwitchAutoPanorama();
-        else showToast(R.string.msg_wait);
-    }
-
-    @OnClick(R.id.picture_360)
-    void onSwitch360() {
-        if (isNotSaving)
-            if (mSwitchPanorama.isChecked() || mSwitchMultithreaded.isChecked() || mSwitch360.isChecked() || mSwitchWide.isChecked()) {
-                mPreferences.setPictureMode(PictureMode.picture360);
-                mPreferences.setLat(10);
-                mPreferences.setLon(5);
-                mSettingsControl.setPictureMode(PictureMode.picture360);
-                mSwitchMultithreaded.setChecked(false);
-                mSwitchAutoPicture.setChecked(false);
-                mSwitchWide.setChecked(false);
-                mSwitchPanorama.setChecked(false);
-                recreate();
-            } else onSwitchAutoPanorama();
-        else showToast(R.string.msg_wait);
-    }
 
     @OnClick(R.id.quality_high)
     void onSwitchHigh() {

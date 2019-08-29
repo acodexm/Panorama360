@@ -20,11 +20,12 @@ public enum PictureMode {
         }
     }
 
+    public static String[] getValues() {
+        return new String[]{auto.name(), multithreaded.name(), panorama.name(), widePicture.name(), picture360.name(), test.name()};
+    }
+
     public static PictureMode intToEnum(int i) {
         switch (i) {
-            case 0: {
-                return auto;
-            }
             case 1: {
                 return multithreaded;
             }
@@ -42,6 +43,29 @@ public enum PictureMode {
             }
             default: {
                 return auto;
+            }
+        }
+    }
+
+    public static int enumToInt(PictureMode i) {
+        switch (i) {
+            case multithreaded: {
+                return 1;
+            }
+            case panorama: {
+                return 2;
+            }
+            case widePicture: {
+                return 3;
+            }
+            case picture360: {
+                return 4;
+            }
+            case test: {
+                return 5;
+            }
+            default: {
+                return 0;
             }
         }
     }

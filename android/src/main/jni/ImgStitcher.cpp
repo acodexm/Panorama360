@@ -127,6 +127,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     string mode = string(params[0]);
     string detector = string(params[1]);
     warp_type = string(params[2]);
+    seam_find_type = string(params[3]);
     if (mode == "multithreaded") {
         ORB_GRID_SIZE = Size(4, 2);
         ORB_FEATURES_N = 1000;
@@ -386,6 +387,10 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         warper_creator = new cv::CylindricalWarper();
     else if (warp_type == "spherical")
         warper_creator = new cv::SphericalWarper();
+    else if (warp_type == "fisheye")
+        warper_creator = new cv::FisheyeWarper();
+    else if (warp_type == "stereographic")
+        warper_creator = new cv::StereographicWarper();
 
 
     if (!warper_creator) {

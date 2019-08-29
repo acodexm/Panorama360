@@ -3,7 +3,7 @@
     <string name="taking_picture_mode">Taking picture mode:</string>
     <string name="full_auto">Full Auto</string>
     <string name="manual">Manual</string>
-    <string name="type_of_picture">Type of picture:</string>
+    <string name="type_of_picture">Select picture type:</string>
     <string name="panorama">Panorama</string>
     <string name="multithreaded">Multithreaded</string>
     <string name="wide_picture">Wide picture</string>
@@ -30,7 +30,6 @@
     <string name="very_low_quality">Very Low quality</string>
     <string name="stitching_in_progress">Stitching in progress: </string>
     <string name="stitching_part_in_progress">Stitching part in progress: </string>
-    <string name="test">Test</string>
     <string name="msg_press_save_for_compute_test_images">Press save button to process test images</string>
     <string name="msg_process_test_images">Processing test images</string>
 </resources>

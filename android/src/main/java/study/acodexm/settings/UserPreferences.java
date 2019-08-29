@@ -8,6 +8,7 @@ import java.io.File;
 
 
 public class UserPreferences {
+    private static final String PREF_SEAM_TYPE = "seam_type";
     private static final String PREF_WRAP_TYPE = "wrap_type";
     private static final String PREF_DETECTOR_TYPE = "detector_type";
     private static final String PREF_ACTION_MODE = "action_mode";
@@ -41,6 +42,14 @@ public class UserPreferences {
 
     public void setWrapType(String wrapType) {
         mPreferences.edit().putString(PREF_WRAP_TYPE, wrapType).apply();
+    }
+
+    public String getSeamType() {
+        return mPreferences.getString(PREF_SEAM_TYPE, "dp_color");
+    }
+
+    public void setSeamType(String seamType) {
+        mPreferences.edit().putString(PREF_SEAM_TYPE, seamType).apply();
     }
 
     public String getDetectorType() {

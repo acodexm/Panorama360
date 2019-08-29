@@ -4,7 +4,7 @@ package study.acodexm.settings;
 import study.acodexm.Utils.LOG;
 
 public enum ActionMode {
-    FullAuto, Manual, Test;
+    FullAuto, Manual;
 
     public static ActionMode stringToEnum(String s) {
         try {

@@ -3,8 +3,8 @@ package study.acodexm.utils;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-public class WrapType {
-    public static String[] items = new String[]{"Spherical", "Cylindrical", "Plane", "Fisheye", "Stereographic"};
+public class SeamType {
+    public static String[] items = new String[]{"no", "voronoi", "gc_color", "gc_colorgrad", "dp_color", "dp_colorgrad"};
 
     public static String get(int position) {
         return items[position].toLowerCase();
