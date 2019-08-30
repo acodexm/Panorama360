@@ -47,6 +47,7 @@ Java_study_acodexm_NativePanorama_processPanorama
     // Create a vector to store all the image
     vector<Mat> imgVec;
     if (params[0] == "OPEN_CV_DEFAULT") {
+    int64 app_start_time = getTickCount();
         for (int k = 0; k < a_len; k++) {
             // Get the image
             Mat &curimage = *(Mat *) imgAddressArr[k];
@@ -59,15 +60,15 @@ Java_study_acodexm_NativePanorama_processPanorama
                                             (int) (scale * curimage.rows)));
             imgVec.push_back(newimage);
         }
+        LOGP("OpenCV Stitcher, reduce resolution: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
         int64 t = getTickCount();
-        int64 app_start_time = getTickCount();
 
         Mat &result = *(Mat *) outputAddress;
         Stitcher::Mode mode = Stitcher::PANORAMA;
         Ptr<Stitcher> stitcher = Stitcher::create(mode, false);
         Stitcher::Status status = stitcher->stitch(imgVec, result);
-        LOGP("OpenCV Stitcher, time: %f: %f: ", ((getTickCount() - t) / getTickFrequency()),
-             ((getTickCount() - app_start_time) / getTickFrequency()));
+        LOGP("OpenCV Stitcher, stitiching time: %f", ((getTickCount() - t) / getTickFrequency()));
+        LOGP("OpenCV Stitcher, total time: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
         if (status != Stitcher::OK) {
             LOGE("Can't stitch images, error code = %d", int(status));
         } else {
