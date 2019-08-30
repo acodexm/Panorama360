@@ -103,6 +103,8 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     ImageView deleteFolderBtn;
     @BindView(R.id.mode_auto)
     Switch mSwitchAuto;
+    @BindView(R.id.mode_test)
+    Switch mSwitchTest;
     @BindView(R.id.mode_manual)
     Switch mSwitchManual;
     @BindView(R.id.quality_high)
@@ -282,7 +284,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     case PROCESS_FINAL_IMAGES: {
                         LOG.s(TAG, "PROCESS_FINAL_IMAGES");
                         MainActivity.this.isNotSaving = false;
-                        new Thread(MainActivity.this.processPicture(PictureMode.intToEnum(msg.arg1))).start();
+                        new Thread(MainActivity.this.processPicture(PictureMode.intToEnum(msg.arg1), msg.arg2 == 1)).start();
                         new Thread(MainActivity.this.getProgress()).start();
                         break;
                     }
@@ -380,14 +382,14 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
      *
      * @param pictureMode
      */
-    private Runnable processPicture(final PictureMode pictureMode) {
+    private Runnable processPicture(final PictureMode pictureMode, boolean isInTestMode) {
         final long time = System.currentTimeMillis();
         return () -> {
             post(LOG.r(TAG, "processPicture BEGIN", 0));
             long t = System.currentTimeMillis();
             final List<Mat> listImage;
             try {
-                listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition);
+                listImage = ImagePicker.loadPictures(pictureMode, mPicturePosition, isInTestMode);
             } catch (Exception e) {
                 post(LOG.r(TAG, "run: loadPictures failed", e));
                 return;
@@ -573,6 +575,9 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             case FullAuto:
                 mSwitchAuto.setChecked(true);
                 break;
+            case Test:
+                mSwitchTest.setChecked(true);
+                break;
         }
         switch (mPreferences.getPictureQuality()) {
             case LOW:
@@ -603,9 +608,9 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                         captureBtn.setVisibility(View.VISIBLE);
                         captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.ready));
                         break;
+                    case Test:
+                        captureBtn.setVisibility(View.GONE);
                 }
-                if (mSettingsControl.getPictureMode() == PictureMode.TEST)
-                    captureBtn.setVisibility(View.GONE);
                 break;
             case recording:
                 captureBtn.setBackground(ContextCompat.getDrawable(this, R.drawable.rec));
@@ -650,7 +655,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.capture)
     void onCaptureClickListener() {
-        if (mSettingsControl.getPictureMode() == PictureMode.TEST) {
+        if (mSettingsControl.getActionMode() == ActionMode.Test) {
             showToast(R.string.msg_press_save_for_compute_test_images);
             return;
         }
@@ -684,20 +689,16 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
 
     @OnClick(R.id.save_picture)
     void saveOnClickListener() {
-        if (mSettingsControl.getPictureMode() == PictureMode.TEST) {
-            Message message = new Message();
-            message.what = PROCESS_FINAL_IMAGES;
-            showToast(getString(R.string.msg_process_test_images));
-            message.arg1 = 5;
-            threadHandler.sendMessage(message);
-            return;
-        }
         if (isNotSaving) {
             Message message = new Message();
             message.what = PROCESS_FINAL_IMAGES;
-            showToast(getString(R.string.msg_save));
+            if (mSettingsControl.getActionMode() == ActionMode.Test) {
+                showToast(getString(R.string.msg_process_test_images));
+                message.arg2 = 1;
+            } else {
+                showToast(getString(R.string.msg_save));
+            }
             message.arg1 = PictureMode.enumToInt(mSettingsControl.getPictureMode());
-
             threadHandler.sendMessage(message);
         } else showToast(R.string.msg_wait);
     }
@@ -720,6 +721,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         if (!navDrawer.isDrawerOpen(GravityCompat.START)) navDrawer.openDrawer(GravityCompat.START);
         else navDrawer.closeDrawer(GravityCompat.END);
     }
+
     @OnClick(R.id.delete_folder)
     void onDeleteFolder() {
         if (isNotSaving) {
@@ -788,6 +790,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             mPreferences.setActionMode(ActionMode.FullAuto);
             mSettingsControl.setActionMode(ActionMode.FullAuto);
             mSwitchManual.setChecked(false);
+            mSwitchTest.setChecked(false);
             setCaptureBtnImage();
             if (!mSwitchAuto.isChecked())
                 mSwitchAuto.setChecked(true);
@@ -797,10 +800,24 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
     @OnClick(R.id.mode_manual)
     void onSwitchManual() {
         if (isNotSaving)
-            if (mSwitchAuto.isChecked()) {
+            if (mSwitchAuto.isChecked() || mSwitchTest.isChecked()) {
                 mPreferences.setActionMode(ActionMode.Manual);
                 mSettingsControl.setActionMode(ActionMode.Manual);
                 mSwitchAuto.setChecked(false);
+                mSwitchTest.setChecked(false);
+                setCaptureBtnImage();
+            } else onSwitchAuto();
+        else showToast(R.string.msg_wait);
+    }
+
+    @OnClick(R.id.mode_test)
+    void onSwitchTest() {
+        if (isNotSaving)
+            if (mSwitchAuto.isChecked() || mSwitchManual.isChecked()) {
+                mPreferences.setActionMode(ActionMode.Test);
+                mSettingsControl.setActionMode(ActionMode.Test);
+                mSwitchAuto.setChecked(false);
+                mSwitchManual.setChecked(false);
                 setCaptureBtnImage();
             } else onSwitchAuto();
         else showToast(R.string.msg_wait);

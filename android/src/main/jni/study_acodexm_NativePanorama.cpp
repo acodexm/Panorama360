@@ -28,11 +28,14 @@ Java_study_acodexm_NativePanorama_processPanorama
     bool isCropped = false;
     int size = env->GetArrayLength(stringArray);
     vector<string> params;
+    bool useDefault=false;
     for (int i = 0; i < size; ++i) {
         auto args = (jstring) env->GetObjectArrayElement(stringArray, i);
         const char *value = env->GetStringUTFChars(args, nullptr);
         if (string(value) == "cropp") {
             isCropped = true;
+        } else if (string(value) == "OPEN_CV_DEFAULT") {
+            useDefault = true;
         } else {
             params.emplace_back(value);
         }
@@ -46,7 +49,7 @@ Java_study_acodexm_NativePanorama_processPanorama
     jlong *imgAddressArr = env->GetLongArrayElements(imageAddressArray, 0);
     // Create a vector to store all the image
     vector<Mat> imgVec;
-    if (params[0] == "OPEN_CV_DEFAULT") {
+    if (useDefault) {
     int64 app_start_time = getTickCount();
         for (int k = 0; k < a_len; k++) {
             // Get the image

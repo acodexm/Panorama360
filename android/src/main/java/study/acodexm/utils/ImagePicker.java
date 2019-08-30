@@ -53,8 +53,9 @@ public class ImagePicker {
                 .collect(Collectors.toList());
     }
 
-    public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance) {
+    public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance, boolean isInTestMode) {
         List<Mat> pictures = new ArrayList<>();
+        if (isInTestMode) return loadTestPictures();
         switch (pictureMode) {
             case OPEN_CV_DEFAULT:
             case AUTO:

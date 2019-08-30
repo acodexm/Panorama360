@@ -30,12 +30,6 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="10dp"
-                        android:text="@string/settings"
-                        android:textStyle="bold"/>
 
                 <TextView
                         android:layout_width="wrap_content"
@@ -59,63 +53,13 @@
                         android:gravity="start"
                         android:padding="10dp"
                         android:text="@string/manual"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:padding="10dp"
-                    android:text="@string/stitcher_settings" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="10dp"
-                    android:textSize="10sp"
-                    android:text="@string/detector_type" />
-                <Spinner
-                        android:id="@+id/detector_select"
+                <Switch
+                        android:id="@+id/mode_test"
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
                         android:padding="10dp"
-                />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="10dp"
-                    android:textSize="10sp"
-                    android:text="@string/wrap_type" />
-                <Spinner
-                        android:id="@+id/wrap_select"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:padding="10dp"
-                />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="10dp"
-                    android:textSize="10sp"
-                    android:text="@string/seam_finder_type" />
-                <Spinner
-                        android:id="@+id/seam_select"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                    android:padding="10dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="10dp"
-                    android:textSize="10sp"
-                    android:text="@string/exposure_composition_type" />
-
-                <Spinner
-                    android:id="@+id/exp_comp_select"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:padding="10dp" />
+                        android:text="@string/test"/>
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -127,6 +71,64 @@
                         android:layout_height="40dp"
                         android:padding="10dp"
                 />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="10dp"
+                        android:text="@string/stitcher_settings"/>
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:textSize="10sp"
+                        android:text="@string/detector_type"/>
+                <Spinner
+                        android:id="@+id/detector_select"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:padding="10dp"
+                />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:textSize="10sp"
+                        android:text="@string/wrap_type"/>
+                <Spinner
+                        android:id="@+id/wrap_select"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:padding="10dp"
+                />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:textSize="10sp"
+                        android:text="@string/seam_finder_type"/>
+                <Spinner
+                        android:id="@+id/seam_select"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:padding="10dp"/>
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:textSize="10sp"
+                        android:text="@string/exposure_composition_type"/>
+
+                <Spinner
+                        android:id="@+id/exp_comp_select"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:padding="10dp"/>
+
 
                 <TextView
                         android:layout_width="wrap_content"
@@ -153,6 +155,7 @@
                             android:textStyle="italic"/>
 
                 </LinearLayout>
+
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

@@ -37,4 +37,5 @@
     <string name="seam_finder_type">Seam finder type:</string>
     <string name="wrap_type">Wrap type:</string>
     <string name="detector_type">Detector type:</string>
+    <string name="test">Test</string>
 </resources>
