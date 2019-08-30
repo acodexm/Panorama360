@@ -23,6 +23,7 @@ public class ImageRW {
     private static final String MAIN_DIR = "/PanoramaApp";
     private static final String TEMP_DIR = "/PanoramaApp/temp";
     private static final String PART_DIR = "/PanoramaApp/part";
+    private static final String LOGS_DIR = "/PanoramaApp/logs";
     private static final String TEST_DIR = "/PanoramaApp/test";
     private static final String HIST_DIR = "/PanoramaApp/archived";
     private static final String MAIN_PREFIX = "/panorama_";
@@ -115,7 +116,10 @@ public class ImageRW {
      * methods deletes all pictures from temporary files if any exists
      */
     public static void deleteAllFiles() {
-        deleteFolderFiles(MAIN_DIR, false);
+        deleteFolderFiles(TEMP_DIR, false);
+        deleteFolderFiles(HIST_DIR, false);
+        deleteFolderFiles(PART_DIR, false);
+        deleteFolderFiles(LOGS_DIR, false);
     }
 
     public static void deleteTempFiles() {
