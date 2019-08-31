@@ -50,16 +50,16 @@ float _progress = 1;
 
 int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 /** working resolution **/
-    double work_megapix = 0.35;
+    double work_megapix = 0.6;
 
     /** seam finding resolution **/
-    double seam_megapix = 0.2;
+    double seam_megapix = 0.1;
 
     /** final panorama resolution **/
-    double compose_megapix = 1.2;
+    double compose_megapix = -1;
 
     /** Threshold for two images are from the same panorama confidence. **/
-    float conf_thresh = 0.7f;    // frequent crashes when < 0.7
+    float conf_thresh = 1.f;    // frequent crashes when < 0.7
 
     /** Bundle adjustment cost function. reproj don't seems suitable for spherical pano**/
     string ba_cost_func = "ray";    //["reproj", "ray" : "ray"]
@@ -84,7 +84,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
     /** Exposure compensation method. **/
     int expos_comp_type = ExposureCompensator::NO;
-
+    string expCompType = "no";
     /** Confidence for feature matching step. **/
     float match_conf = 0.25f;
 
@@ -99,7 +99,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     /** Blending strength from [0,100] range. **/
     float blend_strength = 5;
 
-
+    /** Detector type orb or akaze **/
+    string detector = "orb";
     /** orb featureFinder parameters
     * highly important for performance and matching features
     *
@@ -117,7 +118,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     /** indices of used images **/
     vector<int> _indices;
 
-    float _progressStep = 1;
+    float _progressStep;
     /** current progression of the stitching **/
     _progress = 0;
 
@@ -125,32 +126,33 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     s = accumulate(begin(params), end(params), s);
     LOGD("stitchImg params: %s", s.c_str())
     string mode = string(params[0]);
-    string detector = string(params[1]);
-    warp_type = string(params[2]);
-    seam_find_type = string(params[3]);
-    string expCompType = string(params[4]);
     if (mode == "MULTITHREADED") {
-        ORB_GRID_SIZE = Size(4, 2);
-        ORB_FEATURES_N = 1000;
+        detector = "orb";
         warp_type = "cylindrical";
+        seam_find_type = "dp_color";
+        expCompType = "NO";
     } else if (mode == "TEST") {
-//      ORB_GRID_SIZE = Size(2, 2);
-//      ORB_FEATURES_N = 1000;
-//      work_megapix = 1;
-//      seam_megapix = 0.5;
-//      compose_megapix = 1;
-//      warp_type = "cylindrical";
-//      work_megapix = 0.15;
-//      seam_megapix = 0.1;
-//      compose_megapix = 0.7;
+        detector = string(params[1]);
+        warp_type = string(params[2]);
+        seam_find_type = string(params[3]);
+        expCompType = string(params[4]);
     } else if (mode == "PART") {
         ORB_GRID_SIZE = Size(3, 1);
         ORB_FEATURES_N = 1000;
-    } else if (mode == "PANORAMA") {
+        detector = "orb";
         warp_type = "cylindrical";
+        seam_find_type = "dp_color";
+        expCompType = "NO";
+    } else if (mode == "PANORAMA") {
+        detector = "orb";
+        warp_type = "cylindrical";
+        seam_find_type = "dp_color";
+        expCompType = "NO";
     } else if (mode == "PICTURE_360") {
-        work_megapix = 0.15;
-        seam_megapix = 0.1;
+        detector = "orb";
+        warp_type = "spherical";
+        seam_find_type = "dp_color";
+        expCompType = "NO";
         compose_megapix = 0.7;
     }
     // set expos_comp_type
@@ -285,6 +287,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
     images = img_subset;
     imagesArg = _imagesPath_subset;
+    _imagesPath_subset.clear();
+    img_subset.clear();
     full_img_sizes = full_img_sizes_subset;
 
     // Check if we still have enough images
@@ -314,6 +318,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         Mat R;
         camera.R.convertTo(R, CV_32F);
         camera.R = R;
+        R.release();
     }
     _progress += ESTIMATOR_STEP;
 
@@ -333,6 +338,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     if (ba_refine_mask[3] == 'x') refine_mask(1, 1) = 1;
     if (ba_refine_mask[4] == 'x') refine_mask(1, 2) = 1;
     adjuster->setRefinementMask(refine_mask);
+    refine_mask.release();
 #if ENABLE_LOG
     LOGD("Adjusting bundle");
     t = getTickCount();
@@ -362,6 +368,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         warped_image_scale =
                 static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) *
                 0.5f;
+    focals.clear();
     LOGD("Find median focal lengths, time: %f%s", ((getTickCount() - t) / getTickFrequency()),
          " sec");
     LOGP("Find median focal lengths, time: %f: %f: progress:%f",
@@ -375,6 +382,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         waveCorrect(rmats, wave_correct);
         for (size_t i = 0; i < cameras.size(); ++i)
             cameras[i].R = rmats[i];
+        rmats.clear();
     }
         // ================ Warping images... ==================
 
@@ -599,6 +607,10 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
         // Blend the current image
         blender->feed(img_warped_s, mask_warped, corners[img_idx]);
+        img_warped_s.release();
+        mask_warped.release();
+        seam_mask.release();
+        dilated_mask.release();
         _progress += _progressStep;
     }
 

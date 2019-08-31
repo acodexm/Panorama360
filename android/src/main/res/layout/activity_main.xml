@@ -72,63 +72,71 @@
                         android:padding="10dp"
                 />
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/advanced_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:padding="10dp"
-                        android:text="@string/stitcher_settings"/>
+                        android:text="@string/stitcher_settings" />
 
-                <TextView
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingStart="10dp"
                         android:textSize="10sp"
-                        android:text="@string/detector_type"/>
-                <Spinner
+                        android:text="@string/detector_type" />
+
+                    <Spinner
                         android:id="@+id/detector_select"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:padding="10dp"
-                />
+                        android:padding="10dp" />
 
-                <TextView
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingStart="10dp"
                         android:textSize="10sp"
-                        android:text="@string/wrap_type"/>
-                <Spinner
+                        android:text="@string/wrap_type" />
+
+                    <Spinner
                         android:id="@+id/wrap_select"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:padding="10dp"
-                />
+                        android:padding="10dp" />
 
-                <TextView
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingStart="10dp"
                         android:textSize="10sp"
-                        android:text="@string/seam_finder_type"/>
-                <Spinner
+                        android:text="@string/seam_finder_type" />
+
+                    <Spinner
                         android:id="@+id/seam_select"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:padding="10dp"/>
+                        android:padding="10dp" />
 
-                <TextView
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingStart="10dp"
                         android:textSize="10sp"
-                        android:text="@string/exposure_composition_type"/>
+                        android:text="@string/exposure_composition_type" />
 
-                <Spinner
+                    <Spinner
                         android:id="@+id/exp_comp_select"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:padding="10dp"/>
-
+                        android:padding="10dp" />
+                </LinearLayout>
 
                 <TextView
                         android:layout_width="wrap_content"
@@ -156,35 +164,43 @@
 
                 </LinearLayout>
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/picture_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:padding="10dp"
-                        android:text="@string/picture_settings"/>
+                        android:text="@string/picture_settings" />
 
-                <Switch
+                    <Switch
                         android:id="@+id/quality_high"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="start"
                         android:padding="10dp"
-                        android:text="@string/high_quality"/>
+                        android:text="@string/high_quality" />
 
-                <Switch
+                    <Switch
                         android:id="@+id/quality_low"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="start"
                         android:padding="10dp"
-                        android:text="@string/low_quality"/>
+                        android:text="@string/low_quality" />
 
-                <Switch
+                    <Switch
                         android:id="@+id/quality_very_low"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="start"
                         android:padding="10dp"
-                        android:text="@string/very_low_quality"/>
+                        android:text="@string/very_low_quality" />
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
     </android.support.design.widget.NavigationView>

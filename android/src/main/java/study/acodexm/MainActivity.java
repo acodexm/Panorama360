@@ -21,6 +21,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Switch;
@@ -79,6 +80,10 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         System.loadLibrary("MyLib");
     }
 
+    @BindView(R.id.picture_settings)
+    LinearLayout pictureSettings;
+    @BindView(R.id.advanced_settings)
+    LinearLayout advancedSettings;
     @BindView(R.id.exp_comp_select)
     Spinner expCompSelect;
     @BindView(R.id.picture_mode)
@@ -284,6 +289,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     case PROCESS_FINAL_IMAGES: {
                         LOG.s(TAG, "PROCESS_FINAL_IMAGES");
                         MainActivity.this.isNotSaving = false;
+                        MainActivity.this.orientationProvider.stop();
                         new Thread(MainActivity.this.processPicture(PictureMode.intToEnum(msg.arg1), msg.arg2 == 1)).start();
                         new Thread(MainActivity.this.getProgress()).start();
                         break;
@@ -430,6 +436,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 e.printStackTrace();
             }
             isNotSaving = true;
+            orientationProvider.start();
             post(LOG.r("processPicture", "END", (System.currentTimeMillis() - time)));
             post(LOG.cpJ());
         };
@@ -462,7 +469,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {"PART", "orb", "spherical", "dp_color"};
+                        String[] args = {"PART", "orb", "spherical", "dp_color", "NO"};
                         t = System.currentTimeMillis();
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
@@ -571,12 +578,15 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
         switch (mPreferences.getActionMode()) {
             case Manual:
                 mSwitchManual.setChecked(true);
+                pictureSettings.setVisibility(View.VISIBLE);
                 break;
             case FullAuto:
                 mSwitchAuto.setChecked(true);
+                pictureSettings.setVisibility(View.VISIBLE);
                 break;
             case Test:
                 mSwitchTest.setChecked(true);
+                pictureSettings.setVisibility(View.GONE);
                 break;
         }
         switch (mPreferences.getPictureQuality()) {
@@ -750,6 +760,11 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 mPreferences.setLat(10);
                 mPreferences.setLon(7);
             }
+            if (PictureMode.intToEnum(position) == PictureMode.TEST) {
+                advancedSettings.setVisibility(View.VISIBLE);
+            } else {
+                advancedSettings.setVisibility(View.GONE);
+            }
             mSettingsControl.setPictureMode(PictureMode.intToEnum(position));
             mPreferences.setPictureMode(PictureMode.intToEnum(position));
             setCaptureBtnImage();
@@ -791,6 +806,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
             mSettingsControl.setActionMode(ActionMode.FullAuto);
             mSwitchManual.setChecked(false);
             mSwitchTest.setChecked(false);
+            pictureSettings.setVisibility(View.VISIBLE);
             setCaptureBtnImage();
             if (!mSwitchAuto.isChecked())
                 mSwitchAuto.setChecked(true);
@@ -805,6 +821,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 mSettingsControl.setActionMode(ActionMode.Manual);
                 mSwitchAuto.setChecked(false);
                 mSwitchTest.setChecked(false);
+                pictureSettings.setVisibility(View.VISIBLE);
                 setCaptureBtnImage();
             } else onSwitchAuto();
         else showToast(R.string.msg_wait);
@@ -818,6 +835,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                 mSettingsControl.setActionMode(ActionMode.Test);
                 mSwitchAuto.setChecked(false);
                 mSwitchManual.setChecked(false);
+                pictureSettings.setVisibility(View.GONE);
                 setCaptureBtnImage();
             } else onSwitchAuto();
         else showToast(R.string.msg_wait);

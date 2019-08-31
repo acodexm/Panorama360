@@ -3,7 +3,7 @@
     <string name="taking_picture_mode">Taking picture mode:</string>
     <string name="full_auto">Full Auto</string>
     <string name="manual">Manual</string>
-    <string name="type_of_picture">Select picture type:</string>
+    <string name="type_of_picture">Select application mode:</string>
     <string name="panorama">Panorama</string>
     <string name="multithreaded">Multithreaded</string>
     <string name="wide_picture">Wide picture</string>
@@ -37,5 +37,5 @@
     <string name="seam_finder_type">Seam finder type:</string>
     <string name="wrap_type">Wrap type:</string>
     <string name="detector_type">Detector type:</string>
-    <string name="test">Test</string>
+    <string name="test">From /test folder</string>
 </resources>
