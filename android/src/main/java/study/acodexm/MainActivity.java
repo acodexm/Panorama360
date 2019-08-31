@@ -412,7 +412,13 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     // Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {pictureMode.toString(), detectorType, wrapType, seamType, expCompType};
+                        String[] args = {
+                                pictureMode.toString().toLowerCase(),
+                                detectorType.toLowerCase(),
+                                wrapType.toLowerCase(),
+                                seamType.toLowerCase(),
+                                expCompType.toLowerCase()
+                        };
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));
                         t = System.currentTimeMillis();
@@ -469,7 +475,7 @@ public class MainActivity extends AndroidApplication implements ViewControl, Nav
                     Mat result = new Mat();
                     //Call the OpenCV C++ Code to perform stitching process
                     try {
-                        String[] args = {"PART", "orb", "spherical", "dp_color", "NO"};
+                        String[] args = {"part", "orb", "spherical", "dp_color", "no"};
                         t = System.currentTimeMillis();
                         NativePanorama.processPanorama(tempObjAddress, result.getNativeObjAddr(), args);
                         post(LOG.r("processPanorama", (System.currentTimeMillis() - t) + "", (System.currentTimeMillis() - time)));

@@ -85,6 +85,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     /** Exposure compensation method. **/
     int expos_comp_type = ExposureCompensator::NO;
     string expCompType = "no";
+
     /** Confidence for feature matching step. **/
     float match_conf = 0.25f;
 
@@ -126,39 +127,39 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     s = accumulate(begin(params), end(params), s);
     LOGD("stitchImg params: %s", s.c_str())
     string mode = string(params[0]);
-    if (mode == "MULTITHREADED") {
+    if (mode == "multithreaded") {
         detector = "orb";
         warp_type = "cylindrical";
         seam_find_type = "dp_color";
-        expCompType = "NO";
-    } else if (mode == "TEST") {
+        expCompType = "no";
+    } else if (mode == "test") {
         detector = string(params[1]);
         warp_type = string(params[2]);
         seam_find_type = string(params[3]);
         expCompType = string(params[4]);
-    } else if (mode == "PART") {
+    } else if (mode == "part") {
         ORB_GRID_SIZE = Size(3, 1);
         ORB_FEATURES_N = 1000;
         detector = "orb";
-        warp_type = "cylindrical";
+        warp_type = "spherical";
         seam_find_type = "dp_color";
-        expCompType = "NO";
-    } else if (mode == "PANORAMA") {
+        expCompType = "no";
+    } else if (mode == "panorama") {
         detector = "orb";
         warp_type = "cylindrical";
         seam_find_type = "dp_color";
         expCompType = "NO";
-    } else if (mode == "PICTURE_360") {
+    } else if (mode == "picture_360") {
         detector = "orb";
         warp_type = "spherical";
         seam_find_type = "dp_color";
-        expCompType = "NO";
+        expCompType = "no";
         compose_megapix = 0.7;
     }
     // set expos_comp_type
-    if (expCompType == "GAIN") {
+    if (expCompType == "gain") {
         expos_comp_type = ExposureCompensator::GAIN;
-    } else if (expCompType == "GAIN_BLOCKS") {
+    } else if (expCompType == "gain_blocks") {
         expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
     }
 
@@ -175,17 +176,17 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         LOGD("Not enough images...");
         return -1;
     } else if (imgAmount > 16) {
-        work_megapix = 0.15;
-        seam_megapix = 0.1;
         compose_megapix = 0.7;
         LOGD("over 16 images, lowering quality");
     }
-    LOGD("All images: %d, MODE:%s, detector_type=%s, wrap_type=%s, seam_find_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d",
+    LOGD("All images: %d, MODE:%s, detector_type=%s, wrap_type=%s, seam_find_type=%s, expos_comp_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d",
          imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
-         (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
-    LOGP("All images: %d: MODE:%s: detector_type:%s:  wrap_type:%s: seam_find_type=%s, ORB_FEATURES_N:%d: ORB_GRID_SIZE:%d%d",
+         expCompType.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width,
+         (int) ORB_GRID_SIZE.height)
+    LOGP("All images: %d: MODE:%s: detector_type:%s:  wrap_type:%s: seam_find_type=%s: expos_comp_type=%s: ORB_FEATURES_N:%d: ORB_GRID_SIZE:%d%d",
          imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
-         (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width, (int) ORB_GRID_SIZE.height)
+         expCompType.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width,
+         (int) ORB_GRID_SIZE.height)
 
     double work_scale = 1, seam_scale = 1, compose_scale = 1;
     bool is_work_scale_set = false, is_seam_scale_set = false, is_compose_scale_set = false;
