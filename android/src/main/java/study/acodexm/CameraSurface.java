@@ -101,13 +101,13 @@ public class CameraSurface extends SurfaceView implements SurfaceHolder.Callback
             myParameters.setPreviewSize(myBestSize.width, myBestSize.height);
             myParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             switch (mSettingsControl.getPictureQuality()) {
-                case LOW:
+                case NORMAL:
                     myParameters.set("jpeg-quality", 70);
                     myParameters.setRotation(orientation);
                     myParameters.setPictureFormat(PixelFormat.JPEG);
                     myParameters.setPictureSize(lowRes.width, lowRes.height);
                     break;
-                case VERY_LOW:
+                case LOW:
                     myParameters.set("jpeg-quality", 70);
                     myParameters.setRotation(orientation);
                     myParameters.setPictureFormat(PixelFormat.JPEG);

@@ -28,13 +28,13 @@ Java_study_acodexm_NativePanorama_processPanorama
     bool isCropped = false;
     int size = env->GetArrayLength(stringArray);
     vector<string> params;
-    bool useDefault=false;
+    bool useDefault = false;
     for (int i = 0; i < size; ++i) {
         auto args = (jstring) env->GetObjectArrayElement(stringArray, i);
         const char *value = env->GetStringUTFChars(args, nullptr);
         if (string(value) == "cropp") {
             isCropped = true;
-        } else if (string(value) == "OPEN_CV_DEFAULT") {
+        } else if (string(value) == "open_cv_default") {
             useDefault = true;
         } else {
             params.emplace_back(value);
@@ -49,29 +49,24 @@ Java_study_acodexm_NativePanorama_processPanorama
     jlong *imgAddressArr = env->GetLongArrayElements(imageAddressArray, 0);
     // Create a vector to store all the image
     vector<Mat> imgVec;
+    for (int k = 0; k < a_len; k++) {
+        // Get the image
+        Mat &curimage = *(Mat *) imgAddressArr[k];
+        Mat newimage;
+        // Convert to a 3 channel Mat
+        cvtColor(curimage, newimage, CV_BGRA2RGB);
+        curimage.release();
+        imgVec.push_back(newimage);
+        newimage.release();
+    }
     if (useDefault) {
-    int64 app_start_time = getTickCount();
-        for (int k = 0; k < a_len; k++) {
-            // Get the image
-            Mat &curimage = *(Mat *) imgAddressArr[k];
-            Mat newimage;
-            // Convert to a 3 channel Mat to use with Stitcher module
-            cvtColor(curimage, newimage, CV_BGRA2RGB);
-            // Reduce the resolution for fast computation
-            float scale = 1000.0f / curimage.cols;
-            resize(newimage, newimage, Size((int) (scale * curimage.cols),
-                                            (int) (scale * curimage.rows)));
-            imgVec.push_back(newimage);
-        }
-        LOGP("OpenCV Stitcher, reduce resolution: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
-        int64 t = getTickCount();
-
+        int64 app_start_time = getTickCount();
         Mat &result = *(Mat *) outputAddress;
         Stitcher::Mode mode = Stitcher::PANORAMA;
         Ptr<Stitcher> stitcher = Stitcher::create(mode, false);
         Stitcher::Status status = stitcher->stitch(imgVec, result);
-        LOGP("OpenCV Stitcher, stitiching time: %f", ((getTickCount() - t) / getTickFrequency()));
-        LOGP("OpenCV Stitcher, total time: %f", ((getTickCount() - app_start_time) / getTickFrequency()));
+        LOGP("OpenCV Stitcher, total time: %f",
+             ((getTickCount() - app_start_time) / getTickFrequency()));
         if (status != Stitcher::OK) {
             LOGE("Can't stitch images, error code = %d", int(status));
         } else {
@@ -86,14 +81,6 @@ Java_study_acodexm_NativePanorama_processPanorama
             }
         }
     } else {
-        for (int k = 0; k < a_len; k++) {
-            // Get the image
-            Mat &curimage = *(Mat *) imgAddressArr[k];
-            Mat newimage;
-            // Convert to a 3 channel Mat
-            cvtColor(curimage, newimage, CV_BGRA2RGB);
-            imgVec.push_back(newimage);
-        }
         Mat &result = *(Mat *) outputAddress;
         int status = stitchImg(imgVec, result, params);
         if (status != 0) {

@@ -40,7 +40,7 @@ int FINDER_STEP = 15;
 int MATCHER_STEP = 10;
 int ESTIMATOR_STEP = 5;
 int ADJUSTER_STEP = 5;
-int WARPER_STEP = 10;
+int WRAPPER_STEP = 10;
 int COMPENSATOR_STEP = 20;
 int SEAM_STEP = 10;
 int COMPOSITOR_STEP = 30;
@@ -56,13 +56,10 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     double seam_megapix = 0.1;
 
     /** final panorama resolution **/
-    double compose_megapix = -1;
+    double compose_megapix = -1; // -1 means ignore
 
     /** Threshold for two images are from the same panorama confidence. **/
     float conf_thresh = 1.f;    // frequent crashes when < 0.7
-
-    /** Bundle adjustment cost function. reproj don't seems suitable for spherical pano**/
-    string ba_cost_func = "ray";    //["reproj", "ray" : "ray"]
 
     /** Set refinement mask for bundle adjustment. It looks like 'x_xxx'
         where 'x' means refine respective parameter and '_' means don't
@@ -83,7 +80,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     string warp_type = "spherical";
 
     /** Exposure compensation method. **/
-    int expos_comp_type = ExposureCompensator::NO;
+    int expos_comp_type;
     string expCompType = "no";
 
     /** Confidence for feature matching step. **/
@@ -148,7 +145,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         detector = "orb";
         warp_type = "cylindrical";
         seam_find_type = "dp_color";
-        expCompType = "NO";
+        expCompType = "no";
     } else if (mode == "picture_360") {
         detector = "orb";
         warp_type = "spherical";
@@ -161,6 +158,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         expos_comp_type = ExposureCompensator::GAIN;
     } else if (expCompType == "gain_blocks") {
         expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
+    } else {
+        expos_comp_type = ExposureCompensator::NO;
     }
 
 #if ENABLE_LOG
@@ -324,13 +323,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     _progress += ESTIMATOR_STEP;
 
     // ================ adjuster... ==================
-    Ptr<detail::BundleAdjusterBase> adjuster;
-    if (ba_cost_func == "reproj") adjuster = new detail::BundleAdjusterReproj();
-    else if (ba_cost_func == "ray") adjuster = new detail::BundleAdjusterRay();
-    else {
-        LOGD("Unknown bundle adjustment cost function: '%s'.\n", ba_cost_func.c_str());
-        return -1;
-    }
+    Ptr<detail::BundleAdjusterBase> adjuster = new detail::BundleAdjusterRay();
     adjuster->setConfThresh(conf_thresh);
     Mat_<uchar> refine_mask = Mat::zeros(3, 3, CV_8U);
     if (ba_refine_mask[0] == 'x') refine_mask(0, 0) = 1;
@@ -429,7 +422,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
     Ptr<RotationWarper> warper = warper_creator->create(
             static_cast<float>(warped_image_scale * seam_work_aspect));
-    _progressStep = (float) WARPER_STEP / (float) imgAmount;
+    _progressStep = (float) WRAPPER_STEP / (float) imgAmount;
     for (int i = 0; i < imgAmount; ++i) {
         Mat_<float> K;
         cameras[i].K().convertTo(K, CV_32F);

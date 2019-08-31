@@ -74,7 +74,7 @@ public class UserPreferences {
     }
 
     public PictureQuality getPictureQuality() {
-        return PictureQuality.stringToEnum(mPreferences.getString(PREF_PICTURE_QUALITY, PictureQuality.LOW.name()));
+        return PictureQuality.stringToEnum(mPreferences.getString(PREF_PICTURE_QUALITY, PictureQuality.NORMAL.name()));
     }
 
     public void setPictureQuality(PictureQuality pictureQuality) {
