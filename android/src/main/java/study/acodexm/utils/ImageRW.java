@@ -29,7 +29,7 @@ public class ImageRW {
     private static final String MAIN_PREFIX = "/panorama_";
     private static final String PART_PREFIX = "/part_panorama_";
     private static final String PNG = ".png";
-    private static final String PATTERN = "ddMMyyyyHHmmss";
+    private static final String PATTERN = "yyyyMMddHHmmss";
 
     /**
      * method saves taken individual pictures on external storage

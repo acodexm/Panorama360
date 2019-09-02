@@ -81,7 +81,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
     /** Exposure compensation method. **/
     int expos_comp_type;
-    string expCompType;
+    string exp_comp_type;
 
     /** Confidence for feature matching step. **/
     float match_conf = 0.25f;
@@ -107,7 +107,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     size_t ORB_FEATURES_N; // ORIGINAL 1500;
 
     /** loaded images loaded **/
-    int imgAmount;
+    int img_amount;
 
 
     /** mask used to know what images should we match together **/
@@ -127,7 +127,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     detector = "orb";
     warp_type = "spherical";
     seam_find_type = "dp_color";
-    expCompType = "no";
+    exp_comp_type = "no";
     ORB_GRID_SIZE = Size(3, 1);
     ORB_FEATURES_N = 1500;
     if (mode == "multithreaded") {
@@ -136,7 +136,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         detector = string(params[1]);
         warp_type = string(params[2]);
         seam_find_type = string(params[3]);
-        expCompType = string(params[4]);
+        exp_comp_type = string(params[4]);
     } else if (mode == "part") {
         ORB_FEATURES_N = 1000;
     } else if (mode == "panorama") {
@@ -145,9 +145,9 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         compose_megapix = 0.7;
     }
     // set expos_comp_type
-    if (expCompType == "gain") {
+    if (exp_comp_type == "gain") {
         expos_comp_type = ExposureCompensator::GAIN;
-    } else if (expCompType == "gain_blocks") {
+    } else if (exp_comp_type == "gain_blocks") {
         expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
     } else {
         expos_comp_type = ExposureCompensator::NO;
@@ -161,21 +161,21 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     cv::setBreakOnError(true);
 
     // Check if have enough images
-    imgAmount = static_cast<int>(imagesArg.size());
-    if (imgAmount < 2) {
+    img_amount = static_cast<int>(imagesArg.size());
+    if (img_amount < 2) {
         LOGD("Not enough images...");
         return -1;
-    } else if (imgAmount > 16) {
+    } else if (img_amount > 16) {
         compose_megapix = 0.7;
         LOGD("over 16 images, lowering quality");
     }
     LOGD("All images: %d, MODE:%s, detector_type=%s, wrap_type=%s, seam_find_type=%s, expos_comp_type=%s, ORB_FEATURES_N=%d, ORB_GRID_SIZE=%d%d",
-         imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
-         expCompType.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width,
+         img_amount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
+         exp_comp_type.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width,
          (int) ORB_GRID_SIZE.height)
     LOGP("All images: %d: MODE:%s: detector_type:%s:  wrap_type:%s: seam_find_type=%s: expos_comp_type=%s: ORB_FEATURES_N:%d: ORB_GRID_SIZE:%d%d",
-         imgAmount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
-         expCompType.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width,
+         img_amount, mode.c_str(), detector.c_str(), warp_type.c_str(), seam_find_type.c_str(),
+         exp_comp_type.c_str(), (int) ORB_FEATURES_N, (int) ORB_GRID_SIZE.width,
          (int) ORB_GRID_SIZE.height)
 
     double work_scale = 1, seam_scale = 1, compose_scale = 1;
@@ -186,7 +186,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     LOGD("Finding features... MODE:%s", detector.c_str());
     int64 t = getTickCount();
 #endif
-    _progressStep = ((float) FINDER_STEP / (float) imgAmount);
+    _progressStep = ((float) FINDER_STEP / (float) img_amount);
     Ptr<FeaturesFinder> finder;
     if (detector == "orb") {
         finder = new OrbFeaturesFinder(ORB_GRID_SIZE, ORB_FEATURES_N);
@@ -197,12 +197,12 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     }
 
     Mat full_img, img;
-    vector<ImageFeatures> features(imgAmount);
-    vector<Mat> images(imgAmount);
-    vector<Size> full_img_sizes(imgAmount);
+    vector<ImageFeatures> features(img_amount);
+    vector<Mat> images(img_amount);
+    vector<Size> full_img_sizes(img_amount);
     double seam_work_aspect = 1;
 
-    for (int i = 0; i < imgAmount; ++i) {
+    for (int i = 0; i < img_amount; ++i) {
         full_img = imagesArg[i];
         full_img_sizes[i] = full_img.size();
 
@@ -283,13 +283,13 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     full_img_sizes = full_img_sizes_subset;
 
     // Check if we still have enough images
-    imgAmount = static_cast<int>(imagesArg.size());
-    if (imgAmount < 2) {
+    img_amount = static_cast<int>(imagesArg.size());
+    if (img_amount < 2) {
         LOGD("Need more images");
 
         return -1;
     }
-    LOGP("Left images: %d", imgAmount);
+    LOGP("Left images: %d", img_amount);
 
     // ================ estimate homography... ==================
 #if ENABLE_LOG
@@ -377,14 +377,14 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     t = getTickCount();
 #endif
 
-    vector<Point> corners(imgAmount);
-    vector<UMat> masks_warped(imgAmount);
-    vector<UMat> images_warped(imgAmount);
-    vector<Size> sizes(imgAmount);
-    vector<Mat> masks(imgAmount);
+    vector<Point> corners(img_amount);
+    vector<UMat> masks_warped(img_amount);
+    vector<UMat> images_warped(img_amount);
+    vector<Size> sizes(img_amount);
+    vector<Mat> masks(img_amount);
 
     // Preapre images masks
-    for (int i = 0; i < imgAmount; ++i) {
+    for (int i = 0; i < img_amount; ++i) {
         masks[i].create(images[i].size(), CV_8U);
         masks[i].setTo(Scalar::all(255));
     }
@@ -413,8 +413,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
 
     Ptr<RotationWarper> warper = warper_creator->create(
             static_cast<float>(warped_image_scale * seam_work_aspect));
-    _progressStep = (float) WRAPPER_STEP / (float) imgAmount;
-    for (int i = 0; i < imgAmount; ++i) {
+    _progressStep = (float) WRAPPER_STEP / (float) img_amount;
+    for (int i = 0; i < img_amount; ++i) {
         Mat_<float> K;
         cameras[i].K().convertTo(K, CV_32F);
         float swa = (float) seam_work_aspect;
@@ -431,8 +431,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         _progress += _progressStep;
     }
 
-    vector<UMat> images_warped_f(imgAmount);
-    for (int i = 0; i < imgAmount; ++i)
+    vector<UMat> images_warped_f(img_amount);
+    for (int i = 0; i < img_amount; ++i)
         images_warped[i].convertTo(images_warped_f[i], CV_32F);
 
 
@@ -454,6 +454,11 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
          ((getTickCount() - t) / getTickFrequency()),
          ((getTickCount() - app_start_time) / getTickFrequency()), _progress);
 
+    // ================ finding seam... ==================
+#if ENABLE_LOG
+    LOGD("Finding seam TYPE:%s:", seam_find_type.c_str());
+    t = getTickCount();
+#endif
     Ptr<SeamFinder> seam_finder;
     if (seam_find_type == "no")
         seam_finder = new detail::NoSeamFinder();
@@ -472,12 +477,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
         LOGD("Can't create the following seam finder '%s'\n", seam_find_type.c_str());
         return 1;
     }
-        // ================ finding seam... ==================
 
-#if ENABLE_LOG
-    LOGD("Finding seam TYPE:%s:", seam_find_type.c_str());
-    t = getTickCount();
-#endif
     seam_finder->find(images_warped_f, corners, masks_warped);
     _progress += SEAM_STEP;
     LOGD("Finding seam, time: %f%s", ((getTickCount() - t) / getTickFrequency()), " sec");
@@ -502,8 +502,8 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     Ptr<Blender> blender;
     //double compose_seam_aspect = 1;
     double compose_work_aspect = 1;
-    _progressStep = (float) COMPOSITOR_STEP / (float) imgAmount;
-    for (int img_idx = 0; img_idx < imgAmount; ++img_idx) {
+    _progressStep = (float) COMPOSITOR_STEP / (float) img_amount;
+    for (int img_idx = 0; img_idx < img_amount; ++img_idx) {
         LOGD("Compositing image #%d", _indices[img_idx] + 1);
 
         // Read image and resize it if necessary
@@ -522,7 +522,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
             warper = warper_creator->create(warped_image_scale);
 
             // Update corners and sizes
-            for (int i = 0; i < imgAmount; ++i) {
+            for (int i = 0; i < img_amount; ++i) {
                 // Update intrinsics
                 cameras[i].focal *= compose_work_aspect;
                 cameras[i].ppx *= compose_work_aspect;
