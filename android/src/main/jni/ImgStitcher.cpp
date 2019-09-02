@@ -77,11 +77,11 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     /** Warp surface type.
     plane|cylindrical|spherical
     **/
-    string warp_type = "spherical";
+    string warp_type;
 
     /** Exposure compensation method. **/
     int expos_comp_type;
-    string expCompType = "no";
+    string expCompType;
 
     /** Confidence for feature matching step. **/
     float match_conf = 0.25f;
@@ -89,7 +89,7 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     /** Seam estimation method.
     dp_** is WAY faster!!!
     **/
-    string seam_find_type = "dp_color";
+    string seam_find_type;
 
     /** Blending method. **/
     int blend_type = Blender::MULTI_BAND;
@@ -98,13 +98,13 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     float blend_strength = 5;
 
     /** Detector type orb or akaze **/
-    string detector = "orb";
+    string detector;
     /** orb featureFinder parameters
     * highly important for performance and matching features
     *
     **/
-    Size ORB_GRID_SIZE = Size(3, 1); // ORIGINAL Size(3,1);
-    size_t ORB_FEATURES_N = 1500; // ORIGINAL 1500;
+    Size ORB_GRID_SIZE; // ORIGINAL Size(3,1);
+    size_t ORB_FEATURES_N; // ORIGINAL 1500;
 
     /** loaded images loaded **/
     int imgAmount;
@@ -124,33 +124,24 @@ int stitchImg(vector<Mat> &imagesArg, Mat &result, vector<string> params) {
     s = accumulate(begin(params), end(params), s);
     LOGD("stitchImg params: %s", s.c_str())
     string mode = string(params[0]);
+    detector = "orb";
+    warp_type = "spherical";
+    seam_find_type = "dp_color";
+    expCompType = "no";
+    ORB_GRID_SIZE = Size(3, 1);
+    ORB_FEATURES_N = 1500;
     if (mode == "multithreaded") {
-        detector = "orb";
         warp_type = "cylindrical";
-        seam_find_type = "dp_color";
-        expCompType = "no";
     } else if (mode == "test") {
         detector = string(params[1]);
         warp_type = string(params[2]);
         seam_find_type = string(params[3]);
         expCompType = string(params[4]);
     } else if (mode == "part") {
-        ORB_GRID_SIZE = Size(3, 1);
         ORB_FEATURES_N = 1000;
-        detector = "orb";
-        warp_type = "spherical";
-        seam_find_type = "dp_color";
-        expCompType = "no";
     } else if (mode == "panorama") {
-        detector = "orb";
         warp_type = "cylindrical";
-        seam_find_type = "dp_color";
-        expCompType = "no";
     } else if (mode == "picture_360") {
-        detector = "orb";
-        warp_type = "spherical";
-        seam_find_type = "dp_color";
-        expCompType = "no";
         compose_megapix = 0.7;
     }
     // set expos_comp_type
