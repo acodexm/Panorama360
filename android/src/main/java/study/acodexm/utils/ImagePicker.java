@@ -36,7 +36,9 @@ public class ImagePicker {
     }
 
     public static List<Mat> loadPictureParts(ArrayList<Integer> ids) {
-        return ids.stream().map(id -> bitmapToMat(ImageRW.loadImageExternal(id))).collect(Collectors.toList());
+        return ids.stream()
+                .map(id -> bitmapToMat(ImageRW.loadImageExternal(id)))
+                .collect(Collectors.toList());
     }
 
     private static List<Mat> loadAllPictureParts(PicturePosition position) {
@@ -53,41 +55,47 @@ public class ImagePicker {
                 .collect(Collectors.toList());
     }
 
+    private static List<Mat> loadAllPictures(PicturePosition instance) {
+        return instance.getTakenPictures().stream()
+                .map(id -> bitmapToMat(ImageRW.loadImageExternal(id)))
+                .collect(Collectors.toList());
+    }
+
+    private static List<Mat> loadWidePictures(PicturePosition instance) {
+        Set<Integer> optimalIDS = maxArea(instance);
+        if (optimalIDS != null && optimalIDS.size() > 0)
+            return optimalIDS.stream()
+                    .map(id -> bitmapToMat(ImageRW.loadImageExternal(id)))
+                    .collect(Collectors.toList());
+        else
+            LOG.e(TAG, "WIDE_PICTURE loadPictures failed: ", new Throwable("empty list or null"));
+        return new ArrayList<>();
+    }
+
+    private static List<Mat> loadPanoramaPictures(PicturePosition instance) {
+        Set<Integer> longestIDS = maxLength(instance);
+        if (longestIDS != null && longestIDS.size() > 0)
+            return longestIDS.stream()
+                    .map(id -> bitmapToMat(ImageRW.loadImageExternal(id)))
+                    .collect(Collectors.toList());
+        else
+            LOG.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
+        return new ArrayList<>();
+
+    }
+
     public static List<Mat> loadPictures(PictureMode pictureMode, PicturePosition instance, boolean isInTestMode) {
-        List<Mat> pictures = new ArrayList<>();
         if (isInTestMode) return loadTestPictures();
         switch (pictureMode) {
-            case OPEN_CV_DEFAULT:
-            case AUTO:
-            case PICTURE_360:
-                for (int id : instance.getTakenPictures())
-                    pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
-                break;
             case MULTITHREADED:
                 return loadAllPictureParts(instance);
             case PANORAMA:
-                Set<Integer> longestIDS = maxLength(instance);
-                if (longestIDS != null && longestIDS.size() > 0)
-                    for (int id : longestIDS) {
-                        pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
-                    }
-                else
-                    LOG.e(TAG, "panorama loadPictures failed: ", new Throwable("empty list or null"));
-                break;
+                return loadPanoramaPictures(instance);
             case WIDE_PICTURE:
-                Set<Integer> optimalIDS = maxArea(instance);
-                if (optimalIDS != null && optimalIDS.size() > 0)
-                    for (int id : optimalIDS) {
-                        pictures.add(bitmapToMat(ImageRW.loadImageExternal(id)));
-                    }
-                else
-                    LOG.e(TAG, "WIDE_PICTURE loadPictures failed: ", new Throwable("empty list or null"));
-                break;
-            case TEST: {
-                return loadTestPictures();
-            }
+                return loadWidePictures(instance);
+            default:
+                return loadAllPictures(instance);
         }
-        return pictures;
     }
 
     /**
