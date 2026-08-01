@@ -165,7 +165,7 @@ public class ImprovedOrientationSensor2Provider extends OrientationProvider {
                 SensorManager.getQuaternionFromVector(temporaryQuaternion, event.values);
 
                 // Store in quaternion
-                quaternionRotationVector.setXYZW(temporaryQuaternion[1], temporaryQuaternion[2], temporaryQuaternion[3], -temporaryQuaternion[0]);
+                quaternionRotationVector.setXYZW(temporaryQuaternion[0], temporaryQuaternion[1], temporaryQuaternion[2], temporaryQuaternion[3]);
                 if (!positionInitialised) {
                     // Override
                     quaternionGyroscope.set(quaternionRotationVector);
